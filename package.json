@@ -1,0 +1,24 @@
+{
+  "name": "@testing-system/root",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo: offline classroom knowledge-testing system (course project)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.5.0",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "dev:server": "pnpm --filter @testing-system/server dev",
+    "dev:web": "pnpm --filter @testing-system/web-client dev",
+    "dev:desktop": "pnpm --filter @testing-system/desktop tauri dev",
+    "build:server": "pnpm --filter @testing-system/server build",
+    "build:web": "pnpm --filter @testing-system/web-client build",
+    "build:desktop": "pnpm --filter @testing-system/desktop build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}
