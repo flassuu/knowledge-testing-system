@@ -6,6 +6,11 @@ versioning follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- Linux AppImage blank window on Intel Skylake GPUs + Wayland (EGL failure):
+  launcher `scripts/run-linux-appimage.sh` forces software rendering
+  (`WEBKIT_DISABLE_DMABUF_RENDERER=1 LIBGL_ALWAYS_SOFTWARE=1`).
+
 ## [0.1.0] — 2026-09-10
 
 ### Added
