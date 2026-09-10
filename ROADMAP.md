@@ -4,16 +4,18 @@ High-level plan toward an MVP in ~4 weeks. The current repository is the
 **scaffold phase** — a running baseline outside the product domain, to lock in
 tooling, structure, i18n, and CI-friendly builds before product work begins.
 
-## Phase 0 — Scaffold (baseline, in progress)
+## Phase 0 — Scaffold (baseline, done)
 
 - [x] Monorepo + pnpm workspaces + git (branch `main`)
-- [x] Agent rules & opencode config
-- [x] Docs: README, CHANGELOG, ROADMAP
-- [ ] Server: Fastify + health endpoint + SQLite migration runner running
+- [x] Agent rules & opencode config (single root `AGENTS.md`)
+- [x] Docs: README, CHANGELOG, ROADMAP, architecture, schema, API
+- [x] Server: Fastify + health endpoint + SQLite migration runner running
   in `node` and in a `bun build --compile` binary
-- [ ] Student client: Vite + Vue 3 + Tailwind v4 + i18n (en/uk), mobile-first layout
-- [ ] Desktop: Tauri 2 window reaching the server health endpoint
-- [ ] First clean git commit; `pnpm typecheck && pnpm test` green across apps
+- [x] Student client: Vite + Vue 3 + Tailwind v4 + i18n (en/uk), mobile-first layout
+- [x] Desktop: Tauri 2 window reaching the server health endpoint
+- [x] First clean git commit; `pnpm typecheck && pnpm test` green across apps
+- [x] CI builds for Linux/Windows; release v0.1.0 published with `.exe`, `.msi`,
+  `.deb`, `.AppImage`; auto-release workflow on `v*` tags
 
 ## Phase 1 — Data model & auth (week 1)
 
