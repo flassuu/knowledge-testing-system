@@ -7,9 +7,12 @@ versioning follows [SemVer](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
-- Linux AppImage blank window on Intel Skylake GPUs + Wayland (EGL failure):
-  launcher `scripts/run-linux-appimage.sh` forces software rendering
-  (`WEBKIT_DISABLE_DMABUF_RENDERER=1 LIBGL_ALWAYS_SOFTWARE=1`).
+- Linux AppImage blank white window on Mesa 26 + Wayland (Hyprland and
+  similar): EGL initialization aborts with `EGL_BAD_PARAMETER` because the
+  AppImage bundles an old `libwayland-client` that is ABI-incompatible with
+  Mesa 26. Launcher `scripts/run-linux-appimage.sh` now sets
+  `WEBKIT_DISABLE_DMABUF_RENDERER=1` and preloads the system
+  `libwayland-client.so`. Verified rendering with a window capture.
 
 ## [0.1.0] — 2026-09-10
 
