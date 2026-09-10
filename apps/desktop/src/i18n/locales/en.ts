@@ -22,6 +22,14 @@ export default {
     nextPhase:
       'Next phase: test builder UI, session management, and live results board.',
   },
+  sum: {
+    title: 'Sum of two numbers',
+    description: 'Trial task: compute the sum of two numbers.',
+    first: 'First number',
+    second: 'Second number',
+    button: 'Test',
+    result: '{a} + {b} = {result}',
+  },
   common: {
     language: 'Language',
   },

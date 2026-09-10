@@ -36,7 +36,13 @@ docs/            Architecture, DB schema, API reference
 - `bun` is used only to compile the server into a standalone binary —
   it is NOT the runtime for anything else.
 - Tauri build on Linux requires `webkit2gtk-4.1`
-  (`sudo pacman -S webkit2gtk-4.1`) — install when a desktop build is needed.
+  (`sudo pacman -S webkit2gtk-4.1`).
+- AppImage packaging needs `patchelf` in `$PATH` and, on Arch, `NO_STRIP=true`
+  (linuxdeploy's internal `strip` chokes on `.relr.dyn` sections from modern
+  binutils). Build with:
+  `NO_STRIP=true pnpm --filter @testing-system/desktop tauri build`.
+- Windows builds are done in CI (`.github/workflows/build-desktop.yml`),
+  not cross-compiled locally.
 
 ## Commands (run from repo root)
 
