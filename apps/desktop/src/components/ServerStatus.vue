@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { apiUrl } from '../api/client'
 
 const { t } = useI18n()
 
@@ -9,7 +10,7 @@ const state = ref<'checking' | 'online' | 'offline'>('checking')
 async function check() {
   state.value = 'checking'
   try {
-    const res = await fetch('/api/health', { cache: 'no-store' })
+    const res = await fetch(apiUrl('/api/health'), { cache: 'no-store' })
     state.value = res.ok ? 'online' : 'offline'
   } catch {
     state.value = 'offline'

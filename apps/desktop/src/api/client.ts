@@ -2,6 +2,17 @@ const TOKEN_KEY = 'auth.token'
 
 const NETWORK_ERROR_CODE = 'NETWORK'
 
+/**
+ * API base for the desktop app. The built webview runs on the Tauri origin
+ * (`tauri://localhost`), so API calls must target the local Node server
+ * explicitly; in dev Vite would otherwise proxy `/api` for us.
+ */
+const API_BASE = import.meta.env.VITE_API_TARGET ?? 'http://localhost:3300'
+
+export function apiUrl(path: string): string {
+  return `${API_BASE}${path}`
+}
+
 export class ApiError extends Error {
   readonly status: number
   readonly code: string
@@ -46,7 +57,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
   let res: Response
   try {
-    res = await fetch(path, { ...init, headers })
+    res = await fetch(apiUrl(path), { ...init, headers })
   } catch {
     throw new ApiError(0, NETWORK_ERROR_CODE, 'server unreachable')
   }

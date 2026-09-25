@@ -1,4 +1,4 @@
-import { apiFetch, ApiError, getToken } from './client'
+import { apiFetch, apiUrl, ApiError, getToken } from './client'
 import type { CourseDetails, CourseInput, CourseSummary, Material } from './types'
 
 /** Teacher/admin: own courses (admin sees all). */
@@ -64,9 +64,10 @@ export async function uploadMaterial(courseId: string, file: File): Promise<Mate
 /** Downloads a material file through an authenticated fetch + object URL. */
 export async function downloadMaterial(courseId: string, materialId: string, title: string): Promise<void> {
   const token = getToken()
-  const res = await fetch(`/api/courses/${courseId}/materials/${materialId}/file`, {
-    headers: token ? { authorization: `Bearer ${token}` } : {},
-  })
+  const res = await fetch(
+    apiUrl(`/api/courses/${courseId}/materials/${materialId}/file`),
+    { headers: token ? { authorization: `Bearer ${token}` } : {} },
+  )
   if (!res.ok) throw new ApiError(res.status, 'ERROR', 'download failed')
   const blob = await res.blob()
   const url = URL.createObjectURL(blob)
