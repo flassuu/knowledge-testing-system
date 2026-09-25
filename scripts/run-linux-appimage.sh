@@ -13,7 +13,7 @@ set -euo pipefail
 #      Mesa 26, making EGL init abort with EGL_BAD_PARAMETER.
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-APPIMAGE="${APPIMAGE:-$SCRIPT_DIR/testing-system-teacher_0.1.0_amd64.AppImage}"
+APPIMAGE="${APPIMAGE:-$SCRIPT_DIR/testing-system-teacher_0.0.1_amd64.AppImage}"
 
 chmod +x "$APPIMAGE"
 

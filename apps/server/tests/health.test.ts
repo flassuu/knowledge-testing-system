@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildApp, type TestingApp } from '../src/app'
+import { APP_VERSION } from '../src/version'
 
 let app: TestingApp
 let tmpDir: string
@@ -32,6 +33,6 @@ describe('server scaffold', () => {
     }
     expect(body.status).toBe('ok')
     expect(body.database).toBe('ok')
-    expect(body.version).toBe('0.1.0')
+    expect(body.version).toBe(APP_VERSION)
   })
 })

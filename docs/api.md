@@ -13,7 +13,7 @@ Probe used by clients to confirm the local server is up.
 ```json
 {
   "status": "ok",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "database": "ok",
   "uptime_ms": 1234,
   "timestamp": "2026-01-01T00:00:00.000Z"

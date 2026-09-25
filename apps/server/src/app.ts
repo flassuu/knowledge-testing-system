@@ -4,6 +4,7 @@ import websocket from '@fastify/websocket'
 import fastifyStatic from '@fastify/static'
 import { openDatabase, checkDatabase, type Database } from './lib/db'
 import { healthRoutes } from './routes/health'
+import { APP_VERSION } from './version'
 
 export interface AppOptions {
   host: string
@@ -41,7 +42,7 @@ export function buildApp(options: AppOptions): TestingApp {
   }
 
   void app.register(healthRoutes, {
-    version: '0.1.0',
+    version: APP_VERSION,
     checkDatabase: () => checkDatabase(database),
   })
 
