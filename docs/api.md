@@ -5,6 +5,13 @@ Conventions: REST + JSON, errors as `{ "error": { "code", "message" } }`
 Auth uses `Authorization: Bearer <token>`; tokens are opaque, DB-backed
 sessions valid for 12 hours.
 
+CORS is enabled (`@fastify/cors`, origin reflected) so browser-based clients
+on other origins — including the Tauri desktop webview (`tauri://localhost`),
+which is a different origin from `http://localhost:3300` — can call the API
+directly. The desktop app therefore always targets the local Node server at
+its API base (`VITE_API_TARGET` at build time, default `http://localhost:3300`);
+the Vite dev proxy is only a convenience for `pnpm dev:web` / `dev:desktop`.
+
 ## Health
 
 ### `GET /api/health`
@@ -14,7 +21,7 @@ Probe used by clients to confirm the local server is up. Public.
 ```json
 {
   "status": "ok",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "database": "ok",
   "uptime_ms": 1234,
   "timestamp": "2026-01-01T00:00:00.000Z"
@@ -198,7 +205,7 @@ Aggregated DB health and table counts — the admin "System & DB" screen.
 ```json
 {
   "stats": {
-    "version": "0.0.1",
+    "version": "0.1.0",
     "uptimeMs": 1234,
     "schemaVersion": 3,
     "database": "ok",

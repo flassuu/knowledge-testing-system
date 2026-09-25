@@ -4,92 +4,79 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.1.0] — 2026-09-25
+
+Phase 1 release: the role-based foundation ships as a testable product —
+accounts & auth, tests & courses CRUD with materials, and full admin and
+teacher UIs in the web client and the desktop app. 35 integration tests green.
 
 ### Added
-- **Server — tests & courses (data model + CRUD)**: migration v3 adds
-  `tests`, `questions`, `courses`, `course_enrollments`, `course_tests`,
-  `materials` with full domain validation.
-- **Tests API** (`admin`/`teacher`): `GET/POST /api/tests`,
+- **Server — accounts & roles (Phase 1)**: `users`/`sessions` tables with role
+  (`admin | teacher | student`) and status (`pending | approved | blocked`),
+  built-in admin account seeded on first boot (`ADMIN_USERNAME` /
+  `ADMIN_PASSWORD` env overrides), password hashing with `node:crypto` scrypt
+  (no new dependencies), opaque bearer sessions (SHA-256 at rest, 12 h expiry).
+- **Auth API**: `POST /api/auth/register` (students self-register → pending),
+  `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`.
+- **Admin API**: `GET /api/users` (role/status/search filters),
+  `POST /api/users` (create teacher), `PATCH /api/users/:id/status`
+  (approve/block, revokes live sessions), `DELETE /api/users/:id`.
+- **Admin insights API** (admin only): `GET /api/admin/stats` (schema version,
+  DB health, uptime, table counts) and `GET /api/admin/participants` (flat
+  course × student enrollment list) — backed by 5 integration tests.
+- **Tests & questions API** (`admin`/`teacher`): `GET/POST /api/tests`,
   `GET/PUT/DELETE /api/tests/:id`; embedded questions for all 5 types
   (single choice, multiple choice, true/false, short answer, matching) with
   per-type payload validation; questions are replaced atomically on update.
 - **Courses API** (`admin`/`teacher`): `GET/POST /api/courses`,
-  `GET/PATCH/DELETE /api/courses/:id`; enroll/unenroll students by username
-  (`POST /api/courses/:id/enrollments`, `DELETE .../:userId`); attach/detach
-  tests (`POST /api/courses/:id/tests`, `DELETE .../:testId`).
-- **Material uploads**: raw `application/octet-stream` files (no multipart /
-  native deps) via `POST /api/courses/:id/materials?name=<file>` —
-  100 MiB cap, allow-listed MIME types — streamed back through
+  `GET/PATCH/DELETE /api/courses/:id`; enroll/unenroll students by username;
+  attach/detach tests; raw `application/octet-stream` material upload
+  (100 MiB cap, allow-listed MIME) via
+  `POST /api/courses/:id/materials?name=<file>`, streamed back through
   `GET /api/courses/:id/materials/:materialId/file`.
-- Integration tests for tests & courses CRUD incl. file round-trip,
-  cross-teacher isolation, and question payload validation (17 tests green).
-- **Frontend fix**: `Sign out` now clears the local session even when the
-  server is unreachable, so the button always returns to the sign-in screen
-  (web-client + desktop).
+- Integration tests covering accounts & auth (13) plus tests/courses CRUD
+  incl. file round-trip, cross-teacher isolation and question validation
+  (17 more) — **35 total green**.
+- **Role-based UI shell** in web-client and desktop: sign-in screen with a
+  role picker (student / teacher / administrator), student self-registration,
+  per-role dashboards, persisted session restored on start, server-status chip,
+  uniform error messages (i18n en/uk).
 - **Teacher workbench UI (Phase 2 start)** in web-client and desktop:
   - **Tests tab**: list own tests; full test editor with all five question
-    types (single/multiple choice with correct-answer marking, true/false,
-    short answer, matching pairs), time limit (minutes) and passing score
-    settings; create, edit, delete; per-type client-side validation.
+    types (correct-answer marking for choices, time limit in minutes, passing
+    score), create/edit/delete, per-type client-side validation.
   - **Courses tab**: create/delete courses; course page with students
     (enroll by username, remove), attached tests (attach/detach), and
-    materials (file picker uploads raw bytes, download back through an
-    authenticated fetch).
-- **Admin insights** in web-client and desktop: the admin panel gained two
-  tabs — **Participants** (courses × enrolled students with course filter,
-  status badges, enrollment dates) and **System & DB** (server version,
-  uptime, schema version, database health, table counts).
-- Server endpoints behind the admin insights UI:
-  `GET /api/admin/stats` and `GET /api/admin/participants` (admin only),
-  backed by 5 new integration tests (35 total green).
-- **Admin panel: create teachers from the UI** — a "New teacher" form in the
-  Users tab (full name, username, password) calls the existing admin-only
-  `POST /api/users` endpoint; the account is approved immediately and needs
-  no further steps before signing in.
+    materials (file picker uploads raw bytes, download via authenticated fetch).
+- **Admin dashboard** in web-client and desktop: live user management with
+  search + role/status filters and approve/block; **Participants** tab
+  (courses × students with course filter, status badges, enrollment dates);
+  **System & DB** tab (server version, uptime, schema version, database
+  health, table counts); **create-teacher form** (approved immediately).
+- `docs/api.md` and `docs/schema.md` for the new API surface and data model.
 
 ### Changed
-- **Role-based UI shell (Phase 1)** in web-client and desktop: sign-in screen
-  with a role picker (student / teacher / administrator), student
-  self-registration, per-role dashboards, persisted session restored on start,
-  server-status chip, uniform error messages (i18n en/uk).
-- Admin dashboard with live user management: search + role/status filters,
-  approve pending students, block/unblock accounts (wired to the new API).
-- Teacher and student dashboards with placeholders for the upcoming phases
-  (test/course builder, live sessions, reports).
-- `apps/api` layer (typed fetch client, error envelope, token storage) shared
-  between web-client and desktop frontends.
-- **Server — accounts & roles foundation (Phase 1)**: `users`/`sessions`
-  tables with role (`admin | teacher | student`) and status
-  (`pending | approved | blocked`); built-in admin account seeded on first
-  boot (`ADMIN_USERNAME` / `ADMIN_PASSWORD` env overrides); password hashing
-  with `node:crypto` scrypt (no new dependencies); opaque bearer sessions
-  (SHA-256 at rest, 12 h expiry).
-- Auth API: `POST /api/auth/register` (students self-register → pending),
-  `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`.
-- Admin API: `GET /api/users` (filters: role/status/search),
-  `POST /api/users` (create teacher), `PATCH /api/users/:id/status`
-  (approve/block, revokes live sessions), `DELETE /api/users/:id`.
-- Uniform error envelope `{ "error": { "code", "message" } }` across routes.
-- Integration tests covering the full accounts & auth flow (13 tests green).
-
-### Changed
-- **Desktop**: the v0.0.1 trial demo window (Rust bridge greeting + "sum of two
-  numbers", unused `greet` command) was removed — the desktop app now opens
-  the same role-based sign-in flow; author name stays in the window title.
 - **Architecture rewritten around a role-based single product**: one client
-  serves Administrator / Teacher / Student, roles are chosen at sign-in.
-  Topology updated — the admin machine hosts the embedded server; teachers and
+  serves Administrator / Teacher / Student, roles are chosen at sign-in;
+  topology updated — the admin machine hosts the embedded server, teachers and
   students connect over the LAN; offline mode (cached materials/statistics and
   teacher-side local test drafts) documented in `docs/architecture.md`.
-- Roadmap re-scoped to the same vision with a detailed Phase 1
-  (data model, accounts & roles, auth, admin base) and flexible later phases.
-- README updated: roles section, new topology diagram, offline mode.
-- `docs/api.md` documents the Phase 1 auth & user-management endpoints.
+- Roadmap re-scoped to the same vision with a detailed Phase 1 and flexible
+  later phases; README updated (roles, topology diagram, offline mode).
+- **Desktop**: the v0.0.1 trial demo window (Rust bridge greeting + "sum of
+  two numbers", unused `greet` command) removed — the app now opens the same
+  role-based sign-in flow; author name stays in the window title.
+- Shared `apps/api` layer (typed fetch client, error envelope, token storage)
+  between web-client and desktop frontends.
 
-### Added (docs)
-- New `docs/schema.md` draft: role/status model (`users`, admin seed), courses,
-  materials, tests, questions (5 types), sessions, participants, answers.
+### Fixed
+- **`Sign out` now always clears the local session** (web-client + desktop),
+  even when the server is unreachable, so it always returns to sign-in.
+- **Desktop app reaches the API in production builds**: the built webview runs
+  on the Tauri origin, so all API calls (health checks, REST, material
+  downloads) now target `http://localhost:3300` explicitly instead of the Vite
+  dev proxy; override at build time with `VITE_API_TARGET`. Cross-origin
+  requests are served by the existing CORS setup (documented in `docs/api.md`).
 
 ## [0.0.1] — 2026-09-10
 

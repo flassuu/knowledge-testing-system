@@ -1,6 +1,6 @@
 {
   "name": "@testing-system/server",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Local REST/WebSocket API server (Fastify + node:sqlite), compiles to a single binary",
