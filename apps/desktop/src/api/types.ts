@@ -12,3 +12,96 @@ export interface PublicUser {
 }
 
 export const ROLE_ORDER: UserRole[] = ['student', 'teacher', 'admin']
+
+export type QuestionType =
+  | 'single_choice'
+  | 'multiple_choice'
+  | 'true_false'
+  | 'short_answer'
+  | 'matching'
+
+export const QUESTION_TYPES: QuestionType[] = [
+  'single_choice',
+  'multiple_choice',
+  'true_false',
+  'short_answer',
+  'matching',
+]
+
+export interface ChoiceOption {
+  key: string
+  text: string
+}
+
+export interface QuestionInput {
+  type: QuestionType
+  body: string
+  points: number
+  position: number
+  payload: Record<string, unknown>
+}
+
+export interface Question {
+  id: string
+  type: QuestionType
+  body: string
+  points: number
+  position: number
+  payload: Record<string, unknown>
+}
+
+export interface TestSummary {
+  id: string
+  ownerId: string
+  title: string
+  description: string
+  timeLimitSec: number | null
+  passingPercent: number | null
+  questionCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TestDetails extends Omit<TestSummary, 'questionCount'> {
+  questions: Question[]
+}
+
+export interface TestInput {
+  title: string
+  description?: string
+  timeLimitSec?: number | null
+  passingPercent?: number | null
+  questions?: QuestionInput[]
+}
+
+export interface CourseSummary {
+  id: string
+  ownerId: string
+  title: string
+  description: string
+  materialsCount: number
+  testsCount: number
+  studentsCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CourseDetails extends CourseSummary {
+  materials: Material[]
+  tests: Array<{ id: string; title: string }>
+  students: Array<{ id: string; username: string; fullName: string }>
+}
+
+export interface CourseInput {
+  title: string
+  description?: string
+}
+
+export interface Material {
+  id: string
+  courseId: string
+  title: string
+  mimeType: string
+  sizeBytes: number
+  createdAt: string
+}
