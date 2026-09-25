@@ -62,6 +62,15 @@ export default {
     empty: 'No users match these filters.',
     approve: 'Approve',
     block: 'Block',
+    newTeacher: 'New teacher',
+    cancel: 'Cancel',
+    teacherForm: {
+      title: 'Create teacher account',
+      fullName: 'Full name',
+      username: 'Username',
+      password: 'Password',
+      create: 'Create',
+    },
     tabs: {
       users: 'Users',
       participants: 'Participants',

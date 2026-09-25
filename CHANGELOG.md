@@ -43,6 +43,10 @@ versioning follows [SemVer](https://semver.org/).
 - Server endpoints behind the admin insights UI:
   `GET /api/admin/stats` and `GET /api/admin/participants` (admin only),
   backed by 5 new integration tests (35 total green).
+- **Admin panel: create teachers from the UI** — a "New teacher" form in the
+  Users tab (full name, username, password) calls the existing admin-only
+  `POST /api/users` endpoint; the account is approved immediately and needs
+  no further steps before signing in.
 
 ### Changed
 - **Role-based UI shell (Phase 1)** in web-client and desktop: sign-in screen

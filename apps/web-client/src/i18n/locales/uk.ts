@@ -64,6 +64,15 @@ const uk: typeof en = {
     empty: 'Немає користувачів за цими фільтрами.',
     approve: 'Підтвердити',
     block: 'Заблокувати',
+    newTeacher: 'Новий викладач',
+    cancel: 'Скасувати',
+    teacherForm: {
+      title: 'Створити акаунт викладача',
+      fullName: 'Повне імʼя',
+      username: 'Імʼя користувача',
+      password: 'Пароль',
+      create: 'Створити',
+    },
     tabs: {
       users: 'Користувачі',
       participants: 'Учасники',

@@ -22,6 +22,19 @@ export async function listUsers(params: UserListParams = {}): Promise<PublicUser
   return result.users
 }
 
+/** Admin only: creates a teacher account (approved immediately). */
+export async function createUser(input: {
+  username: string
+  password: string
+  fullName: string
+}): Promise<PublicUser> {
+  const result = await apiFetch<{ user: PublicUser }>('/api/users', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+  return result.user
+}
+
 /** Admin only. */
 export async function setUserStatus(id: string, status: UserStatus): Promise<PublicUser> {
   const result = await apiFetch<{ user: PublicUser }>(`/api/users/${id}/status`, {
