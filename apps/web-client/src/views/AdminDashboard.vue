@@ -1,61 +1,15 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppHeader from '../components/AppHeader.vue'
-import { listUsers, setUserStatus } from '../api/users'
-import { ApiError } from '../api/client'
-import type { PublicUser, UserRole, UserStatus } from '../api/types'
+import UsersTab from '../components/admin/UsersTab.vue'
+import ParticipantsTab from '../components/admin/ParticipantsTab.vue'
+import SystemTab from '../components/admin/SystemTab.vue'
 
 const { t } = useI18n()
 
-const users = ref<PublicUser[]>([])
-const loading = ref(false)
-const errorKey = ref('')
-const query = ref('')
-const roleFilter = ref<'all' | UserRole>('all')
-const statusFilter = ref<'all' | UserStatus>('all')
-const busyId = ref('')
-
-const roleBadgeClass: Record<UserRole, string> = {
-  admin: 'bg-violet-100 text-violet-700',
-  teacher: 'bg-sky-100 text-sky-700',
-  student: 'bg-amber-100 text-amber-700',
-}
-
-const statusBadgeClass: Record<UserStatus, string> = {
-  pending: 'bg-amber-50 text-amber-700',
-  approved: 'bg-emerald-50 text-emerald-700',
-  blocked: 'bg-rose-50 text-rose-700',
-}
-
-async function load() {
-  loading.value = true
-  errorKey.value = ''
-  try {
-    users.value = await listUsers({
-      role: roleFilter.value === 'all' ? undefined : roleFilter.value,
-      status: statusFilter.value === 'all' ? undefined : statusFilter.value,
-      q: query.value.trim() || undefined,
-    })
-  } catch (error) {
-    errorKey.value = error instanceof ApiError ? error.code : ''
-  } finally {
-    loading.value = false
-  }
-}
-
-async function changeStatus(user: PublicUser, status: UserStatus) {
-  busyId.value = user.id
-  try {
-    await setUserStatus(user.id, status)
-    await load()
-  } finally {
-    busyId.value = ''
-  }
-}
-
-onMounted(load)
-watch([query, roleFilter, statusFilter], () => void load())
+type AdminTab = 'users' | 'participants' | 'system'
+const activeTab = ref<AdminTab>('users')
 </script>
 
 <template>
@@ -68,108 +22,28 @@ watch([query, roleFilter, statusFilter], () => void load())
       </h2>
       <p class="mt-1 text-sm text-slate-500">{{ t('admin.subheading') }}</p>
 
-      <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <input
-          v-model="query"
-          type="search"
-          :placeholder="t('admin.searchPlaceholder')"
-          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 sm:max-w-56"
-        />
-        <select
-          v-model="roleFilter"
-          class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
-        >
-          <option value="all">{{ t('admin.anyRole') }}</option>
-          <option value="student">{{ t('role.student') }}</option>
-          <option value="teacher">{{ t('role.teacher') }}</option>
-          <option value="admin">{{ t('role.admin') }}</option>
-        </select>
-        <select
-          v-model="statusFilter"
-          class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
-        >
-          <option value="all">{{ t('admin.anyStatus') }}</option>
-          <option value="pending">{{ t('admin.status.pending') }}</option>
-          <option value="approved">{{ t('admin.status.approved') }}</option>
-          <option value="blocked">{{ t('admin.status.blocked') }}</option>
-        </select>
+      <div class="mt-5 flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
         <button
+          v-for="tab in ['users', 'participants', 'system'] as AdminTab[]"
+          :key="tab"
           type="button"
-          @click="load"
-          class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          class="flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors"
+          :class="activeTab === tab ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'"
+          @click="activeTab = tab"
         >
-          {{ t('admin.refresh') }}
+          {{ t(`admin.tabs.${tab}`) }}
         </button>
       </div>
 
-      <p
-        v-if="errorKey"
-        role="alert"
-        class="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700"
-      >
-        {{ errorKey === 'NETWORK' ? t('auth.errors.network') : t('auth.errors.generic') }}
-      </p>
-
-      <p v-else-if="loading" class="mt-6 text-center text-sm text-slate-400">
-        {{ t('common.loading') }}
-      </p>
-
-      <div v-else-if="users.length === 0" class="mt-6 text-center text-sm text-slate-400">
-        {{ t('admin.empty') }}
+      <div class="mt-5">
+        <UsersTab v-if="activeTab === 'users'" />
+        <ParticipantsTab v-else-if="activeTab === 'participants'" />
+        <SystemTab v-else />
       </div>
 
-      <ul v-else class="mt-4 space-y-2">
-        <li
-          v-for="user in users"
-          :key="user.id"
-          class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
-        >
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2">
-              <p class="truncate text-sm font-semibold text-slate-800">
-                {{ user.fullName }}
-              </p>
-              <span
-                class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                :class="roleBadgeClass[user.role]"
-              >
-                {{ t(`role.${user.role}`) }}
-              </span>
-              <span
-                class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                :class="statusBadgeClass[user.status]"
-              >
-                {{ t(`admin.status.${user.status}`) }}
-              </span>
-            </div>
-            <p class="mt-0.5 text-xs text-slate-400">@{{ user.username }}</p>
-          </div>
-
-          <div
-            v-if="user.role !== 'admin'"
-            class="flex shrink-0 items-center gap-2"
-          >
-            <button
-              v-if="user.status !== 'approved'"
-              type="button"
-              :disabled="busyId === user.id"
-              @click="changeStatus(user, 'approved')"
-              class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-opacity disabled:opacity-60"
-            >
-              {{ t('admin.approve') }}
-            </button>
-            <button
-              v-if="user.status !== 'blocked'"
-              type="button"
-              :disabled="busyId === user.id"
-              @click="changeStatus(user, 'blocked')"
-              class="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60"
-            >
-              {{ t('admin.block') }}
-            </button>
-          </div>
-        </li>
-      </ul>
+      <p class="mt-8 text-center text-xs text-slate-400">
+        {{ t('footer.message') }}
+      </p>
     </main>
   </div>
 </template>

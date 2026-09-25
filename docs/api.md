@@ -189,6 +189,45 @@ Removes the course and its enrollments/links/materials. → `204`.
 - `GET /api/courses/:id/materials/:materialId/file` — streams the file back
   with its MIME type and `Content-Disposition: attachment`.
 
+## Admin insights (`/api/admin`, admin only)
+
+### `GET /api/admin/stats`
+
+Aggregated DB health and table counts — the admin "System & DB" screen.
+
+```json
+{
+  "stats": {
+    "version": "0.0.1",
+    "uptimeMs": 1234,
+    "schemaVersion": 3,
+    "database": "ok",
+    "counts": {
+      "users": 5, "admins": 1, "teachers": 1, "students": 3,
+      "pendingUsers": 1, "approvedUsers": 4, "blockedUsers": 0,
+      "tests": 2, "questions": 7, "courses": 2,
+      "enrollments": 4, "materials": 2
+    }
+  }
+}
+```
+
+### `GET /api/admin/participants`
+
+Flat course → student participation list (the admin "Participants" screen).
+
+```json
+{
+  "participants": [
+    { "courseId": "…", "courseTitle": "Physics 101", "studentId": "…",
+      "username": "student1", "fullName": "Student One",
+      "status": "approved", "enrolledAt": "2026-01-01T00:00:00.000Z" }
+  ]
+}
+```
+
+Ordered by course title, then enrollment date.
+
 ## Roles & access
 
 | Endpoint | Admin | Teacher | Student |
@@ -198,6 +237,7 @@ Removes the course and its enrollments/links/materials. → `204`.
 | `POST /api/auth/logout`, `GET /api/auth/me` | + | + | + |
 | `GET/POST /api/users`, `PATCH/DELETE /api/users/:id` | + | – | – |
 | `/api/tests`, `/api/tests/:id`, `/api/courses*` | + | + (own) | – |
+| `/api/admin/stats`, `/api/admin/participants` | + | – | – |
 
 ## Roadmap
 

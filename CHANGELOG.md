@@ -36,6 +36,13 @@ versioning follows [SemVer](https://semver.org/).
     (enroll by username, remove), attached tests (attach/detach), and
     materials (file picker uploads raw bytes, download back through an
     authenticated fetch).
+- **Admin insights** in web-client and desktop: the admin panel gained two
+  tabs — **Participants** (courses × enrolled students with course filter,
+  status badges, enrollment dates) and **System & DB** (server version,
+  uptime, schema version, database health, table counts).
+- Server endpoints behind the admin insights UI:
+  `GET /api/admin/stats` and `GET /api/admin/participants` (admin only),
+  backed by 5 new integration tests (35 total green).
 
 ### Changed
 - **Role-based UI shell (Phase 1)** in web-client and desktop: sign-in screen

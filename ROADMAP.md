@@ -38,7 +38,8 @@ while development proceeds.
 
 **Admin basics**
 - [x] Admin panel: users management (list, filters, approve/block) in the UI
-- [ ] Participants list & DB health views (next)
+- [x] Participants list (courses × enrolled students) & DB health views
+      (schema version, table counts, uptime) in the admin UI
 - [x] First-run bootstrap: seed admin account (server + UI login with it)
 
 **Tests & courses (CRUD)**

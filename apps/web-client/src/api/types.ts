@@ -105,3 +105,36 @@ export interface Material {
   sizeBytes: number
   createdAt: string
 }
+
+export interface ParticipationEntry {
+  courseId: string
+  courseTitle: string
+  studentId: string
+  username: string
+  fullName: string
+  status: UserStatus
+  enrolledAt: string
+}
+
+export interface TableCounts {
+  users: number
+  admins: number
+  teachers: number
+  students: number
+  pendingUsers: number
+  approvedUsers: number
+  blockedUsers: number
+  tests: number
+  questions: number
+  courses: number
+  enrollments: number
+  materials: number
+}
+
+export interface SystemStats {
+  version: string
+  uptimeMs: number
+  schemaVersion: number
+  database: 'ok' | 'error'
+  counts: TableCounts
+}
