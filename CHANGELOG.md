@@ -47,4 +47,4 @@ versioning follows [SemVer](https://semver.org/).
   preloads the system `libwayland-client.so` (bundled one is ABI-incompatible
   with Mesa 26).
 
-[GitHub Release v0.0.1]: https://github.com/flassuu/testing-system/releases/tag/v0.0.1
+[GitHub Release v0.0.1]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.0.1
