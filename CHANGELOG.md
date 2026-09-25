@@ -7,6 +7,28 @@ versioning follows [SemVer](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Server — tests & courses (data model + CRUD)**: migration v3 adds
+  `tests`, `questions`, `courses`, `course_enrollments`, `course_tests`,
+  `materials` with full domain validation.
+- **Tests API** (`admin`/`teacher`): `GET/POST /api/tests`,
+  `GET/PUT/DELETE /api/tests/:id`; embedded questions for all 5 types
+  (single choice, multiple choice, true/false, short answer, matching) with
+  per-type payload validation; questions are replaced atomically on update.
+- **Courses API** (`admin`/`teacher`): `GET/POST /api/courses`,
+  `GET/PATCH/DELETE /api/courses/:id`; enroll/unenroll students by username
+  (`POST /api/courses/:id/enrollments`, `DELETE .../:userId`); attach/detach
+  tests (`POST /api/courses/:id/tests`, `DELETE .../:testId`).
+- **Material uploads**: raw `application/octet-stream` files (no multipart /
+  native deps) via `POST /api/courses/:id/materials?name=<file>` —
+  100 MiB cap, allow-listed MIME types — streamed back through
+  `GET /api/courses/:id/materials/:materialId/file`.
+- Integration tests for tests & courses CRUD incl. file round-trip,
+  cross-teacher isolation, and question payload validation (17 tests green).
+- **Frontend fix**: `Sign out` now clears the local session even when the
+  server is unreachable, so the button always returns to the sign-in screen
+  (web-client + desktop).
+
+### Changed
 - **Role-based UI shell (Phase 1)** in web-client and desktop: sign-in screen
   with a role picker (student / teacher / administrator), student
   self-registration, per-role dashboards, persisted session restored on start,

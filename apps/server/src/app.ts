@@ -5,10 +5,13 @@ import Fastify, {
 import cors from '@fastify/cors'
 import websocket from '@fastify/websocket'
 import fastifyStatic from '@fastify/static'
+import { dirname, join } from 'node:path'
 import { openDatabase, checkDatabase, type Database } from './lib/db'
 import { healthRoutes } from './routes/health'
 import { authRoutes } from './routes/auth'
 import { userRoutes } from './routes/users'
+import { testRoutes } from './routes/tests'
+import { courseRoutes } from './routes/courses'
 import { attachAuth } from './plugins/auth'
 import { APP_VERSION } from './version'
 
@@ -17,6 +20,8 @@ export interface AppOptions {
   port: number
   dbPath: string
   webRoot: string | null
+  /** Base directory for file uploads; defaults to the DB directory. */
+  dataDir?: string
 }
 
 export interface TestingApp {
@@ -30,6 +35,8 @@ export interface TestingApp {
  */
 export function buildApp(options: AppOptions): TestingApp {
   const database = openDatabase(options.dbPath)
+  const dataDir = options.dataDir ?? dirname(options.dbPath)
+  const uploadsDir = join(dataDir, 'uploads')
 
   const app = Fastify({
     logger: { level: process.env.LOG_LEVEL ?? 'info' },
@@ -59,6 +66,10 @@ export function buildApp(options: AppOptions): TestingApp {
   // Phase 1: accounts & roles.
   void app.register(authRoutes, { database })
   void app.register(userRoutes, { database })
+
+  // Phase 2 foundation: tests & courses.
+  void app.register(testRoutes, { database })
+  void app.register(courseRoutes, { database, uploadsDir })
 
   // Uniform error envelope; validation failures map to 400 VALIDATION.
   app.setErrorHandler((error: FastifyError, request, reply) => {

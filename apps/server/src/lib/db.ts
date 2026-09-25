@@ -12,7 +12,7 @@ export function nowIso(): string {
   return new Date().toISOString()
 }
 
-const SCHEMA_VERSION = 2
+const SCHEMA_VERSION = 3
 
 const MIGRATIONS: Array<{ version: number; up: string }> = [
   {
@@ -47,6 +47,71 @@ const MIGRATIONS: Array<{ version: number; up: string }> = [
 
       CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
       CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+    `,
+  },
+  {
+    version: 3,
+    up: `
+      CREATE TABLE IF NOT EXISTS tests (
+        id              TEXT PRIMARY KEY,
+        owner_id        TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title           TEXT NOT NULL,
+        description     TEXT NOT NULL DEFAULT '',
+        time_limit_sec  INTEGER,
+        passing_percent INTEGER,
+        created_at      TEXT NOT NULL,
+        updated_at      TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_tests_owner ON tests(owner_id);
+
+      CREATE TABLE IF NOT EXISTS questions (
+        id       TEXT PRIMARY KEY,
+        test_id  TEXT NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
+        type     TEXT NOT NULL CHECK (type IN ('single_choice', 'multiple_choice', 'true_false', 'short_answer', 'matching')),
+        body     TEXT NOT NULL,
+        payload  TEXT NOT NULL,
+        points   INTEGER NOT NULL DEFAULT 1,
+        position INTEGER NOT NULL,
+        UNIQUE (test_id, position)
+      );
+      CREATE INDEX IF NOT EXISTS idx_questions_test ON questions(test_id);
+
+      CREATE TABLE IF NOT EXISTS courses (
+        id          TEXT PRIMARY KEY,
+        owner_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title       TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_courses_owner ON courses(owner_id);
+
+      CREATE TABLE IF NOT EXISTS course_enrollments (
+        id          TEXT PRIMARY KEY,
+        course_id   TEXT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+        user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        enrolled_at TEXT NOT NULL,
+        UNIQUE (course_id, user_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS course_tests (
+        id        TEXT PRIMARY KEY,
+        course_id TEXT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+        test_id   TEXT NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
+        added_at  TEXT NOT NULL,
+        UNIQUE (course_id, test_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS materials (
+        id         TEXT PRIMARY KEY,
+        course_id  TEXT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+        title      TEXT NOT NULL,
+        file_path  TEXT NOT NULL,
+        mime_type  TEXT NOT NULL DEFAULT 'application/octet-stream',
+        size_bytes INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_materials_course ON materials(course_id);
     `,
   },
 ]

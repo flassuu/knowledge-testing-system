@@ -26,8 +26,9 @@ while development proceeds.
 - [x] `users` with role enum (`admin | teacher | student`) and status
       (`pending | approved | blocked`), built-in admin seed
 - [x] `sessions` — opaque bearer tokens, SHA-256 hashed at rest
-- [ ] `courses`, `course_materials` (files), `course_enrollments`
-- [ ] `tests`, `questions` (5 types), `sessions` (live runs), `participants`, `answers`
+- [x] `courses`, `course_enrollments`, `course_tests`, `materials` (files)
+- [x] `tests`, `questions` (5 types) — live-run `sessions`, `participants`,
+      `answers` land with Phase 3
 
 **Accounts & auth**
 - [x] Register/login endpoints; password hashing (scrypt, no deps); role-scoped bearer tokens
@@ -41,8 +42,9 @@ while development proceeds.
 - [x] First-run bootstrap: seed admin account (server + UI login with it)
 
 **Tests & courses (CRUD)**
-- [ ] Test/question CRUD with validation; import/export share format (JSON)
-- [ ] Course CRUD + material upload (static files)
+- [x] Test/question CRUD with per-type payload validation (5 question types)
+- [x] Course CRUD + material upload (static files, no multipart deps)
+- [ ] Import/export share format (JSON) — Phase 2 authoring
 
 ## Phase 2 — Teacher workbench (v0.2.0, flexible)
 
