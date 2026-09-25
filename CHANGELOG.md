@@ -6,6 +6,20 @@ versioning follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **Architecture rewritten around a role-based single product**: one client
+  serves Administrator / Teacher / Student, roles are chosen at sign-in.
+  Topology updated — the admin machine hosts the embedded server; teachers and
+  students connect over the LAN; offline mode (cached materials/statistics and
+  teacher-side local test drafts) documented in `docs/architecture.md`.
+- Roadmap re-scoped to the same vision with a detailed Phase 1
+  (data model, accounts & roles, auth, admin base) and flexible later phases.
+- README updated: roles section, new topology diagram, offline mode.
+
+### Added
+- New `docs/schema.md` draft: role/status model (`users`, admin seed), courses,
+  materials, tests, questions (5 types), sessions, participants, answers.
+
 ## [0.0.1] — 2026-09-10
 
 ### Added
