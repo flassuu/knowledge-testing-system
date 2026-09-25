@@ -46,11 +46,14 @@ while development proceeds.
 - [x] Course CRUD + material upload (static files, no multipart deps)
 - [ ] Import/export share format (JSON) — Phase 2 authoring
 
-## Phase 2 — Teacher workbench (v0.2.0, flexible)
+## Phase 2 — Teacher workbench (v0.2.0, in progress)
 
-- Test authoring UX (rich editor for 5 question types), duplication, sharing
-- Course builder with materials; assign students to courses
-- Offline authoring: local drafts that sync when the server is reachable
+- [x] Test authoring UX — list + full editor for all 5 question types in the
+      teacher dashboard (web-client & desktop)
+- [x] Course builder: create courses, attach/detach tests, enroll students,
+      upload and download materials
+- [ ] Test duplication & sharing (JSON import/export)
+- [ ] Offline authoring: local drafts that sync when the server is reachable
 
 ## Phase 3 — Session runtime (v0.3.0, flexible)
 

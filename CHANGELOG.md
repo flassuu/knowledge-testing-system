@@ -27,6 +27,15 @@ versioning follows [SemVer](https://semver.org/).
 - **Frontend fix**: `Sign out` now clears the local session even when the
   server is unreachable, so the button always returns to the sign-in screen
   (web-client + desktop).
+- **Teacher workbench UI (Phase 2 start)** in web-client and desktop:
+  - **Tests tab**: list own tests; full test editor with all five question
+    types (single/multiple choice with correct-answer marking, true/false,
+    short answer, matching pairs), time limit (minutes) and passing score
+    settings; create, edit, delete; per-type client-side validation.
+  - **Courses tab**: create/delete courses; course page with students
+    (enroll by username, remove), attached tests (attach/detach), and
+    materials (file picker uploads raw bytes, download back through an
+    authenticated fetch).
 
 ### Changed
 - **Role-based UI shell (Phase 1)** in web-client and desktop: sign-in screen
