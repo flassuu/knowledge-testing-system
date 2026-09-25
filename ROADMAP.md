@@ -23,19 +23,20 @@ while development proceeds.
 ## Phase 1 — Foundation (v0.1.0, detailed)
 
 **Data model ([docs/schema.md](./docs/schema.md))**
-- [ ] `users` with role enum (`admin | teacher | student`) and status
+- [x] `users` with role enum (`admin | teacher | student`) and status
       (`pending | approved | blocked`), built-in admin seed
+- [x] `sessions` — opaque bearer tokens, SHA-256 hashed at rest
 - [ ] `courses`, `course_materials` (files), `course_enrollments`
-- [ ] `tests`, `questions` (5 types), `sessions`, `participants`, `answers`
+- [ ] `tests`, `questions` (5 types), `sessions` (live runs), `participants`, `answers`
 
 **Accounts & auth**
-- [ ] Register/login endpoints; password hashing; role-scoped bearer tokens
-- [ ] Admin creates teachers; student self-registration + approval workflow
+- [x] Register/login endpoints; password hashing (scrypt, no deps); role-scoped bearer tokens
+- [x] Admin creates teachers; student self-registration + approval workflow
 - [ ] Role-based UI shell (same client, different features) in web + desktop
 
 **Admin basics**
 - [ ] Admin panel: users management, participants list, DB health, console view
-- [ ] First-run bootstrap: seed admin account
+- [ ] First-run bootstrap: seed admin account (server side done — CLI/UI surfacing pending)
 
 **Tests & courses (CRUD)**
 - [ ] Test/question CRUD with validation; import/export share format (JSON)

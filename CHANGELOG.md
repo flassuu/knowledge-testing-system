@@ -6,6 +6,21 @@ versioning follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Server — accounts & roles foundation (Phase 1)**: `users`/`sessions`
+  tables with role (`admin | teacher | student`) and status
+  (`pending | approved | blocked`); built-in admin account seeded on first
+  boot (`ADMIN_USERNAME` / `ADMIN_PASSWORD` env overrides); password hashing
+  with `node:crypto` scrypt (no new dependencies); opaque bearer sessions
+  (SHA-256 at rest, 12 h expiry).
+- Auth API: `POST /api/auth/register` (students self-register → pending),
+  `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`.
+- Admin API: `GET /api/users` (filters: role/status/search),
+  `POST /api/users` (create teacher), `PATCH /api/users/:id/status`
+  (approve/block, revokes live sessions), `DELETE /api/users/:id`.
+- Uniform error envelope `{ "error": { "code", "message" } }` across routes.
+- Integration tests covering the full accounts & auth flow (13 tests green).
+
 ### Changed
 - **Architecture rewritten around a role-based single product**: one client
   serves Administrator / Teacher / Student, roles are chosen at sign-in.
@@ -15,8 +30,9 @@ versioning follows [SemVer](https://semver.org/).
 - Roadmap re-scoped to the same vision with a detailed Phase 1
   (data model, accounts & roles, auth, admin base) and flexible later phases.
 - README updated: roles section, new topology diagram, offline mode.
+- `docs/api.md` documents the Phase 1 auth & user-management endpoints.
 
-### Added
+### Added (docs)
 - New `docs/schema.md` draft: role/status model (`users`, admin seed), courses,
   materials, tests, questions (5 types), sessions, participants, answers.
 
