@@ -8,7 +8,8 @@ while development proceeds.
 | Phase | Version | Goal |
 |-------|---------|------|
 | Phase 0 — Scaffold | **0.0.1** (done) | Monorepo, tooling, docs, CI, demo window |
-| Phase 1 — Foundation | 0.1.0 | Data model, accounts & roles, auth, admin base |
+| Phase 1 — Foundation | **0.1.0** (done) | Data model, accounts & roles, auth, admin base |
+| Phase 1.1 — UI/UX polish | **0.1.1** (next) | Design & feedback pass over what 0.1.0 already ships |
 | Phase 2 — Teacher workbench | 0.2.0 | Test/course authoring, sharing, offline drafts |
 | Phase 3 — Session runtime | 0.3.0 | Live testing: join, answer, score, WS board |
 | Phase 4 — Reporting | 0.4.0 | Statistics, journals, PDF + CSV export |
@@ -20,7 +21,7 @@ while development proceeds.
 - [x] Server binary, health endpoint, migration runner (node + bun-compiled)
 - [x] Web client & desktop foundations, i18n (en/uk), CI builds, release v0.0.1
 
-## Phase 1 — Foundation (v0.1.0, detailed)
+## Phase 1 — Foundation (v0.1.0, done)
 
 **Data model ([docs/schema.md](./docs/schema.md))**
 - [x] `users` with role enum (`admin | teacher | student`) and status
@@ -45,7 +46,46 @@ while development proceeds.
 **Tests & courses (CRUD)**
 - [x] Test/question CRUD with per-type payload validation (5 question types)
 - [x] Course CRUD + material upload (static files, no multipart deps)
+- [x] Admin insights: DB health (+ table counts) and participants list
 - [ ] Import/export share format (JSON) — Phase 2 authoring
+
+## Phase 1.1 — UI/UX polish (v0.1.1, next)
+
+Nothing new server-side: make everything 0.1.0 already ships feel finished.
+Released as a separate minor so the polish sprint never blocks Phase 2.
+
+**Design system & states**
+- [ ] Consistency pass: shared spacing/typography tokens, one set of
+      buttons/cards/badges/inputs (drop ad-hoc Tailwind class soup)
+- [ ] State coverage everywhere: empty states with a call-to-action
+      (e.g. "no tests yet → Create test"), loading skeletons, inline errors
+- [ ] Global toast notifications (success/error) instead of throwaway inline
+      alerts; offline banner when the server goes away mid-session
+
+**Sign-in & auth UX**
+- [ ] Enter-to-submit, "show password", remember the last username,
+      autocomplete attributes, focus management after login/logout
+- [ ] Keep the role picker fast: one click to switch role, no page reload
+
+**Admin dashboard**
+- [ ] Users/Participants as proper tables on desktop widths (cards stay for
+      narrow) with sortable columns and result counts
+- [ ] Bulk approve of pending students; confirm dialogs before block/delete
+
+**Teacher workbench**
+- [ ] Confirm dialogs before any destructive delete (test, course, material)
+- [ ] Editor ergonomics: duplicate a question, reorder questions, live test
+      preview before saving
+- [ ] Course page: clearer test-attach picker and file list with type badges
+
+**A11y, i18n & desktop**
+- [ ] Visible focus rings, aria-labels on icon-only controls, contrast and
+      reduced-motion pass
+- [ ] i18n hygiene: move the remaining hardcoded strings (tooltips, titles)
+      into locales; persist the chosen locale
+- [ ] Desktop: About dialog with version, remember window size/position,
+      cleaner window title; verify admin/teacher screens at 1080×720
+- [ ] Web/mobile QA of admin & teacher screens served over LAN on narrow widths
 
 ## Phase 2 — Teacher workbench (v0.2.0, in progress)
 
