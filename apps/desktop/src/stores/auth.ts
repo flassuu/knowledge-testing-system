@@ -33,9 +33,15 @@ export function useAuth() {
   }
 
   async function signOut(): Promise<void> {
-    await apiLogout()
-    user.value = null
-    status.value = 'guest'
+    try {
+      await apiLogout()
+    } catch {
+      // Server may be unreachable — still clear the local session so the UI
+      // always returns to the sign-in screen.
+    } finally {
+      user.value = null
+      status.value = 'guest'
+    }
   }
 
   const isAuthenticated: ComputedRef<boolean> = computed(
