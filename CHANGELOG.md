@@ -7,6 +7,16 @@ versioning follows [SemVer](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Role-based UI shell (Phase 1)** in web-client and desktop: sign-in screen
+  with a role picker (student / teacher / administrator), student
+  self-registration, per-role dashboards, persisted session restored on start,
+  server-status chip, uniform error messages (i18n en/uk).
+- Admin dashboard with live user management: search + role/status filters,
+  approve pending students, block/unblock accounts (wired to the new API).
+- Teacher and student dashboards with placeholders for the upcoming phases
+  (test/course builder, live sessions, reports).
+- `apps/api` layer (typed fetch client, error envelope, token storage) shared
+  between web-client and desktop frontends.
 - **Server — accounts & roles foundation (Phase 1)**: `users`/`sessions`
   tables with role (`admin | teacher | student`) and status
   (`pending | approved | blocked`); built-in admin account seeded on first
@@ -22,6 +32,9 @@ versioning follows [SemVer](https://semver.org/).
 - Integration tests covering the full accounts & auth flow (13 tests green).
 
 ### Changed
+- **Desktop**: the v0.0.1 trial demo window (Rust bridge greeting + "sum of two
+  numbers", unused `greet` command) was removed — the desktop app now opens
+  the same role-based sign-in flow; author name stays in the window title.
 - **Architecture rewritten around a role-based single product**: one client
   serves Administrator / Teacher / Student, roles are chosen at sign-in.
   Topology updated — the admin machine hosts the embedded server; teachers and

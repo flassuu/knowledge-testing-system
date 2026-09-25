@@ -32,11 +32,13 @@ while development proceeds.
 **Accounts & auth**
 - [x] Register/login endpoints; password hashing (scrypt, no deps); role-scoped bearer tokens
 - [x] Admin creates teachers; student self-registration + approval workflow
-- [ ] Role-based UI shell (same client, different features) in web + desktop
+- [x] Role-based UI shell in web + desktop: role picker on sign-in, login/register
+      screens, per-role dashboards; token persisted, restores session on start
 
 **Admin basics**
-- [ ] Admin panel: users management, participants list, DB health, console view
-- [ ] First-run bootstrap: seed admin account (server side done — CLI/UI surfacing pending)
+- [x] Admin panel: users management (list, filters, approve/block) in the UI
+- [ ] Participants list & DB health views (next)
+- [x] First-run bootstrap: seed admin account (server + UI login with it)
 
 **Tests & courses (CRUD)**
 - [ ] Test/question CRUD with validation; import/export share format (JSON)
