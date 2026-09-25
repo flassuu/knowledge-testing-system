@@ -191,12 +191,16 @@ export function openDatabase(dbPath: string): Database {
 }
 
 export function checkDatabase(db: Database): boolean {
+  return schemaVersion(db) === SCHEMA_VERSION
+}
+
+export function schemaVersion(db: Database): number {
   try {
     const row = db.raw
       .prepare('SELECT value FROM app_meta WHERE key = ?')
       .get('schema_version') as { value: string } | undefined
-    return Boolean(row && Number(row.value) === SCHEMA_VERSION)
+    return row ? Number(row.value) : 0
   } catch {
-    return false
+    return 0
   }
 }
