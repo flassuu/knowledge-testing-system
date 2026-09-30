@@ -64,6 +64,15 @@ versioning follows [SemVer](https://semver.org/).
   `teacher.tests.emptyTitle/emptyHint`,
   `teacher.courses.emptyTitle/emptyHint` — en and uk (the old single-line
   `empty` keys are gone).
+- **UI/UX polish batch 7 (v0.1.1): course page.** Attaching a test is now a
+  searchable list (`TestPicker`) instead of a bare `<select>`: every row shows
+  the title, the question count and the time limit, and a click attaches
+  directly — no extra submit step. Materials carry a `MaterialBadge` with a
+  Lucide icon and a short label (PDF, Doc, Sheet, Slides, Image, Archive,
+  Video, Audio, Text, File), derived from the stored MIME type with a filename
+  extension fallback (`utils/fileType.ts`).
+- i18n: `common.fileType.*`, `teacher.courses.attachSearch/attachNoMatch/allTestsAttached`
+  — en and uk.
 
 ### Changed
 - **UI/UX polish batch 3 (v0.1.1): light + dark themes.** The whole UI now

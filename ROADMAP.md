@@ -109,7 +109,9 @@ These rules apply to every screen of web-client and desktop. No exceptions.
 - [x] Editor ergonomics: duplicate a question, move questions up/down, and a
       live test preview (student view with the correct answers highlighted)
       before saving
-- [ ] Course page: clearer test-attach picker and file list with type badges
+- [x] Course page: searchable test-attach picker (type, question count and
+      time limit per row, no more bare `<select>`) and material rows with a
+      file-type badge resolved from MIME type with an extension fallback
 
 **A11y, i18n & desktop**
 - [ ] Visible focus rings, aria-labels on icon-only controls, contrast and
