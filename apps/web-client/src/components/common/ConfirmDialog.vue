@@ -1,28 +1,20 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getConfirmState, settleConfirm } from '../../composables/confirm'
+import { useDialogFocus } from '../../composables/focusTrap'
 
 const { t } = useI18n()
 const state = getConfirmState()
+const panelRef = ref<HTMLElement | null>(null)
 const cancelRef = ref<HTMLButtonElement | null>(null)
 
-watch(
+useDialogFocus(
   () => state.open,
-  async (open) => {
-    if (open) {
-      await nextTick()
-      cancelRef.value?.focus()
-    }
-  },
+  () => settleConfirm(false),
+  panelRef,
+  cancelRef,
 )
-
-function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape' && state.open) settleConfirm(false)
-}
-
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
@@ -38,7 +30,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         class="absolute inset-0 bg-scrim"
         @click="settleConfirm(false)"
       />
-      <div class="relative w-full max-w-sm rounded-xl bg-surface-container p-5 shadow-xl">
+      <div
+        ref="panelRef"
+        class="relative w-full max-w-sm rounded-xl bg-surface-container p-5 shadow-xl"
+      >
         <p class="text-sm text-on-surface">{{ state.message }}</p>
         <div class="mt-5 flex justify-end gap-2">
           <button

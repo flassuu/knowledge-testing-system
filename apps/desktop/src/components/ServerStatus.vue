@@ -10,7 +10,7 @@ const health = getHealthState()
   <button
     type="button"
     @click="void recheckHealth()"
-    title="Server status — click to re-check"
+    :title="t('server.recheckHint')"
     class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors"
     :class="
       health.status === 'checking'

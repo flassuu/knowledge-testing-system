@@ -196,8 +196,9 @@ onMounted(load)
         <input
           v-model="enrollUsername"
           type="text"
+          :aria-label="t('teacher.courses.enrollPlaceholder')"
           :placeholder="t('teacher.courses.enrollPlaceholder')"
-          class="w-full max-w-52 rounded-lg border border-outline bg-surface px-3 py-1.5 text-sm outline-none focus:border-outline"
+          class="w-full max-w-52 rounded-lg border border-outline bg-surface px-3 py-1.5 text-sm focus:border-primary"
         />
         <button
           type="submit"

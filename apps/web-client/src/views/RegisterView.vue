@@ -128,7 +128,7 @@ function back() {
             v-model="fullName"
             type="text"
             autocomplete="name"
-            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm outline-none focus:border-outline"
+            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm focus:border-primary"
           />
         </label>
 
@@ -140,7 +140,7 @@ function back() {
             v-model="username"
             type="text"
             autocomplete="username"
-            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm outline-none focus:border-outline"
+            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm focus:border-primary"
           />
         </label>
 
@@ -152,7 +152,7 @@ function back() {
             v-model="password"
             type="password"
             autocomplete="new-password"
-            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm outline-none focus:border-outline"
+            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm focus:border-primary"
           />
         </label>
 
@@ -164,7 +164,7 @@ function back() {
             v-model="confirmPassword"
             type="password"
             autocomplete="new-password"
-            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm outline-none focus:border-outline"
+            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm focus:border-primary"
           />
         </label>
 

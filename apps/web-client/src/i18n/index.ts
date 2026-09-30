@@ -25,11 +25,20 @@ function detectLocale(): Locale {
   return fallbackLocale
 }
 
+/** Keeps `<html lang>` in sync so assistive tech announces the active language. */
+export function syncDocumentLocale(locale: Locale): void {
+  document.documentElement.lang = locale
+}
+
+const initialLocale = detectLocale()
+
 const i18n = createI18n<[typeof messages.en, typeof messages.uk], Locale>({
   legacy: false,
-  locale: detectLocale(),
+  locale: initialLocale,
   fallbackLocale,
   messages,
 })
+
+syncDocumentLocale(initialLocale)
 
 export default i18n

@@ -108,7 +108,7 @@ onMounted(load)
         <input
           v-model="newTitle"
           type="text"
-          class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
+          class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
         />
       </label>
       <label class="block">
@@ -116,7 +116,7 @@ onMounted(load)
         <textarea
           v-model="newDescription"
           rows="2"
-          class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
+          class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
         />
       </label>
       <p v-if="createError" role="alert" class="text-sm text-error">

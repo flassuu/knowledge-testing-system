@@ -70,7 +70,8 @@ onMounted(load)
     <div class="flex items-center justify-between gap-2">
       <select
         v-model="courseFilter"
-        class="rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+        :aria-label="t('admin.participants.courseFilter')"
+        class="rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
       >
         <option value="all">{{ t('admin.participants.allCourses') }}</option>
         <option v-for="course in courses" :key="course" :value="course">

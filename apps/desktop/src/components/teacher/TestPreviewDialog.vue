@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeftRight, Check, X } from '@lucide/vue'
 import { buildQuestions, type QuestionForm } from './questionForm'
+import { useDialogFocus } from '../../composables/focusTrap'
 import type { QuestionInput } from '../../api/types'
 
 const props = defineProps<{
@@ -17,15 +18,14 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>()
 
 const { t } = useI18n()
+const panelRef = ref<HTMLElement | null>(null)
 const closeRef = ref<HTMLButtonElement | null>(null)
 
-watch(
+useDialogFocus(
   () => props.open,
-  async (open) => {
-    if (!open) return
-    await nextTick()
-    closeRef.value?.focus()
-  },
+  () => emit('close'),
+  panelRef,
+  closeRef,
 )
 
 const built = computed(() => buildQuestions(props.forms))
@@ -82,13 +82,6 @@ function pairsOf(question: QuestionInput): PreviewPair[] {
   return payloadOf(question).pairs ?? []
 }
 
-function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape' && props.open) emit('close')
-}
-
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
-
 const chipClass =
   'rounded-full bg-primary-container px-2.5 py-0.5 text-xs font-semibold text-on-primary-container'
 const optionBaseClass = 'flex items-center gap-2 rounded-xl px-3 py-2 text-sm'
@@ -107,6 +100,7 @@ const plainClass = 'bg-surface-container-high text-on-surface'
     >
       <div class="absolute inset-0 bg-scrim" @click="emit('close')" />
       <div
+        ref="panelRef"
         class="relative flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-surface-container shadow-xl"
       >
         <header class="flex items-start justify-between gap-3 border-b border-outline-variant p-4">

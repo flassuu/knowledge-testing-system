@@ -185,12 +185,14 @@ watch([query, roleFilter, statusFilter], () => void load())
       <input
         v-model="query"
         type="search"
+        :aria-label="t('admin.searchPlaceholder')"
         :placeholder="t('admin.searchPlaceholder')"
-        class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-primary sm:max-w-56"
+        class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary sm:max-w-56"
       />
       <select
         v-model="roleFilter"
-        class="rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+        :aria-label="t('admin.roleFilter')"
+        class="rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
       >
         <option value="all">{{ t('admin.anyRole') }}</option>
         <option value="student">{{ t('role.student') }}</option>
@@ -199,7 +201,8 @@ watch([query, roleFilter, statusFilter], () => void load())
       </select>
       <select
         v-model="statusFilter"
-        class="rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+        :aria-label="t('admin.statusFilter')"
+        class="rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
       >
         <option value="all">{{ t('admin.anyStatus') }}</option>
         <option value="pending">{{ t('admin.status.pending') }}</option>
@@ -235,24 +238,27 @@ watch([query, roleFilter, statusFilter], () => void load())
           v-model="form.fullName"
           type="text"
           required
+          :aria-label="t('admin.teacherForm.fullName')"
           :placeholder="t('admin.teacherForm.fullName')"
-          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
         />
         <input
           v-model="form.username"
           type="text"
           required
           autocomplete="username"
+          :aria-label="t('admin.teacherForm.username')"
           :placeholder="t('admin.teacherForm.username')"
-          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
         />
         <input
           v-model="form.password"
           type="password"
           required
           autocomplete="new-password"
+          :aria-label="t('admin.teacherForm.password')"
           :placeholder="t('admin.teacherForm.password')"
-          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-primary sm:col-span-2"
+          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary sm:col-span-2"
         />
       </div>
       <p v-if="formError" role="alert" class="mt-3 text-sm text-error">

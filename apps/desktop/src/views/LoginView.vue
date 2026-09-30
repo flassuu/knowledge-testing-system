@@ -138,7 +138,7 @@ async function submit() {
             type="text"
             autocomplete="username"
             :placeholder="usernamePlaceholder"
-            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm outline-none focus:border-outline"
+            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm focus:border-primary"
           />
         </label>
 
@@ -152,7 +152,7 @@ async function submit() {
               :type="showPassword ? 'text' : 'password'"
               autocomplete="current-password"
               placeholder="••••••••"
-              class="w-full rounded-lg border border-outline px-3 py-2 pr-11 text-sm outline-none focus:border-outline"
+              class="w-full rounded-lg border border-outline px-3 py-2 pr-11 text-sm focus:border-primary"
             />
             <button
               type="button"

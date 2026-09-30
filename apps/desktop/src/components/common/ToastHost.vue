@@ -7,9 +7,9 @@ const { t } = useI18n()
 const state = getToastState()
 
 const kindClass: Record<ToastKind, string> = {
-  success: 'border-l-emerald-500',
-  error: 'border-l-rose-500',
-  info: 'border-l-slate-500',
+  success: 'border-l-success',
+  error: 'border-l-error',
+  info: 'border-l-outline',
 }
 </script>
 
@@ -36,7 +36,7 @@ const kindClass: Record<ToastKind, string> = {
             type="button"
             :aria-label="t('common.dismiss')"
             @click="dismissToast(item.id)"
-            class="shrink-0 text-on-surface-variant transition-colors hover:text-on-surface-variant"
+            class="shrink-0 text-on-surface-variant transition-colors hover:text-on-surface"
           >
             <X class="size-3.5" aria-hidden="true" />
           </button>

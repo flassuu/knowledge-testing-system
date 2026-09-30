@@ -14,6 +14,7 @@ export default {
     offline: 'Offline',
     offlineBanner: 'Server is unreachable — changes are not saved until it reconnects.',
     backOnline: 'Server is back online.',
+    recheckHint: 'Server status — click to re-check',
   },
   theme: {
     switchToLight: 'Switch to light theme',
@@ -61,6 +62,8 @@ export default {
     searchPlaceholder: 'Search by name…',
     anyRole: 'Any role',
     anyStatus: 'Any status',
+    roleFilter: 'Filter by role',
+    statusFilter: 'Filter by status',
     status: {
       pending: 'Pending',
       approved: 'Approved',
@@ -110,6 +113,7 @@ export default {
     },
     participants: {
       allCourses: 'All courses',
+      courseFilter: 'Filter by course',
       students: '{count} students',
       emptyTitle: 'No enrollments yet',
       emptyHint: 'Enrol a student from the course page in the teacher dashboard.',
@@ -168,6 +172,10 @@ export default {
       left: 'Left',
       right: 'Right',
       addPair: 'Add pair',
+      typeLabel: 'Question type',
+      optionLabel: 'Option text',
+      removeOption: 'Remove option',
+      removePair: 'Remove pair',
     },
     form: {
       err: {

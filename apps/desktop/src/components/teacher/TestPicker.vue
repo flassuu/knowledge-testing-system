@@ -31,8 +31,9 @@ const filtered = computed(() => {
       <input
         v-model="query"
         type="search"
+        :aria-label="t('teacher.courses.attachSearch')"
         :placeholder="t('teacher.courses.attachSearch')"
-        class="w-full bg-transparent text-sm outline-none"
+        class="w-full bg-transparent text-sm"
       />
     </label>
 

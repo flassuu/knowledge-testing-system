@@ -192,7 +192,7 @@ onMounted(load)
             <input
               v-model="title"
               type="text"
-              class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
+              class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
             />
           </label>
           <div class="grid grid-cols-2 gap-3">
@@ -202,7 +202,7 @@ onMounted(load)
                 v-model="timeLimitMin"
                 type="number"
                 min="0"
-                class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
+                class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
               />
             </label>
             <label class="block">
@@ -212,7 +212,7 @@ onMounted(load)
                 type="number"
                 min="0"
                 max="100"
-                class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
+                class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
               />
             </label>
           </div>
@@ -221,7 +221,7 @@ onMounted(load)
             <textarea
               v-model="description"
               rows="2"
-              class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
+              class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
             />
           </label>
         </div>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { supportedLocales } from '../i18n'
+import { supportedLocales, syncDocumentLocale, type Locale } from '../i18n'
 
 const { t, locale } = useI18n()
 
-function setLocale(next: (typeof supportedLocales)[number]) {
+function setLocale(next: Locale) {
   locale.value = next
+  syncDocumentLocale(next)
   localStorage.setItem('locale', next)
 }
 </script>
@@ -22,6 +23,7 @@ function setLocale(next: (typeof supportedLocales)[number]) {
       @click="setLocale(code)"
       class="rounded-md px-2 py-1 text-xs font-semibold uppercase transition-colors disabled:cursor-default disabled:opacity-100"
       :disabled="locale === code"
+      :aria-pressed="locale === code"
       :class="
         locale === code
           ? 'bg-primary text-on-primary'

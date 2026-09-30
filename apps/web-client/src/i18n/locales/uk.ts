@@ -16,6 +16,7 @@ const uk: typeof en = {
     offline: 'Недоступний',
     offlineBanner: 'Сервер недоступний — зміни не зберігаються, доки зʼєднання не відновиться.',
     backOnline: 'Сервер знову в мережі.',
+    recheckHint: 'Стан сервера — натисніть, щоб перевірити',
   },
   theme: {
     switchToLight: 'Перемкнути на світлу тему',
@@ -63,6 +64,8 @@ const uk: typeof en = {
     searchPlaceholder: 'Пошук за ім\'ям…',
     anyRole: 'Будь-яка роль',
     anyStatus: 'Будь-який статус',
+    roleFilter: 'Фільтр за роллю',
+    statusFilter: 'Фільтр за статусом',
     status: {
       pending: 'Очікує',
       approved: 'Підтверджено',
@@ -112,6 +115,7 @@ const uk: typeof en = {
     },
     participants: {
       allCourses: 'Усі курси',
+      courseFilter: 'Фільтр за курсом',
       students: '{count} студентів',
       emptyTitle: 'Заходувань ще немає',
       emptyHint: 'Додайте студента на сторінці курсу в кабінеті викладача.',
@@ -170,6 +174,10 @@ const uk: typeof en = {
       left: 'Ліве',
       right: 'Праве',
       addPair: 'Додати пару',
+      typeLabel: 'Тип питання',
+      optionLabel: 'Текст варіанта',
+      removeOption: 'Видалити варіант',
+      removePair: 'Видалити пару',
     },
     form: {
       err: {

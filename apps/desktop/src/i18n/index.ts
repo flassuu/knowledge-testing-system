@@ -18,17 +18,27 @@ export const fallbackLocale: Locale = 'en'
 function detectLocale(): Locale {
   const stored = localStorage.getItem('locale') as Locale | null
   if (stored && supportedLocales.includes(stored)) return stored
+  const nav = (navigator.language ?? 'en').toLowerCase()
   for (const locale of supportedLocales) {
-    if (navigator.language.toLowerCase().startsWith(locale)) return locale
+    if (nav === locale || nav.startsWith(`${locale}-`)) return locale
   }
   return fallbackLocale
 }
 
+/** Keeps `<html lang>` in sync so assistive tech announces the active language. */
+export function syncDocumentLocale(locale: Locale): void {
+  document.documentElement.lang = locale
+}
+
+const initialLocale = detectLocale()
+
 const i18n = createI18n<[typeof messages.en, typeof messages.uk], Locale>({
   legacy: false,
-  locale: detectLocale(),
+  locale: initialLocale,
   fallbackLocale,
   messages,
 })
+
+syncDocumentLocale(initialLocale)
 
 export default i18n
