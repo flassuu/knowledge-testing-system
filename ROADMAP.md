@@ -96,9 +96,10 @@ These rules apply to every screen of web-client and desktop. No exceptions.
 
 **Admin dashboard**
 - [x] Confirm dialog before blocking a user (Users tab)
-- [ ] Users/Participants as proper tables on desktop widths (cards stay for
-      narrow) with sortable columns and result counts
-- [ ] Bulk approve of pending students; confirm dialogs before user delete
+- [x] Users/Participants as sortable tables on wide screens (cards stay on
+      narrow) with result counts and `aria-sort` on the headers
+- [x] Bulk approve of pending students: row checkboxes, select-all-pending,
+      one-click approval with a toast; confirm dialog guards blocking
 
 **Teacher workbench**
 - [x] Confirm dialogs before destructive deletes: test, course, remove

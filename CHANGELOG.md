@@ -24,6 +24,15 @@ versioning follows [SemVer](https://semver.org/).
   the API layer keeps the desktop app pointing at `VITE_API_TARGET`.
 - i18n: `server.offlineBanner`, `server.backOnline`, toast strings for
   tests/courses/admin actions, `common.dismiss` — en and uk.
+- **UI/UX polish batch 4 (v0.1.1): admin tables + bulk approve.** The Users
+  and Participants tabs render as sortable tables on wide screens (columns:
+  name, role, status / course, student, enrolled, status) and keep the card
+  layout on narrow ones. Column headers are buttons with `aria-sort`, sorting
+  is client-side via a shared `useTableSort()` composable, and a result count
+  sits above the table.
+- **Bulk approval**: pending accounts get row checkboxes plus
+  "select all pending", and one click approves the selection sequentially
+  (with a toast). A confirm dialog still guards blocking.
 
 ### Changed
 - **UI/UX polish batch 3 (v0.1.1): light + dark themes.** The whole UI now
