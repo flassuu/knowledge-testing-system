@@ -23,7 +23,9 @@ import {
   type LiveSessionStatus,
   type Participation,
 } from '../lib/sessions'
+import { broadcast, joinRoom, leaveRoom, sendTo, type LiveClient } from '../lib/live'
 import { requireRoles } from '../plugins/auth'
+import { resolveSession } from '../lib/tokens'
 
 export interface SessionRoutesDeps {
   database: Database
@@ -160,6 +162,13 @@ export const sessionRoutes: FastifyPluginAsync<SessionRoutesDeps> = async (
     return setSessionStatus(db, session.id, 'finished') ?? session
   }
 
+  /** Pushes the new state to everyone watching, and the board to the teachers. */
+  function announce(session: LiveSession): void {
+    const status: LiveSessionStatus = session.status
+    broadcast(session.id, { type: 'status', status, serverNow: new Date().toISOString() })
+    broadcast(session.id, { type: 'participants', participants: listParticipantEntries(db, session.id) }, true)
+  }
+
   function sessionPayload(session: LiveSession): SessionResponse {
     const test = findTestRow(db, session.testId)
     return {
@@ -222,10 +231,11 @@ export const sessionRoutes: FastifyPluginAsync<SessionRoutesDeps> = async (
       const { id } = request.params as { id: string }
       const row = findSessionRow(db, id)
       if (!row) return sendError(reply, 404, 'NOT_FOUND', 'session not found')
-      const session = autoSubmitExpired(toSession(row))
+      let session = autoSubmitExpired(toSession(row))
       if (session.ownerId !== request.session?.userId && request.session?.role !== 'admin') {
         return sendError(reply, 403, 'FORBIDDEN', 'this session belongs to another teacher')
       }
+      if (session.status === 'finished' && row.status !== 'finished') announce(session)
       return {
         session,
         participants: listParticipantEntries(db, session.id),
@@ -260,7 +270,9 @@ export const sessionRoutes: FastifyPluginAsync<SessionRoutesDeps> = async (
       if (session.status === 'finished') {
         return sendError(reply, 409, 'CONFLICT', 'this session is already finished')
       }
-      return sessionPayload(setSessionStatus(db, id, status) ?? session)
+      const updated = setSessionStatus(db, id, status) ?? session
+      announce(updated)
+      return sessionPayload(updated)
     },
   )
 
@@ -405,6 +417,7 @@ export const sessionRoutes: FastifyPluginAsync<SessionRoutesDeps> = async (
         graded.summary,
       )
       if (!saved) return sendError(reply, 500, 'INTERNAL', 'could not save the submission')
+      announce(session)
       return {
         participation: toParticipation(saved),
         result: graded.summary,
@@ -469,4 +482,55 @@ export const sessionRoutes: FastifyPluginAsync<SessionRoutesDeps> = async (
       }
     },
   )
+
+  /**
+   * Live channel for one session. Browsers cannot set headers on a WebSocket
+   * handshake, so the token travels in the query string like the join link.
+   * Teachers receive the participant board, students receive status changes.
+   */
+  app.get('/ws/sessions/:id', { websocket: true }, (socket, request) => {
+    const { id } = request.params as { id: string }
+    const token = (request.query as { token?: string }).token ?? ''
+    const authed = resolveSession(db, token)
+    if (!authed) {
+      socket.send(JSON.stringify({ type: 'error', code: 'UNAUTHORIZED', message: 'authentication required' }))
+      socket.close(4401, 'unauthorized')
+      return
+    }
+    const row = findSessionRow(db, id)
+    if (!row) {
+      socket.send(JSON.stringify({ type: 'error', code: 'NOT_FOUND', message: 'session not found' }))
+      socket.close(4404, 'not found')
+      return
+    }
+    const session = toSession(row)
+    const isAdmin = authed.role === 'admin'
+    const isOwner = session.ownerId === authed.userId
+    if (authed.role === 'student') {
+      // A student may only watch a session they actually joined.
+      if (!findParticipation(db, id, authed.userId)) {
+        socket.send(JSON.stringify({ type: 'error', code: 'FORBIDDEN', message: 'not your session' }))
+        socket.close(4403, 'forbidden')
+        return
+      }
+    } else if (!isOwner && !isAdmin) {
+      socket.send(JSON.stringify({ type: 'error', code: 'FORBIDDEN', message: 'not your session' }))
+      socket.close(4403, 'forbidden')
+      return
+    }
+
+    const client: LiveClient = {
+      socket,
+      userId: authed.userId,
+      role: authed.role as LiveClient['role'],
+      isTeacher: authed.role !== 'student',
+    }
+    joinRoom(id, client)
+    sendTo(client, { type: 'status', status: session.status, serverNow: new Date().toISOString() })
+    if (client.isTeacher) {
+      sendTo(client, { type: 'participants', participants: listParticipantEntries(db, id) })
+    }
+    socket.on('close', () => leaveRoom(id, client))
+    socket.on('error', () => leaveRoom(id, client))
+  })
 }
