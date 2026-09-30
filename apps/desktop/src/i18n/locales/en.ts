@@ -35,11 +35,11 @@ export default {
     needAccount: 'Student?',
     registerHeading: 'Create a student account',
     registerHint:
-      'Your account must be approved by a teacher or administrator before you can sign in.',
+      'An administrator has to approve your account before you can sign in.',
     backToLogin: 'Back to sign in',
     pendingTitle: 'Account created',
     pendingNote:
-      'Your account awaits approval by a teacher or administrator before you can sign in.',
+      'An administrator has to approve your account before you can sign in.',
     form: {
       fullNameRequired: 'Enter your full name',
       usernameTooShort: 'Username must be at least 3 characters',
@@ -48,7 +48,7 @@ export default {
     },
     errors: {
       invalidCredentials: 'Wrong username or password.',
-      pendingApproval: 'Your account awaits approval by a teacher or admin.',
+      pendingApproval: 'Your account awaits approval by an administrator.',
       blocked: 'Your account has been blocked.',
       network: 'Server unreachable. Only cached content is available offline.',
       usernameTaken: 'This username is already taken.',
@@ -73,6 +73,8 @@ export default {
     emptyTitle: 'No accounts match',
     emptyHint: 'Change the search term or the role/status filters to see more accounts.',
     clearFilters: 'Clear filters',
+    pendingBanner: '{count} student accounts are waiting for approval.',
+    pendingReview: 'Review pending',
     approve: 'Approve',
     block: 'Block',
     blockConfirm: 'Block {username}? They will be signed out immediately and cannot sign in again until unblocked.',

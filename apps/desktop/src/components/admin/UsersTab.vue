@@ -11,6 +11,12 @@ import { useToast } from '../../composables/toast'
 import { useTableSort } from '../../composables/tableSort'
 import type { PublicUser, UserRole, UserStatus } from '../../api/types'
 
+const props = defineProps<{
+  focusStatus?: UserStatus | ''
+}>()
+
+const emit = defineEmits<{ changed: [] }>()
+
 const { t } = useI18n()
 const confirm = useConfirm()
 const toast = useToast()
@@ -103,6 +109,7 @@ async function changeStatus(user: PublicUser, status: UserStatus) {
       status === 'approved' ? t('admin.toastApproved') : t('admin.toastBlocked'),
     )
     await load()
+    emit('changed')
   } finally {
     busyId.value = ''
   }
@@ -131,6 +138,7 @@ async function approveSelected(): Promise<void> {
     toast.success(t('admin.bulk.approved', { count: ids.length }))
     selected.value = []
     await load()
+    emit('changed')
   } finally {
     busyId.value = ''
   }
@@ -159,6 +167,7 @@ async function createTeacher() {
     showCreateForm.value = false
     form.value = { username: '', password: '', fullName: '' }
     await load()
+    emit('changed')
   } catch (error) {
     if (error instanceof ApiError) {
       formError.value =
@@ -177,6 +186,14 @@ async function createTeacher() {
 
 onMounted(load)
 watch([query, roleFilter, statusFilter], () => void load())
+// The dashboard can ask the tab to jump straight to a status filter.
+watch(
+  () => props.focusStatus,
+  (status) => {
+    if (status) statusFilter.value = status
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
