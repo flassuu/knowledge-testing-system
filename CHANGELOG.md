@@ -115,6 +115,18 @@ versioning follows [SemVer](https://semver.org/).
   accidental plural/linked syntax (`|`, `@{`), assert that `uk` mirrors the `en`
   key structure, and that interpolated placeholders match across locales. This
   is what catches the class of bug above at build time.
+- **Fixed: pending student registrations were hard to find.** The queue was just
+  rows inside the admin users table, and the "Participants" tab (course
+  enrollments) looked like the place to look, so a fresh registration appeared to
+  have vanished. The admin dashboard now shows a callout — "N student accounts
+  are waiting for approval" — with a **Review pending** button that opens the
+  users tab pre-filtered to `pending`, plus a count badge on the Users tab. The
+  badge and callout refresh after every approve, block or teacher creation and
+  disappear when the queue is empty.
+- **Fixed:** the registration and pending screens promised approval "by a
+  teacher or administrator", but only an administrator can approve (the status
+  endpoint is admin-only) and the teacher dashboard has no approval queue. Both
+  locales now say administrator.
 
 ### Changed
 - **UI/UX polish batch 3 (v0.1.1): light + dark themes.** The whole UI now
