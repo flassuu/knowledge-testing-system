@@ -10,7 +10,10 @@ withDefaults(
     actionLabel?: string
     actionIcon?: Component
   }>(),
-  { description: '', actionLabel: '', actionIcon: Plus },
+  // Never default a component to a Lucide icon here: Vue treats a function
+  // default as a factory and calls it, which breaks these functional components.
+  // The `actionIcon ?? Plus` fallback in the template does the same job safely.
+  { description: '', actionLabel: '' },
 )
 
 const emit = defineEmits<{ action: [] }>()
@@ -35,7 +38,7 @@ const emit = defineEmits<{ action: [] }>()
       class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary transition-opacity hover:opacity-90"
       @click="emit('action')"
     >
-      <component :is="actionIcon" class="size-3.5" aria-hidden="true" />
+      <component :is="actionIcon ?? Plus" class="size-3.5" aria-hidden="true" />
       {{ actionLabel }}
     </button>
   </div>
