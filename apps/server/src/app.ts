@@ -12,6 +12,7 @@ import { authRoutes } from './routes/auth'
 import { userRoutes } from './routes/users'
 import { testRoutes } from './routes/tests'
 import { courseRoutes } from './routes/courses'
+import { sessionRoutes } from './routes/sessions'
 import { adminRoutes } from './routes/admin'
 import { attachAuth } from './plugins/auth'
 import { APP_VERSION } from './version'
@@ -71,6 +72,9 @@ export function buildApp(options: AppOptions): TestingApp {
   // Phase 2 foundation: tests & courses.
   void app.register(testRoutes, { database })
   void app.register(courseRoutes, { database, uploadsDir })
+
+  // Phase 3: live session runtime (teacher run + student join/submit).
+  void app.register(sessionRoutes, { database })
 
   // Admin-only introspection: DB health and course participants.
   void app.register(adminRoutes, { database, version: APP_VERSION })
