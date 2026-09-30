@@ -21,7 +21,7 @@ Probe used by clients to confirm the local server is up. Public.
 ```json
 {
   "status": "ok",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "database": "ok",
   "uptime_ms": 1234,
   "timestamp": "2026-01-01T00:00:00.000Z"
@@ -205,9 +205,9 @@ Aggregated DB health and table counts — the admin "System & DB" screen.
 ```json
 {
   "stats": {
-    "version": "0.1.0",
+    "version": "0.3.0",
     "uptimeMs": 1234,
-    "schemaVersion": 3,
+    "schemaVersion": 4,
     "database": "ok",
     "counts": {
       "users": 5, "admins": 1, "teachers": 1, "students": 3,
@@ -235,6 +235,144 @@ Flat course → student participation list (the admin "Participants" screen).
 
 Ordered by course title, then enrollment date.
 
+## Live sessions (`/api/sessions`)
+
+A **session** is one live run of a test. A teacher starts it, students join
+with a six-character code, answer, and the server grades and stores the paper.
+
+A session snapshots the test's time limit and pass mark at start, so editing
+the test mid-run changes nothing for the students already answering. It is
+created already `active`; `PATCH` moves it to `paused` or `finished`.
+
+Every entry point that grades or closes a session also sweeps expired
+participations: once the time limit has passed, anyone still working is
+auto-submitted with zero and the session closes. A teacher who forgets to end
+a session therefore costs nobody their attempt.
+
+### Answer payload
+
+Answers are keyed by **question id**, so the shuffled order never matters. One
+flat shape per question type:
+
+| Type | Body |
+|------|------|
+| `single_choice` | `{ "key": "a" }` — the chosen option key |
+| `multiple_choice` | `{ "keys": ["a", "c"] }` |
+| `true_false` | `{ "boolean": true }` |
+| `short_answer` | `{ "text": "oxygen" }` |
+| `matching` | `{ "pairs": [{ "left": "Cat", "right": "Animal" }] }` |
+
+Unanswered or malformed answers score zero. Short answers are compared trimmed,
+whitespace-collapsed and case-insensitively against the accepted list;
+multiple choice is an exact set match, and duplicate keys never collapse into a
+match.
+
+### `GET /api/sessions`
+
+Admin & teacher. The teacher's own sessions, newest first; an admin sees every
+teacher's.
+
+```json
+{ "sessions": [ { "id": "…", "joinCode": "JV8Z9B", "status": "active",
+                  "timeLimitSec": 600, "passingPercent": 50,
+                  "title": "Mixed quiz", "questionCount": 5,
+                  "joinedCount": 2, "submittedCount": 1 } ] }
+```
+
+### `POST /api/sessions`
+
+Admin & teacher. Body `{ "testId": "…" }` → `201` with the new session.
+
+- `400 VALIDATION` — the test has no questions yet
+- `403 FORBIDDEN` — the test belongs to another teacher
+
+### `GET /api/sessions/:id/participants`
+
+Admin & teacher (owner). The live board: the session plus one row per student.
+
+```json
+{ "session": { "id": "…", "status": "active", "…": "…" },
+  "participants": [ { "userId": "…", "username": "student1",
+                      "fullName": "Student One", "status": "submitted",
+                      "score": 6, "percent": 75, "passed": true,
+                      "joinedAt": "…", "submittedAt": "…" } ] }
+```
+
+`passed` is `null` when the test has no pass mark. `status` is `joined` while
+the student is still working, then `submitted` or `auto_submitted`.
+
+### `PATCH /api/sessions/:id`
+
+Admin & teacher (owner). Body `{ "status": "paused" | "active" | "finished" }`
+→ `200` with the session. `409 CONFLICT` once it is finished.
+
+### `GET /api/sessions/:id/review`
+
+Admin & teacher (owner). The paper **with** the answer key, for the teacher's
+own review screen. Students never receive this payload.
+
+### `POST /api/sessions/join`
+
+Student only. Body `{ "code": "JV8Z9B" }` → `201`. Case and stray spaces are
+normalised, so a code read out in class or pasted from a slide works.
+
+```json
+{ "participation": { "id": "…", "status": "joined", "questionOrder": ["…"] },
+  "session": { "id": "…", "status": "active", "timeLimitSec": 600,
+               "passingPercent": 50, "startedAt": "…", "serverNow": "…" },
+  "questions": [ { "id": "…", "type": "single_choice", "body": "Capital?",
+                   "points": 2, "position": 0,
+                   "payload": { "options": [{ "key": "a", "text": "Kyiv" }] } } ] }
+```
+
+`serverNow` lets the client correct its clock for the round trip. The payload
+carries **no answer key**: `correct` is stripped from choices, `accepted` from
+short answers. Re-joining returns the same participation and the same order.
+
+- `404 NOT_FOUND` — no session with that code
+- `409 CONFLICT` — the session is finished or paused
+
+### `GET /api/sessions/current`
+
+Student only. The session in progress with the same shape as `join`, so a
+reload lands back on the same paper. `404 NOT_FOUND` when nothing is running.
+
+### `POST /api/sessions/:id/submit`
+
+Student only. Body `{ "answers": { "<questionId>": … } }`.
+
+```json
+{ "participation": { "status": "submitted", "…": "…" },
+  "result": { "score": 6, "maxScore": 8, "percent": 75, "passed": true } }
+```
+
+- `403 FORBIDDEN` — the student never joined
+- `409 CONFLICT` — already submitted, or the session is over
+
+### `GET /api/sessions/:id/result`
+
+Student only, their own participation. `409 CONFLICT` before submitting.
+Returns the graded paper, each question with `isCorrect`, `pointsAwarded` and
+**the answer key**, so the student can learn from the result.
+
+## Realtime (`/ws`)
+
+### `GET /ws/sessions/:id`
+
+A WebSocket carrying the session live. Browsers cannot set headers on a
+WebSocket handshake, so the token travels in the query string:
+`/ws/sessions/<id>?token=<token>`.
+
+| Message | Sent to | Meaning |
+|---------|---------|---------|
+| `{ "type": "status", "status": "active", "serverNow": "…" }` | everyone in the session | state on connect and on every change |
+| `{ "type": "participants", "participants": [ … ] }` | teachers only | the board, on connect and after every join, submit, pause, resume, finish and timeout sweep |
+| `{ "type": "error", "code": "…", "message": "…" }` | the offender | then the socket closes |
+
+Rejections close with a code rather than connecting silently: `4401`
+unauthenticated, `4403` not your session (a student who never joined, or a
+teacher who does not own it), `4404` unknown session.
+
 ## Roles & access
 
 | Endpoint | Admin | Teacher | Student |
@@ -244,10 +382,12 @@ Ordered by course title, then enrollment date.
 | `POST /api/auth/logout`, `GET /api/auth/me` | + | + | + |
 | `GET/POST /api/users`, `PATCH/DELETE /api/users/:id` | + | – | – |
 | `/api/tests`, `/api/tests/:id`, `/api/courses*` | + | + (own) | – |
+| `GET/POST /api/sessions`, `PATCH /api/sessions/:id`, `/participants`, `/review` | + | + (own) | – |
+| `POST /api/sessions/join`, `GET /api/sessions/current`, `/:id/submit`, `/:id/result` | – | – | + |
+| `GET /ws/sessions/:id` | + (board) | + (board) | + (status only) |
 | `/api/admin/stats`, `/api/admin/participants` | + | – | – |
 
 ## Roadmap
 
-Phase 3 adds live sessions (join code, participants, answers) and the
-WebSocket hub; Phase 4 adds reporting and PDF/CSV export. Endpoint shapes
-will be documented here as they land.
+Phase 4 adds reporting: a results API, grade journals and PDF/CSV export.
+Endpoint shapes

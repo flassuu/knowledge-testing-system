@@ -4,7 +4,103 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.3.0] — 2026-09-30
+
+The classroom loop, end to end: a teacher starts a live session, students
+join from their phones with a code, answer against a countdown, and get a
+graded result. Schema moves to version 4.
+
+### Added
+- **Phase 3: the student side, end to end.** The student home was three
+  placeholder cards; it is now a working flow:
+  - *Join* — the six-character code the teacher reads out. The input upper-cases
+    and drops anything that is not a letter or digit, and the server normalises
+    case and stray spaces, so a code pasted from a slide just works.
+  - *The paper* — questions in a per-student order that stays stable across
+    reloads, with every answer key stripped from the payload. All five types
+    render as real inputs: radio, checkboxes, true/false, free text, matching.
+  - *The clock* — corrected for the round trip to the server, so a device with
+    a drifting clock still sees the real deadline. It turns amber in the last
+    minute and submits the paper itself at zero.
+  - *Submit* — with a confirmation that states how many questions are answered.
+  - *Result* — percentage, score, pass mark and a per-question breakdown with
+    the correct answers, marked green or red.
+- **Phase 3: live session API and schema.** `live_sessions`, `participations`
+  and `participation_answers` (schema v4). Teachers start a run of their own
+  test, pause/resume/finish it, read the participant board and review the paper
+  with the answer key. Students join by code, re-read the paper and the clock,
+  submit, and read their graded result. The time limit and pass mark are
+  snapshotted per session, so editing a test mid-run changes nothing.
+- **Scoring engine** (`lib/scoring.ts`) as pure functions over all five
+  question types: option keys for choices (set equality — duplicates never
+  collapse into a match), booleans, trimmed case-insensitive text against the
+  accepted list, and full pair mapping. Unanswered or malformed input scores
+  zero. 32 unit tests.
+- **Timeout handling in two places.** The client clock submits at zero, and
+  every server entry point that grades or closes a session also sweeps expired
+  participations — so a teacher who forgets to end a session costs nobody their
+  attempt: the paper is auto-submitted with zero and the session closes.
+- **20 server integration tests** over the whole cycle, including that no
+  answer key ever reaches a student, that shuffles are stable, and that a
+  second submission is rejected.
+- **Phase 3: the teacher side.** The teacher dashboard opens on a **Live** tab:
+  start a session from any of your tests, read the join code at a size you can
+  hold up to the room (with a copy button), and control the run with pause,
+  resume and finish — finishing asks for confirmation and says how many students
+  have not submitted yet. The participant board refreshes every four seconds and
+  shows each student's name, a "working" marker while they are still in the
+  paper, and their percentage with a pass badge once they submit; finished
+  results sort to the top. It polls for now; the WebSocket hub replaces that.
+- **WebSocket hub.** `GET /ws/sessions/:id` streams one session live: teachers
+  receive the participant board, students receive status changes, and both get
+  the current state on connect. Joins, submissions, pause, resume, finish and
+  the timeout sweep all push an update. An invalid token, an unknown session, a
+  student who never joined and a teacher who does not own the session are
+  rejected with a close code. The client reconnects with a backoff and silently
+  falls back to polling when a socket cannot be opened, so the board works
+  either way.
+- **Join link for phones.** The teacher copies a `?join=CODE` link next to the
+  code; opened on a phone it lands on the join card with the code filled in and
+  the button ready, and the parameter is cleared once the student is in.
+- **`GET /api/sessions`** returns the teacher's own sessions newest first with
+  joined and submitted counts. An admin sees every teacher's, a student gets 403.
+- **README:** a "Testing from a phone" section — the server already binds
+  `0.0.0.0:3300`, so a device on the same network can open
+  `http://<lan-address>:3300` once the web client is built.
+- **Client-side session logic** (`student/sessionLogic.ts`) — what counts as
+  answered, the answer payload per type, the server-corrected clock and its
+  formatting — under 20 new `node:test` cases.
+
+### Fixed
+- **"Not passed" on a perfect score.** A test with no pass mark sends
+  `passed: null` from the server, and the result screen read that as a failure.
+  It now shows a neutral "Completed" panel, and only reveals passed or failed
+  when the test actually defines a mark.
+- **The result screen's back button** returned to the paper of a session that
+  could no longer be submitted. It lands on the student home, with a second
+  button to join another test.
+- **The sign-in header floated in the middle of a phone screen**, because the
+  whole column was vertically centred. The header is pinned to the top now and
+  only the card centres.
+- **Switching roles on the sign-in screen jumped the layout**, since only the
+  student role had the "Create account" line. The slot is always rendered at a
+  fixed height and fills with a short note for the other roles.
+- **Theme switching flickered**, restyling every element at once. It now
+  cross-fades through the View Transition API, falls back to muting transitions
+  for a single frame elsewhere, and drops the fade under `prefers-reduced-motion`.
+
+### Changed
+- The teacher dashboard opens on a **Live** tab (sessions) ahead of tests
+  and courses.
+- `GET /api/admin/stats` now reports `schemaVersion: 4`.
+
+
+## [0.2.0] — 2026-09-30
+
+The teacher workbench and a finished-looking UI: authoring for all five
+question types, the course builder, a real admin dashboard — plus the
+UI/UX polish that turns the first release into a product you can hand to
+a class.
 
 ### Added
 - **UI/UX polish batch 1 (v0.1.1)**: a styled, dependency-free confirm dialog
@@ -127,85 +223,11 @@ versioning follows [SemVer](https://semver.org/).
   teacher or administrator", but only an administrator can approve (the status
   endpoint is admin-only) and the teacher dashboard has no approval queue. Both
   locales now say administrator.
-
-### Added
-- **Phase 3: the student side, end to end.** The student home was three
-  placeholder cards; it is now a working flow:
-  - *Join* — the six-character code the teacher reads out. The input upper-cases
-    and drops anything that is not a letter or digit, and the server normalises
-    case and stray spaces, so a code pasted from a slide just works.
-  - *The paper* — questions in a per-student order that stays stable across
-    reloads, with every answer key stripped from the payload. All five types
-    render as real inputs: radio, checkboxes, true/false, free text, matching.
-  - *The clock* — corrected for the round trip to the server, so a device with
-    a drifting clock still sees the real deadline. It turns amber in the last
-    minute and submits the paper itself at zero.
-  - *Submit* — with a confirmation that states how many questions are answered.
-  - *Result* — percentage, score, pass mark and a per-question breakdown with
-    the correct answers, marked green or red.
-- **Phase 3: live session API and schema.** `live_sessions`, `participations`
-  and `participation_answers` (schema v4). Teachers start a run of their own
-  test, pause/resume/finish it, read the participant board and review the paper
-  with the answer key. Students join by code, re-read the paper and the clock,
-  submit, and read their graded result. The time limit and pass mark are
-  snapshotted per session, so editing a test mid-run changes nothing.
-- **Scoring engine** (`lib/scoring.ts`) as pure functions over all five
-  question types: option keys for choices (set equality — duplicates never
-  collapse into a match), booleans, trimmed case-insensitive text against the
-  accepted list, and full pair mapping. Unanswered or malformed input scores
-  zero. 32 unit tests.
-- **Timeout handling in two places.** The client clock submits at zero, and
-  every server entry point that grades or closes a session also sweeps expired
-  participations — so a teacher who forgets to end a session costs nobody their
-  attempt: the paper is auto-submitted with zero and the session closes.
-- **20 server integration tests** over the whole cycle, including that no
-  answer key ever reaches a student, that shuffles are stable, and that a
-  second submission is rejected.
-- **Phase 3: the teacher side.** The teacher dashboard opens on a **Live** tab:
-  start a session from any of your tests, read the join code at a size you can
-  hold up to the room (with a copy button), and control the run with pause,
-  resume and finish — finishing asks for confirmation and says how many students
-  have not submitted yet. The participant board refreshes every four seconds and
-  shows each student's name, a "working" marker while they are still in the
-  paper, and their percentage with a pass badge once they submit; finished
-  results sort to the top. It polls for now; the WebSocket hub replaces that.
-- **WebSocket hub.** `GET /ws/sessions/:id` streams one session live: teachers
-  receive the participant board, students receive status changes, and both get
-  the current state on connect. Joins, submissions, pause, resume, finish and
-  the timeout sweep all push an update. An invalid token, an unknown session, a
-  student who never joined and a teacher who does not own the session are
-  rejected with a close code. The client reconnects with a backoff and silently
-  falls back to polling when a socket cannot be opened, so the board works
-  either way.
-- **Join link for phones.** The teacher copies a `?join=CODE` link next to the
-  code; opened on a phone it lands on the join card with the code filled in and
-  the button ready, and the parameter is cleared once the student is in.
-- **`GET /api/sessions`** returns the teacher's own sessions newest first with
-  joined and submitted counts. An admin sees every teacher's, a student gets 403.
-- **README:** a "Testing from a phone" section — the server already binds
-  `0.0.0.0:3300`, so a device on the same network can open
-  `http://<lan-address>:3300` once the web client is built.
-- **Client-side session logic** (`student/sessionLogic.ts`) — what counts as
-  answered, the answer payload per type, the server-corrected clock and its
-  formatting — under 20 new `node:test` cases.
-
-### Fixed
-- **"Not passed" on a perfect score.** A test with no pass mark sends
-  `passed: null` from the server, and the result screen read that as a failure.
-  It now shows a neutral "Completed" panel, and only reveals passed or failed
-  when the test actually defines a mark.
-- **The result screen's back button** returned to the paper of a session that
-  could no longer be submitted. It lands on the student home, with a second
-  button to join another test.
-- **The sign-in header floated in the middle of a phone screen**, because the
-  whole column was vertically centred. The header is pinned to the top now and
-  only the card centres.
-- **Switching roles on the sign-in screen jumped the layout**, since only the
-  student role had the "Create account" line. The slot is always rendered at a
-  fixed height and fills with a short note for the other roles.
-- **Theme switching flickered**, restyling every element at once. It now
-  cross-fades through the View Transition API, falls back to muting transitions
-  for a single frame elsewhere, and drops the fade under `prefers-reduced-motion`.
+- All emoji and decorative glyphs replaced by Lucide icons
+  (`@lucide/vue`): role picker, show/hide password, student phase cards,
+  material rows, back arrow, question/pair removal, matching pairs swap,
+  toast dismissal, theme switcher. **New dependency: `@lucide/vue`**
+  (the deprecated `lucide-vue-next` package is not used).
 
 ### Changed
 - **UI/UX polish batch 3 (v0.1.1): light + dark themes.** The whole UI now
@@ -224,12 +246,20 @@ versioning follows [SemVer](https://semver.org/).
   UI — icons come from Lucide only; one cohesive M3 Expressive style; colour
   only through semantic theme tokens; exactly two themes (light and dark).
 
-### Added
-- All emoji and decorative glyphs replaced by Lucide icons
-  (`@lucide/vue`): role picker, show/hide password, student phase cards,
-  material rows, back arrow, question/pair removal, matching pairs swap,
-  toast dismissal, theme switcher. **New dependency: `@lucide/vue`**
-  (the deprecated `lucide-vue-next` package is not used).
+### Fixed
+- **Black screen for brand-new teacher accounts.** A teacher with no tests
+  and no courses mounts the empty state, whose `withDefaults()` used a
+  Lucide icon as a prop default. Vue treats a function default as a factory
+  and calls it, while Lucide icons are functional components that
+  destructure their second argument — every mount threw and unmounted the
+  app. The fallback moved into the template, with a comment explaining why
+  it must stay out of `withDefaults`.
+- **Throwing i18n messages in the admin dashboard.** `admin.blockConfirm` and
+  `admin.bulk.selectUser` used `@{username}`, which vue-i18n reads as
+  *linked-message* syntax rather than a placeholder, so compiling them threw
+  `SyntaxError` while rendering the users table.
+- **Focus rings were invisible app-wide.** Every input carried Tailwind's
+  `outline-none`, whose utility layer beats the global `:focus-visible` rule.
 
 ## [0.1.0] — 2026-09-25
 

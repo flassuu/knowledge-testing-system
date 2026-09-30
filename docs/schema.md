@@ -1,13 +1,13 @@
 # Database schema
 
-Draft schema for the role-based system (v0.1.0 foundation). SQLite via
-`node:sqlite` (`DatabaseSync`); ids are server-side UUIDs; timestamps are
-stored as ISO-8601 UTC strings. The schema evolves per roadmap phase and is
-enforced by idempotent, versioned migrations run at server startup.
+Schema of the system at v0.3.0. SQLite via `node:sqlite` (`DatabaseSync`);
+ids are server-side UUIDs; timestamps are stored as ISO-8601 UTC strings. The
+schema is enforced by idempotent, versioned migrations run at server startup;
+`GET /api/admin/stats` reports the applied version as `schemaVersion`.
 
-> Status: **draft** — refined in Phase 1 (Foundation). The auth/roles and
-> course/test core are already decided; session & reporting tables will get
-> their full shape in Phase 3.
+> Status: **current**. Phases 1–3 are implemented: roles and auth, the
+> test/course core, and the live-session runtime. Reporting tables
+> (grade journals) arrive with Phase 4.
 
 ## Conventions
 
@@ -36,8 +36,9 @@ Accounts for all three roles. The built-in **admin is seeded** on first run
 
 - **Admin** is seeded by the system at first startup; cannot be deleted.
 - **Teachers** are created by an admin (status `approved` immediately).
-- **Students** register themselves → status `pending` until a teacher or admin
-  approves (> `approved`). `blocked` revokes access.
+- **Students** register themselves → status `pending` until an **administrator**
+  approves them (the status endpoint is admin-only). `blocked` revokes access
+  and invalidates every token.
 
 ### courses
 
@@ -113,65 +114,102 @@ Payload shapes (draft):
 - `short_answer` — `{ accepted: string[] }` (case-insensitive compare)
 - `matching` — `{ pairs: [{left, right}], keys: [{key, text}] }`
 
+### app_meta
+
+Key/value bookkeeping for the migrations themselves.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| key | TEXT PK | e.g. `schema_version` |
+| value | TEXT | applied version |
+
 ### sessions
 
-A live run of a test, driven by a teacher on the admin-connected network.
+Auth tokens. One row per signed-in client; the token is stored hashed.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| id | TEXT PK | UUID |
-| test_id | TEXT FK tests.id | |
-| owner_id | TEXT FK users.id | running teacher |
-| join_code | TEXT UNIQUE | 6 uppercase chars |
-| state | TEXT | `created \| active \| paused \| finished` |
-| started_at / ended_at | TEXT | nullable |
+| token_hash | TEXT PK | sha256 of the opaque token |
+| user_id | TEXT FK users.id | cascades on delete |
 | created_at | TEXT | |
+| expires_at | TEXT | 12 h after login |
 
-### participants
+> Name clash worth knowing: the **live** session of a test is `live_sessions`
+> below, not this table.
 
-One row per student joining a session.
+### live_sessions
+
+One live run of a test, started by a teacher and joined by students with a
+short code. Created already `active` — there is no draft state.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | TEXT PK | UUID |
-| session_id | TEXT FK sessions.id | |
-| user_id | TEXT FK users.id | nullable — guest join by name |
-| display_name | TEXT | |
-| token | TEXT UNIQUE | per-session participant token |
-| questions_order | TEXT JSON | deterministic per-student shuffle |
-| score | INTEGER | points earned |
-| max_score | INTEGER | points available |
-| percent | REAL | score / max_score × 100 |
+| test_id | TEXT FK tests.id | cascades |
+| owner_id | TEXT FK users.id | teacher who started it |
+| join_code | TEXT UNIQUE | 6 chars from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no ambiguous 0/O or 1/I) |
+| status | TEXT | `active \| paused \| finished` |
+| time_limit_sec | INTEGER | snapshot of the test at start |
+| passing_percent | INTEGER | snapshot of the test at start |
+| created_at / started_at | TEXT | |
 | finished_at | TEXT | nullable |
 
-### answers
+The snapshots are deliberate: editing the test while a session runs changes
+nothing for the students already answering.
 
-Captured responses, one row per question per participant.
+### participations
+
+One row per student who joined a session, holding their personal question
+order and their result.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | TEXT PK | UUID |
-| participant_id | TEXT FK participants.id | |
-| question_id | TEXT FK questions.id | |
-| response | TEXT JSON | raw answer, per question type |
-| is_correct | INTEGER | 0/1 (nullable for partial) |
-| points_earned | INTEGER | |
-| answered_at | TEXT | |
-| UNIQUE (participant_id, question_id) | | one answer per question |
+| session_id | TEXT FK live_sessions.id | cascades |
+| user_id | TEXT FK users.id | cascades |
+| status | TEXT | `joined \| submitted \| auto_submitted` |
+| question_order | TEXT JSON | array of question ids — the per-student shuffle, fixed at join so a reload never reshuffles |
+| score | INTEGER | points earned, nullable until submitted |
+| max_score | INTEGER | points on offer |
+| percent | INTEGER | `round(score / max_score × 100)` |
+| passed | INTEGER | 0/1, **NULL when the test has no pass mark** |
+| joined_at | TEXT | |
+| submitted_at | TEXT | nullable |
+| UNIQUE (session_id, user_id) | | one participation per student |
+
+### participation_answers
+
+The submitted paper, one graded row per question. Rewritten on every
+submission, so a student who resubmits before the session closes does not
+accumulate rows.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | TEXT PK | UUID |
+| participation_id | TEXT FK participations.id | cascades |
+| question_id | TEXT FK questions.id | cascades |
+| payload | TEXT JSON | the raw answer, per question type |
+| is_correct | INTEGER | 0/1 |
+| points_awarded | INTEGER | |
+| UNIQUE (participation_id, question_id) | | one answer per question |
 
 ## Relationship overview
 
 ```
 users ─┬─ owns ──▶ courses ──┬─ has ──▶ materials
-       │                    └─ enrolls ─▶ course_enrollments ─▶ users (student)
+       │         │            ├─ enrolls ─▶ course_enrollments ─▶ users (student)
+       │         │            └─ runs ───▶ course_tests ─────────▶ tests
        ├─ owns ──▶ tests ──▶ questions
-       └─ runs ──▶ sessions ──▶ participants ──▶ answers ──▶ questions
+       ├─ signs in ─▶ sessions            (auth tokens, hashed)
+       └─ runs ────▶ live_sessions ──▶ participations ──▶ participation_answers ──▶ questions
 ```
 
 ## Migration notes
 
-- v1 creates `users` (with built-in admin seed), `courses`,
-  `course_enrollments`, `materials`, `tests`, `questions`.
-- v2 (Phase 3) adds `sessions`, `participants`, `answers`.
+- v1 creates `app_meta`.
+- v2 creates `users` (with the built-in admin seed) and `sessions`.
+- v3 creates `tests`, `questions`, `courses`, `course_enrollments`,
+  `course_tests`, `materials`.
+- v4 creates `live_sessions`, `participations`, `participation_answers`.
 - Migrations run idempotently at startup, in order; each is wrapped in a
   transaction and versioned in `schema_migrations`.

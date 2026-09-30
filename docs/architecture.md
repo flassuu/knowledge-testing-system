@@ -98,36 +98,52 @@ Almost everything requires the running server. When the server is unreachable:
 
 ## Data model (see [schema](./schema.md))
 
-`users` (roles, approval status) · `courses` · `materials` ·
-`tests` · `questions` (5 types: single choice, multiple choice, true/false,
-short answer, matching) · `sessions` · `participants` · `answers`.
+`users` (roles, approval status) · `sessions` (auth tokens) · `courses` ·
+`materials` · `tests` · `questions` (5 types: single choice, multiple choice,
+true/false, short answer, matching) · `live_sessions` · `participations` ·
+`participation_answers`.
 
 ## Testing flow (live sessions)
 
-1. Teacher picks a test and starts a **session** — the server issues a
-   6-character join code and a QR.
-2. Students join with code + name → `participant` row.
-3. Questions are served in a deterministic per-student shuffle; answers
-   auto-submit on timeout.
-4. Scoring: **points per question + percent** of max, computed server-side.
-5. Live board (joins, answers, finishes) streams to the teacher over **WebSocket**;
-   cheap REST polling keeps student state/time in sync.
-6. On finish the teacher exports a report: **PDF (printable) + CSV
-   (spreadsheets)**, stamped per session.
+1. Teacher picks a test and starts a **session** on the Live tab. The server
+   issues a 6-character join code (no ambiguous `0/O` or `1/I` glyphs, so it
+   can be read out loud) and snapshots the time limit and pass mark.
+2. Students sign in, type the code — or open the teacher's `?join=CODE` link,
+   which fills it in — and a `participations` row is created.
+3. The paper is served in a **per-student shuffle** fixed at join, so a reload
+   never reorders it, and with **every answer key stripped**. A test can still
+   be edited meanwhile: the session works from its snapshots.
+4. The countdown is corrected for the round trip to the server, so a device
+   with a drifting clock still sees the real deadline. At zero the client
+   submits, and every server entry point that grades or closes a session also
+   sweeps expired participations — a forgotten session costs nobody their
+   attempt.
+5. Scoring is server-side: points per question and a percent of the maximum.
+   Missing or malformed answers score zero.
+6. The teacher's **live board** streams over **WebSocket**: status changes for
+   everyone in the session, the participant list for the teacher. The client
+   falls back to polling where a socket cannot be opened.
+7. *Planned (Phase 4):* the teacher exports a report — PDF (printable) + CSV —
+   stamped per session.
 
 ## Communication
 
 | Flow | Channel |
 |------|---------|
-| Admin/Teacher ↔ Server (CRUD, sessions, results) | REST `/api/*`, bearer token |
-| Student → Server (join, submit answers) | REST `/api/*`, participant token |
-| Server → Teacher (live: joins, answers, finishes) | WebSocket `/ws` |
-| Student ↔ Server (state, time) | REST polling (cheap, LAN scale) |
+| Everyone ↔ Server (CRUD, join, submit, results) | REST `/api/*`, bearer token (the student's own account token) |
+| Server → Teacher (live board: joins, submissions, status) | WebSocket `/ws/sessions/:id` |
+| Server → Student (pause, finish, time) | same WebSocket, status only |
+| Fallback when a socket cannot be opened | REST polling (cheap, LAN scale) |
 
 ## Security model (LAN trust)
 
-- Offline classroom: role-scoped bearer tokens; students hold per-session
-  participant tokens; account approval workflow; CORS open to the LAN.
+- Offline classroom: role-scoped bearer tokens for all three roles; an
+  administrator approves student registrations; CORS open to the LAN.
+- A student can only read or submit **their own** participation: results and
+  the live channel check the participation belongs to the caller.
+- The live channel authenticates from the query string (browsers cannot set
+  headers on a WebSocket handshake) and closes with a code when the token, the
+  session or the ownership check fails.
 - No TLS in v1 (out of scope); deeper security review is deferred — see Access
   & accounts.
 

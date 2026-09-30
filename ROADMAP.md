@@ -9,11 +9,15 @@ while development proceeds.
 |-------|---------|------|
 | Phase 0 — Scaffold | **0.0.1** (done) | Monorepo, tooling, docs, CI, demo window |
 | Phase 1 — Foundation | **0.1.0** (done) | Data model, accounts & roles, auth, admin base |
-| Phase 1.1 — UI/UX polish | **0.1.1** (next) | Design & feedback pass over what 0.1.0 already ships |
-| Phase 2 — Teacher workbench | 0.2.0 | Test/course authoring, sharing, offline drafts |
-| Phase 3 — Session runtime | 0.3.0 | Live testing: join, answer, score, WS board |
-| Phase 4 — Reporting | 0.4.0 | Statistics, journals, PDF + CSV export |
-| Phase 5 — MVP polish | 1.0.0 | Student UX, packaging, tests, README |
+| Phase 1.1 — UI/UX polish | **shipped in 0.2.0** | Design & feedback pass over what 0.1.0 already ships |
+| Phase 2 — Teacher workbench | **0.2.0** (done) | Test/course authoring and sharing |
+| Phase 3 — Session runtime | **0.3.0** (done) | Live testing: join, answer, score, WS board |
+| Phase 4 — Reporting | 0.4.0 (next) | Statistics, journals, PDF + CSV export |
+| Phase 5 — MVP polish | 1.0.0 | Packaging, e2e, README polish |
+
+The UI/UX polish pass (originally planned as its own 0.1.1) shipped together
+with Phase 2 as **0.2.0** — separating them would have meant a release that
+only restyled the same screens.
 
 ## Phase 0 — Scaffold (v0.0.1, done)
 
@@ -49,10 +53,10 @@ while development proceeds.
 - [x] Admin insights: DB health (+ table counts) and participants list
 - [ ] Import/export share format (JSON) — Phase 2 authoring
 
-## Phase 1.1 — UI/UX polish (v0.1.1, almost done)
+## Phase 1.1 — UI/UX polish (shipped in v0.2.0)
 
 Nothing new server-side: make everything 0.1.0 already ships feel finished.
-Released as a separate minor so the polish sprint never blocks Phase 2.
+Planned as its own 0.1.1, released as part of 0.2.0 together with Phase 2.
 
 Batches 1–8 are in. The two items still open below (component consistency
 pass, desktop About dialog) are visual work — they need a real screen and
@@ -130,7 +134,7 @@ These rules apply to every screen of web-client and desktop. No exceptions.
       cleaner window title; verify admin/teacher screens at 1080×720
 - [ ] Web/mobile QA of admin & teacher screens served over LAN on narrow widths
 
-## Phase 2 — Teacher workbench (v0.2.0, in progress)
+## Phase 2 — Teacher workbench (v0.2.0, done)
 
 - [x] Test authoring UX — list + full editor for all 5 question types in the
       teacher dashboard (web-client & desktop)
@@ -164,13 +168,13 @@ These rules apply to every screen of web-client and desktop. No exceptions.
       on the student's phone (`QR code for the link would need a dependency -
       not done`)
 
-## Phase 4 — Reporting (v0.4.0, flexible)
+## Phase 4 — Reporting (v0.4.0, next)
 
 - Results API + teacher live dashboard; grade journals
 - Student result screen (per test settings)
 - Report export: PDF (printable) + CSV (spreadsheets) per session
 
-## Phase 5 — MVP polish (v1.0.0, flexible)
+## Phase 5 — MVP polish (v1.0.0)
 
 - Sidecar packaging; offline PWA caching polish
 - Design pass, empty/loading/error states, seed demo data

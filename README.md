@@ -18,11 +18,14 @@ application serves an **administrator**, **teachers** and **students**.
 
 - **Administrator** — hosts the system: runs the embedded server (in the
   desktop client or headless CLI), manages the database, users, participants.
-- **Teacher** — desktop app and/or web app on `localhost`: creates/edits
-  tests, builds courses with materials, shares tests, reviews statistics and
-  journals. May author tests offline and sync them later.
-- **Student** — takes tests, views own statistics and course materials
-  (phone/PC via PWA, or desktop).
+- **Teacher** — desktop app and/or web app: creates and edits tests with all
+  five question types, builds courses with materials, and runs a **live
+  session** — start a test, read the join code to the room, watch the
+  participant board in real time, pause or finish.
+- **Student** — signs in on a phone (PWA) or PC, joins a session with a
+  six-character code or a link, answers the paper against a countdown, and sees
+  the graded result with the correct answers. *(Course materials and a
+  results history are next, in Phase 4.)*
 
 ## Architecture
 

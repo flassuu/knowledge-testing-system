@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, realpathSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { dirname, isAbsolute, resolve } from 'node:path'
 
 export interface ServerConfig {
   host: string
@@ -16,7 +16,9 @@ function arg(argv: string[], flag: string): string | undefined {
 
 function asWebRoot(value: string | undefined): string | null {
   if (!value) return null
-  return existsSync(value) ? value : null
+  // Absolute: @fastify/static rejects a relative root with an opaque error.
+  const absolute = isAbsolute(value) ? value : resolve(process.cwd(), value)
+  return existsSync(absolute) ? absolute : null
 }
 
 /**
@@ -53,7 +55,10 @@ function resolveWebRoot(baseDirValue: string): string {
 
 export function loadConfig(argv: string[]): ServerConfig {
   const baseDirValue = baseDir()
-  const dataDir = arg(argv, '--data') ?? './data'
+  // A relative --data would tie the database and uploads to the working
+  // directory of whoever happens to start the binary.
+  const dataArg = arg(argv, '--data') ?? './data'
+  const dataDir = isAbsolute(dataArg) ? dataArg : resolve(process.cwd(), dataArg)
   if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true })
 
   const explicitWebRoot = asWebRoot(arg(argv, '--webroot'))
