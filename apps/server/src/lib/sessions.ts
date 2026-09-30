@@ -290,6 +290,39 @@ export function joinSession(
   return row
 }
 
+export interface SessionSummary extends LiveSession {
+  title: string
+  joinedCount: number
+  submittedCount: number
+}
+
+/**
+ * Sessions newest first, with the counts the board needs. Pass an owner id to
+ * scope it to one teacher, or nothing for every teacher's sessions.
+ */
+export function listSessions(db: DatabaseSync, ownerId?: string): SessionSummary[] {
+  const rows = db
+    .prepare(
+      `SELECT s.*, t.title AS title,
+              (SELECT COUNT(*) FROM participations p WHERE p.session_id = s.id) AS joined_count,
+              (SELECT COUNT(*) FROM participations p WHERE p.session_id = s.id AND p.status != 'joined') AS submitted_count
+         FROM live_sessions s
+         JOIN tests t ON t.id = s.test_id
+        WHERE (? IS NULL OR s.owner_id = ?)
+        ORDER BY s.created_at DESC
+        LIMIT 50`,
+    )
+    .all(ownerId ?? null, ownerId ?? null) as unknown as Array<
+    LiveSessionRow & { title: string; joined_count: number; submitted_count: number }
+  >
+  return rows.map((row) => ({
+    ...toSession(row),
+    title: row.title,
+    joinedCount: row.joined_count,
+    submittedCount: row.submitted_count,
+  }))
+}
+
 export function listParticipations(db: DatabaseSync, sessionId: string): ParticipationRow[] {
   return db
     .prepare('SELECT * FROM participations WHERE session_id = ? ORDER BY joined_at ASC')

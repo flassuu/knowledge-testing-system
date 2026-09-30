@@ -165,6 +165,25 @@ afterAll(() => {
   rmSync(tmpDir, { recursive: true, force: true })
 })
 
+
+/** Registers and approves a student, returning a token. */
+async function approvedStudentForList(): Promise<string> {
+  const adminToken = await login('admin', process.env.ADMIN_PASSWORD!)
+  const registered = await app.server.inject({
+    method: 'POST',
+    url: '/api/auth/register',
+    payload: { username: 'liststudent', password: 'student-pass-1', fullName: 'List Student' },
+  })
+  const id = (registered.json() as { user: { id: string } }).user.id
+  await app.server.inject({
+    method: 'PATCH',
+    url: `/api/users/${id}/status`,
+    headers: bearer(adminToken),
+    payload: { status: 'approved' },
+  })
+  return login('liststudent', 'student-pass-1')
+}
+
 describe('live sessions: teacher side', () => {
   it('starts a session for an owned test and hands out a 6-character code', async () => {
     const teacherToken = await login('teacher1', 'teacher-pass-1')
@@ -261,6 +280,71 @@ describe('live sessions: teacher side', () => {
       payload: { status: 'active' },
     })
     expect(again.statusCode).toBe(409)
+  })
+
+  it('lists the own sessions of a teacher with counts, and nobody else', async () => {
+    const teacherToken = await login('teacher1', 'teacher-pass-1')
+    const testId = await seedTest(teacherToken)
+    const first = await app.server.inject({
+      method: 'POST',
+      url: '/api/sessions',
+      headers: bearer(teacherToken),
+      payload: { testId },
+    })
+    const firstId = (first.json() as SessionBody).session.id
+    await app.server.inject({
+      method: 'POST',
+      url: '/api/sessions',
+      headers: bearer(teacherToken),
+      payload: { testId },
+    })
+
+    const res = await app.server.inject({
+      method: 'GET',
+      url: '/api/sessions',
+      headers: bearer(teacherToken),
+    })
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as {
+      sessions: Array<{
+        id: string
+        title: string
+        joinedCount: number
+        submittedCount: number
+      }>
+    }
+    // Earlier tests in this file start sessions too, so assert on membership.
+    expect(body.sessions.filter((session) => session.title === 'Mixed quiz').length).toBeGreaterThanOrEqual(2)
+    const mine = body.sessions.filter((session) => session.id === firstId)
+    expect(mine).toHaveLength(1)
+    expect(mine[0]?.title).toBe('Mixed quiz')
+    expect(mine[0]?.joinedCount).toBe(0)
+    expect(mine[0]?.submittedCount).toBe(0)
+
+    // A second teacher sees none of the first teacher's sessions.
+    const other = await app.server.inject({
+      method: 'GET',
+      url: '/api/sessions',
+      headers: bearer(await login('teacher2', 'teacher-pass-1')),
+    })
+    expect((other.json() as { sessions: unknown[] }).sessions).toHaveLength(0)
+
+    // An admin sees every teacher's sessions.
+    const asAdmin = await app.server.inject({
+      method: 'GET',
+      url: '/api/sessions',
+      headers: bearer(await login('admin', 'test-admin-password')),
+    })
+    expect((asAdmin.json() as { sessions: unknown[] }).sessions.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('keeps a student out of the session list', async () => {
+    const res = await app.server.inject({
+      method: 'GET',
+      url: '/api/sessions',
+      headers: bearer(await approvedStudentForList()),
+    })
+    expect(res.statusCode).toBe(403)
   })
 
   it('shows the answer key to the owning teacher only', async () => {

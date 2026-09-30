@@ -12,6 +12,7 @@ import {
   joinSession,
   listOpenParticipations,
   listParticipantEntries,
+  listSessions,
   saveSubmission,
   setSessionStatus,
   toParticipation,
@@ -174,6 +175,12 @@ export const sessionRoutes: FastifyPluginAsync<SessionRoutesDeps> = async (
   }
 
   // ---------------------------------------------------------------- teacher
+
+  /** Session list: a teacher sees their own, an admin sees every teacher's. */
+  app.get('/api/sessions', { preHandler: requireRoles('admin', 'teacher') }, async (request) => {
+    const isAdmin = request.session?.role === 'admin'
+    return { sessions: listSessions(db, isAdmin ? undefined : request.session?.userId) }
+  })
 
   /** Starts a live run of one of the teacher's own tests. */
   app.post(
