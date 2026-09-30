@@ -169,6 +169,17 @@ versioning follows [SemVer](https://semver.org/).
   shows each student's name, a "working" marker while they are still in the
   paper, and their percentage with a pass badge once they submit; finished
   results sort to the top. It polls for now; the WebSocket hub replaces that.
+- **WebSocket hub.** `GET /ws/sessions/:id` streams one session live: teachers
+  receive the participant board, students receive status changes, and both get
+  the current state on connect. Joins, submissions, pause, resume, finish and
+  the timeout sweep all push an update. An invalid token, an unknown session, a
+  student who never joined and a teacher who does not own the session are
+  rejected with a close code. The client reconnects with a backoff and silently
+  falls back to polling when a socket cannot be opened, so the board works
+  either way.
+- **Join link for phones.** The teacher copies a `?join=CODE` link next to the
+  code; opened on a phone it lands on the join card with the code filled in and
+  the button ready, and the parameter is cleared once the student is in.
 - **`GET /api/sessions`** returns the teacher's own sessions newest first with
   joined and submitted counts. An admin sees every teacher's, a student gets 403.
 - **README:** a "Testing from a phone" section — the server already binds
@@ -177,6 +188,24 @@ versioning follows [SemVer](https://semver.org/).
 - **Client-side session logic** (`student/sessionLogic.ts`) — what counts as
   answered, the answer payload per type, the server-corrected clock and its
   formatting — under 20 new `node:test` cases.
+
+### Fixed
+- **"Not passed" on a perfect score.** A test with no pass mark sends
+  `passed: null` from the server, and the result screen read that as a failure.
+  It now shows a neutral "Completed" panel, and only reveals passed or failed
+  when the test actually defines a mark.
+- **The result screen's back button** returned to the paper of a session that
+  could no longer be submitted. It lands on the student home, with a second
+  button to join another test.
+- **The sign-in header floated in the middle of a phone screen**, because the
+  whole column was vertically centred. The header is pinned to the top now and
+  only the card centres.
+- **Switching roles on the sign-in screen jumped the layout**, since only the
+  student role had the "Create account" line. The slot is always rendered at a
+  fixed height and fills with a short note for the other roles.
+- **Theme switching flickered**, restyling every element at once. It now
+  cross-fades through the View Transition API, falls back to muting transitions
+  for a single frame elsewhere, and drops the fade under `prefers-reduced-motion`.
 
 ### Changed
 - **UI/UX polish batch 3 (v0.1.1): light + dark themes.** The whole UI now

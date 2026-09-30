@@ -139,7 +139,7 @@ These rules apply to every screen of web-client and desktop. No exceptions.
 - [ ] Test duplication & sharing (JSON import/export)
 - [ ] Offline authoring: local drafts that sync when the server is reachable
 
-## Phase 3 — Session runtime (v0.3.0, flexible)
+## Phase 3 — Session runtime (v0.3.0, done)
 
 - [x] Session lifecycle (create → active → paused → finished) with a 6-character
       join code (no ambiguous 0/O or 1/I glyphs) and snapshots of the test's time
@@ -156,8 +156,13 @@ These rules apply to every screen of web-client and desktop. No exceptions.
 - [x] Teacher side UI: start a session from a test, join code shown large with
       a copy button, participant board (polling every 4s) with working markers,
       percentages and pass badges, pause / resume / finish with confirmation
-- [ ] WebSocket hub so the participant board updates without polling
-- [ ] QR code for the join link
+- [x] WebSocket hub: `GET /ws/sessions/:id` streams status to everyone and the
+      participant board to the teacher, pushed on every join, submit, pause,
+      resume, finish and timeout sweep; the client falls back to polling when
+      the socket cannot be opened
+- [x] Join link: the teacher copies a `?join=CODE` link, which fills the code in
+      on the student's phone (`QR code for the link would need a dependency -
+      not done`)
 
 ## Phase 4 — Reporting (v0.4.0, flexible)
 
