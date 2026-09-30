@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { ArrowLeftRight, X } from '@lucide/vue'
+import { ArrowDown, ArrowLeftRight, ArrowUp, Copy, X } from '@lucide/vue'
 import { QUESTION_TYPES } from '../../api/types'
 import type { QuestionType } from '../../api/types'
 import type { QuestionForm } from './questionForm'
@@ -8,9 +8,14 @@ import type { QuestionForm } from './questionForm'
 const props = defineProps<{
   question: QuestionForm
   index: number
+  total: number
 }>()
 
-const emit = defineEmits<{ remove: [index: number] }>()
+const emit = defineEmits<{
+  remove: [index: number]
+  duplicate: [index: number]
+  move: [index: number, delta: number]
+}>()
 
 const { t } = useI18n()
 
@@ -53,7 +58,56 @@ function removePair(index: number): void {
 
 <template>
   <fieldset class="rounded-xl border border-outline-variant bg-surface-container p-4">
-    <div class="flex flex-col gap-2 sm:flex-row sm:items-start">
+    <div class="mb-3 flex items-center justify-between gap-2">
+      <div class="flex min-w-0 items-center gap-2">
+        <span
+          class="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-container text-xs font-bold text-on-primary-container"
+        >
+          {{ index + 1 }}
+        </span>
+        <span class="truncate text-xs font-semibold text-on-surface-variant">
+          {{ typeLabel(question.type) }}
+        </span>
+      </div>
+      <div class="flex shrink-0 items-center gap-1">
+        <button
+          type="button"
+          :disabled="index === 0"
+          @click="emit('move', index, -1)"
+          class="rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface disabled:opacity-30"
+          :aria-label="t('teacher.editor.moveUp')"
+        >
+          <ArrowUp class="size-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          :disabled="index === total - 1"
+          @click="emit('move', index, 1)"
+          class="rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface disabled:opacity-30"
+          :aria-label="t('teacher.editor.moveDown')"
+        >
+          <ArrowDown class="size-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          @click="emit('duplicate', index)"
+          class="rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+          :aria-label="t('teacher.editor.duplicateQuestion')"
+        >
+          <Copy class="size-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          @click="emit('remove', index)"
+          class="rounded-lg p-1.5 text-on-surface-variant hover:bg-error-container hover:text-on-error-container"
+          :aria-label="t('teacher.editor.removeQuestion')"
+        >
+          <X class="size-4" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
       <input
         v-model="question.body"
         type="text"
@@ -78,14 +132,6 @@ function removePair(index: number): void {
             class="w-16 rounded-lg border border-outline bg-surface px-2 py-2 text-sm outline-none focus:border-outline"
           />
         </label>
-        <button
-          type="button"
-          @click="emit('remove', index)"
-          class="rounded-lg border border-outline-variant px-2 py-2 text-xs font-semibold text-on-error-container hover:bg-error-container"
-          :aria-label="t('teacher.editor.removeQuestion')"
-        >
-          <X class="size-4" aria-hidden="true" />
-        </button>
       </div>
     </div>
 

@@ -1,0 +1,241 @@
+<script setup lang="ts">
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { ArrowLeftRight, Check, X } from '@lucide/vue'
+import { buildQuestions, type QuestionForm } from './questionForm'
+import type { QuestionInput } from '../../api/types'
+
+const props = defineProps<{
+  open: boolean
+  title: string
+  description: string
+  timeLimitMin: string
+  passingPercent: string
+  forms: QuestionForm[]
+}>()
+
+const emit = defineEmits<{ close: [] }>()
+
+const { t } = useI18n()
+const closeRef = ref<HTMLButtonElement | null>(null)
+
+watch(
+  () => props.open,
+  async (open) => {
+    if (!open) return
+    await nextTick()
+    closeRef.value?.focus()
+  },
+)
+
+const built = computed(() => buildQuestions(props.forms))
+const questions = computed<QuestionInput[]>(() =>
+  typeof built.value === 'string' ? [] : built.value,
+)
+const buildError = computed(() =>
+  typeof built.value === 'string' ? t(`teacher.form.err.${built.value}`) : '',
+)
+const totalPoints = computed(() =>
+  questions.value.reduce((sum, question) => sum + question.points, 0),
+)
+
+interface PreviewOption {
+  key: string
+  text: string
+}
+
+interface PreviewPair {
+  left: string
+  right: string
+}
+
+interface PreviewPayload {
+  options?: PreviewOption[]
+  correct?: string | string[] | boolean
+  accepted?: string[]
+  pairs?: PreviewPair[]
+}
+
+function payloadOf(question: QuestionInput): PreviewPayload {
+  return question.payload as PreviewPayload
+}
+
+function optionsOf(question: QuestionInput): PreviewOption[] {
+  return payloadOf(question).options ?? []
+}
+
+function isCorrectOption(question: QuestionInput, key: string): boolean {
+  const correct = payloadOf(question).correct
+  if (Array.isArray(correct)) return correct.includes(key)
+  return correct === key
+}
+
+function isCorrectBoolean(question: QuestionInput, value: boolean): boolean {
+  return payloadOf(question).correct === value
+}
+
+function acceptedOf(question: QuestionInput): string[] {
+  return payloadOf(question).accepted ?? []
+}
+
+function pairsOf(question: QuestionInput): PreviewPair[] {
+  return payloadOf(question).pairs ?? []
+}
+
+function onKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && props.open) emit('close')
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+
+const chipClass =
+  'rounded-full bg-primary-container px-2.5 py-0.5 text-xs font-semibold text-on-primary-container'
+const optionBaseClass = 'flex items-center gap-2 rounded-xl px-3 py-2 text-sm'
+const correctClass = 'bg-success-container font-semibold text-on-success-container'
+const plainClass = 'bg-surface-container-high text-on-surface'
+</script>
+
+<template>
+  <Teleport to="body">
+    <div
+      v-if="open"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="t('teacher.tests.previewTitle')"
+    >
+      <div class="absolute inset-0 bg-scrim" @click="emit('close')" />
+      <div
+        class="relative flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-surface-container shadow-xl"
+      >
+        <header class="flex items-start justify-between gap-3 border-b border-outline-variant p-4">
+          <div class="min-w-0">
+            <h3 class="truncate text-base font-semibold text-on-surface">
+              {{ title || t('teacher.tests.previewUntitled') }}
+            </h3>
+            <p v-if="description" class="mt-0.5 text-sm text-on-surface-variant">
+              {{ description }}
+            </p>
+          </div>
+          <button
+            ref="closeRef"
+            type="button"
+            :aria-label="t('common.close')"
+            class="shrink-0 rounded-full p-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+            @click="emit('close')"
+          >
+            <X class="size-4" aria-hidden="true" />
+          </button>
+        </header>
+
+        <div v-if="!buildError" class="flex flex-wrap gap-2 px-4 pt-3">
+          <span :class="chipClass">
+            {{ t('teacher.tests.questionCount', { count: questions.length }) }}
+          </span>
+          <span :class="chipClass">
+            {{ t('teacher.tests.totalPoints', { count: totalPoints }) }}
+          </span>
+          <span v-if="timeLimitMin" :class="chipClass">
+            {{ t('teacher.tests.timeLimit') }}: {{ timeLimitMin }}
+            {{ t('teacher.tests.minutes') }}
+          </span>
+          <span v-if="passingPercent" :class="chipClass">
+            {{ t('teacher.tests.passing', { percent: passingPercent }) }}
+          </span>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4">
+          <p
+            v-if="buildError"
+            role="alert"
+            class="rounded-xl bg-error-container px-3 py-2 text-sm text-on-error-container"
+          >
+            {{ buildError }}
+          </p>
+
+          <ol v-else class="space-y-3">
+            <li
+              v-for="(question, index) in questions"
+              :key="index"
+              class="rounded-xl bg-surface p-4"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <p class="text-sm font-semibold text-on-surface">
+                  {{ index + 1 }}. {{ question.body }}
+                </p>
+                <span
+                  class="shrink-0 rounded-full bg-warning-container px-2 py-0.5 text-[11px] font-semibold text-on-warning-container"
+                >
+                  {{ t('teacher.editor.points') }}: {{ question.points }}
+                </span>
+              </div>
+
+              <ul v-if="question.type === 'single_choice' || question.type === 'multiple_choice'" class="mt-3 space-y-1.5">
+                <li
+                  v-for="option in optionsOf(question)"
+                  :key="option.key"
+                  :class="[optionBaseClass, isCorrectOption(question, option.key) ? correctClass : plainClass]"
+                >
+                  <Check v-if="isCorrectOption(question, option.key)" class="size-4 shrink-0" aria-hidden="true" />
+                  <span>{{ option.text }}</span>
+                </li>
+              </ul>
+
+              <div
+                v-else-if="question.type === 'true_false'"
+                class="mt-3 flex flex-wrap gap-1.5"
+              >
+                <span
+                  v-for="value in [true, false]"
+                  :key="String(value)"
+                  :class="[optionBaseClass, isCorrectBoolean(question, value) ? correctClass : plainClass]"
+                >
+                  <Check v-if="isCorrectBoolean(question, value)" class="size-4 shrink-0" aria-hidden="true" />
+                  {{ value ? t('teacher.editor.trueValue') : t('teacher.editor.falseValue') }}
+                </span>
+              </div>
+
+              <div v-else-if="question.type === 'short_answer'" class="mt-3 space-y-1.5">
+                <p class="text-xs font-semibold text-on-surface-variant">
+                  {{ t('teacher.editor.accepted') }}
+                </p>
+                <p
+                  v-for="(answer, answerIndex) in acceptedOf(question)"
+                  :key="answerIndex"
+                  :class="[optionBaseClass, correctClass]"
+                >
+                  <Check class="size-4 shrink-0" aria-hidden="true" />
+                  {{ answer }}
+                </p>
+              </div>
+
+              <ul v-else class="mt-3 space-y-1.5">
+                <li
+                  v-for="(pair, pairIndex) in pairsOf(question)"
+                  :key="pairIndex"
+                  :class="[optionBaseClass, correctClass]"
+                >
+                  <Check class="size-4 shrink-0" aria-hidden="true" />
+                  <span class="min-w-0 flex-1 truncate">{{ pair.left }}</span>
+                  <ArrowLeftRight class="size-3.5 shrink-0 opacity-70" aria-hidden="true" />
+                  <span class="min-w-0 flex-1 truncate">{{ pair.right }}</span>
+                </li>
+              </ul>
+            </li>
+          </ol>
+        </div>
+
+        <footer class="border-t border-outline-variant p-4">
+          <button
+            type="button"
+            class="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:opacity-90 sm:w-auto"
+            @click="emit('close')"
+          >
+            {{ t('common.close') }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  </Teleport>
+</template>

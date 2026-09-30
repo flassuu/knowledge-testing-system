@@ -57,6 +57,17 @@ export function newQuestionForm(type: QuestionType = 'single_choice'): QuestionF
   }
 }
 
+/** Deep copy of a form row with a fresh key, so it can be inserted next to the original. */
+export function duplicateQuestionForm(form: QuestionForm): QuestionForm {
+  return {
+    ...form,
+    key: crypto.randomUUID(),
+    options: [...form.options],
+    correctIndexes: [...form.correctIndexes],
+    pairs: form.pairs.map((pair) => ({ ...pair })),
+  }
+}
+
 export function buildQuestions(forms: QuestionForm[]): QuestionBuild {
   const questions: QuestionInput[] = []
   for (let position = 0; position < forms.length; position++) {

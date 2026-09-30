@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Eye, Plus } from '@lucide/vue'
 import { ApiError } from '../../api/client'
 import { createTest, deleteTest, getTest, listTests, updateTest } from '../../api/tests'
 import type { TestSummary } from '../../api/types'
 import {
   buildQuestions,
+  duplicateQuestionForm,
   formsFromQuestions,
   newQuestionForm,
   type QuestionForm,
 } from './questionForm'
 import QuestionEditor from './QuestionEditor.vue'
+import TestPreviewDialog from './TestPreviewDialog.vue'
 import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
 
@@ -33,6 +36,7 @@ const timeLimitMin = ref('')
 const passingPercent = ref('')
 const questionForms = ref<QuestionForm[]>([])
 const busyId = ref('')
+const showPreview = ref(false)
 
 function apiErrorKey(error: unknown): string {
   if (!(error instanceof ApiError)) return 'generic'
@@ -98,6 +102,20 @@ function removeQuestion(index: number) {
   questionForms.value.splice(index, 1)
 }
 
+function duplicateQuestion(index: number) {
+  const source = questionForms.value[index]
+  if (!source) return
+  questionForms.value.splice(index + 1, 0, duplicateQuestionForm(source))
+}
+
+function moveQuestion(index: number, delta: number) {
+  const target = index + delta
+  if (target < 0 || target >= questionForms.value.length) return
+  const [row] = questionForms.value.splice(index, 1)
+  if (!row) return
+  questionForms.value.splice(target, 0, row)
+}
+
 async function save() {
   const built = buildQuestions(questionForms.value)
   if (typeof built === 'string') {
@@ -123,6 +141,7 @@ async function save() {
     toast.success(editingId.value ? t('teacher.tests.updated') : t('teacher.tests.created'))
     await load()
     isEditing.value = false
+    showPreview.value = false
   } catch (error) {
     formErrorKey.value = apiErrorKey(error)
   } finally {
@@ -155,9 +174,10 @@ onMounted(load)
         v-if="!isEditing"
         type="button"
         @click="startCreate"
-        class="rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success hover:opacity-90"
+        class="inline-flex items-center gap-1.5 rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success hover:opacity-90"
       >
-        + {{ t('teacher.tests.newTest') }}
+        <Plus class="size-3.5" aria-hidden="true" />
+        {{ t('teacher.tests.newTest') }}
       </button>
     </div>
 
@@ -210,22 +230,46 @@ onMounted(load)
       </div>
 
       <div class="space-y-3">
-        <p class="text-sm font-semibold text-on-surface">{{ t('teacher.tests.questions') }}</p>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-sm font-semibold text-on-surface">{{ t('teacher.tests.questions') }}</p>
+          <button
+            type="button"
+            @click="showPreview = true"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
+          >
+            <Eye class="size-3.5" aria-hidden="true" />
+            {{ t('teacher.tests.preview') }}
+          </button>
+        </div>
         <QuestionEditor
           v-for="(question, index) in questionForms"
           :key="question.key"
           :question="question"
           :index="index"
+          :total="questionForms.length"
           @remove="removeQuestion"
+          @duplicate="duplicateQuestion"
+          @move="moveQuestion"
         />
         <button
           type="button"
           @click="addQuestion"
-          class="rounded-lg border border-outline bg-surface px-3 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high"
         >
-          + {{ t('teacher.tests.addQuestion') }}
+          <Plus class="size-4" aria-hidden="true" />
+          {{ t('teacher.tests.addQuestion') }}
         </button>
       </div>
+
+      <TestPreviewDialog
+        :open="showPreview"
+        :title="title"
+        :description="description"
+        :time-limit-min="timeLimitMin"
+        :passing-percent="passingPercent"
+        :forms="questionForms"
+        @close="showPreview = false"
+      />
 
       <div class="flex gap-2">
         <button
