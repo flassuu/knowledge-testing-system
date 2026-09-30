@@ -80,8 +80,10 @@ These rules apply to every screen of web-client and desktop. No exceptions.
       theme switcher in every header, system preference as first-run default,
       persisted choice with an anti-flash boot script, global `:focus-visible`
       ring and `prefers-reduced-motion` guard
-- [ ] State coverage everywhere: empty states with a call-to-action
-      (e.g. "no tests yet → Create test"), loading skeletons, inline errors
+- [x] State coverage: shared `<EmptyState/>` (icon, title, hint, optional
+      call-to-action) and `<SkeletonList/>` (card + table variants, pulse) on
+      every list — tests, courses, course details, users, participants,
+      system stats and the boot screen; inline error alerts kept per screen
 - [x] Global toast notifications (success/error) via a shared, dependency-free
       `useToast()` + `<ToastHost/>` (tests, courses, students, materials, user
       actions), plus an app-wide offline banner and a "server is back" toast

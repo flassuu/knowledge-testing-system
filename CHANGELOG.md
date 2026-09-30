@@ -47,6 +47,23 @@ versioning follows [SemVer](https://semver.org/).
 - i18n: `teacher.editor.duplicateQuestion/moveUp/moveDown`,
   `teacher.tests.preview/previewTitle/previewUntitled/totalPoints`,
   `common.close` — en and uk.
+- **UI/UX polish batch 6 (v0.1.1): loading and empty states.** Two shared,
+  dependency-free components replace the ad-hoc "Loading…" / "No items yet"
+  lines: `<EmptyState/>` (Lucide icon in a tonal circle, title, hint and an
+  optional call-to-action) and `<SkeletonList/>` (card and table variants built
+  on `animate-pulse` plus theme tokens, announced via `role="status"`).
+  Every list now uses them — my tests, my courses, course details, users,
+  participants, system stats — and the boot screen shows a skeleton instead of
+  text. Empty tests/courses carry a real call-to-action ("New test" / "New
+  course"), and an empty user list offers "Clear filters" whenever a search or
+  filter is active.
+- Remaining `+` glyph buttons and the inline empty hints on the course page
+  were replaced with Lucide icons to follow the no-glyph rule.
+- i18n: `admin.emptyTitle/emptyHint/clearFilters`,
+  `admin.participants.emptyTitle/emptyHint`,
+  `teacher.tests.emptyTitle/emptyHint`,
+  `teacher.courses.emptyTitle/emptyHint` — en and uk (the old single-line
+  `empty` keys are gone).
 
 ### Changed
 - **UI/UX polish batch 3 (v0.1.1): light + dark themes.** The whole UI now
