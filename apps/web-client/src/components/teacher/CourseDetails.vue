@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, ClipboardList, Paperclip, Upload, Users } from '@lucide/vue'
 import { ApiError } from '../../api/client'
+import MaterialBadge from '../common/MaterialBadge.vue'
 import SkeletonList from '../common/SkeletonList.vue'
 import {
   attachTest,
@@ -16,6 +17,7 @@ import {
 } from '../../api/courses'
 import { listTests } from '../../api/tests'
 import type { CourseDetails, Material, TestSummary } from '../../api/types'
+import TestPicker from './TestPicker.vue'
 import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
 
@@ -35,7 +37,7 @@ const errorKey = ref('')
 
 const availableTests = ref<TestSummary[]>([])
 const enrollUsername = ref('')
-const attachTestId = ref('')
+const attaching = ref(false)
 const actionError = ref('')
 
 function apiErrorKey(error: unknown): string {
@@ -106,11 +108,11 @@ async function unenroll(student: { id: string; fullName: string }) {
   if (!actionError.value) toast.success(t('teacher.courses.unenrolled', { name: student.fullName }))
 }
 
-async function attach() {
-  if (!attachTestId.value) return
-  await run(() => attachTest(props.courseId, attachTestId.value))
+async function attach(testId: string) {
+  attaching.value = true
+  await run(() => attachTest(props.courseId, testId))
   if (!actionError.value) toast.success(t('teacher.courses.testAttached'))
-  attachTestId.value = ''
+  attaching.value = false
 }
 
 async function onFileSelected(event: Event) {
@@ -231,24 +233,7 @@ onMounted(load)
         <ClipboardList class="size-3.5" aria-hidden="true" />
         {{ t('teacher.courses.noTests') }}
       </p>
-      <form v-if="availableTests.length" class="mt-3 flex gap-2" @submit.prevent="attach">
-        <select
-          v-model="attachTestId"
-          class="w-full max-w-52 rounded-lg border border-outline bg-surface px-3 py-1.5 text-sm outline-none focus:border-outline"
-        >
-          <option value="" disabled>{{ t('teacher.courses.attachTest') }}</option>
-          <option v-for="test in availableTests" :key="test.id" :value="test.id">
-            {{ test.title }}
-          </option>
-        </select>
-        <button
-          type="submit"
-          :disabled="!attachTestId"
-          class="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:opacity-90 disabled:opacity-60"
-        >
-          {{ t('teacher.courses.attach') }}
-        </button>
-      </form>
+      <TestPicker :tests="availableTests" :busy="attaching" @select="attach" />
     </section>
 
     <!-- materials -->
@@ -257,9 +242,9 @@ onMounted(load)
         {{ t('teacher.courses.materials') }} ({{ course.materials.length }})
       </h5>
       <ul v-if="course.materials.length" class="mt-3 space-y-1.5">
-        <li v-for="material in course.materials" :key="material.id" class="flex items-center gap-2 text-sm">
+        <li v-for="material in course.materials" :key="material.id" class="flex flex-wrap items-center gap-2 text-sm">
+          <MaterialBadge :title="material.title" :mime-type="material.mimeType" />
           <span class="flex min-w-0 flex-1 items-center gap-1.5 truncate text-on-surface">
-            <Paperclip class="size-3.5 shrink-0 text-on-surface-variant" aria-hidden="true" />
             {{ material.title }}
           </span>
           <span class="shrink-0 text-xs text-on-surface-variant">{{ formatBytes(material.sizeBytes) }}</span>
