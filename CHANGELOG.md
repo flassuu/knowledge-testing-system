@@ -97,6 +97,24 @@ versioning follows [SemVer](https://semver.org/).
   `border-l-rose-500`, `border-l-slate-500`), which broke the dark theme and
   the "semantic tokens only" rule — now `border-l-success/error/outline`.
 - **Fixed:** the "+" glyph buttons in the question editor became Lucide icons.
+- **Fixed: black screen for brand-new teacher accounts.** A teacher with no
+  tests and no courses mounts `<EmptyState/>`, and its `withDefaults()` used a
+  Lucide icon as the default for the `actionIcon` prop. Vue treats a function
+  default as a factory and calls it — `Plus(props, undefined)` — while Lucide
+  icons are functional components that destructure their second argument, so
+  every mount threw `TypeError: Cannot destructure property 'slots'` and unmounted
+  the whole app (dark theme: a black screen). The fallback moved into the
+  template (`actionIcon ?? Plus`) and the reason is documented in the component.
+- **Fixed: throwing i18n messages in the admin dashboard.** `admin.blockConfirm`
+  and `admin.bulk.selectUser` used `@{username}`, which vue-i18n reads as
+  *linked-message* syntax rather than a placeholder; compiling them threw
+  `SyntaxError` while rendering the users table. They are plain `{username}`
+  placeholders now (en and uk).
+- **Added:** `pnpm --filter @testing-system/web-client test` — six `node:test`
+  checks that compile and resolve every message in both locales, reject
+  accidental plural/linked syntax (`|`, `@{`), assert that `uk` mirrors the `en`
+  key structure, and that interpolated placeholders match across locales. This
+  is what catches the class of bug above at build time.
 
 ### Changed
 - **UI/UX polish batch 3 (v0.1.1): light + dark themes.** The whole UI now
