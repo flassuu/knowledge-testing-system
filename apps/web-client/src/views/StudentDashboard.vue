@@ -30,6 +30,23 @@ const futureCards = [
   { key: 'results', icon: TrendingUp, phase: '4' },
 ] as const
 
+/**
+ * A teacher can hand out a link (or a QR of it) that lands the student straight
+ * on the join card with the code filled in.
+ */
+function codeFromLink(): string {
+  const fromQuery = new URLSearchParams(window.location.search).get('join')
+  if (fromQuery) return fromQuery.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)
+  return ''
+}
+
+function clearCodeFromLink(): void {
+  if (!new URLSearchParams(window.location.search).has('join')) return
+  const url = new URL(window.location.href)
+  url.searchParams.delete('join')
+  window.history.replaceState(null, '', url.toString())
+}
+
 function joinErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return t('student.errors.joinFailed')
   if (error.code === 'NOT_FOUND') return t('student.errors.noSuchCode')
@@ -45,6 +62,7 @@ async function join(): Promise<void> {
   try {
     state.value = await joinSession(code.value)
     code.value = ''
+    clearCodeFromLink()
   } catch (error) {
     joinError.value = joinErrorMessage(error)
   } finally {
@@ -57,6 +75,9 @@ async function showResult(sessionId: string): Promise<void> {
   loadError.value = ''
   try {
     result.value = await getSessionResult(sessionId)
+    // The paper is spent: leaving the result must land on the home screen, not
+    // on a stale runner for a session that can no longer be submitted.
+    state.value = null
   } catch (error) {
     loadError.value = t('student.errors.resultFailed')
   } finally {
@@ -83,7 +104,10 @@ function leaveRunner(): void {
   void resume()
 }
 
-onMounted(resume)
+onMounted(() => {
+  code.value = codeFromLink()
+  void resume()
+})
 </script>
 
 <template>
@@ -118,6 +142,13 @@ onMounted(resume)
           class="mt-4 w-full rounded-xl border border-outline bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface hover:bg-surface-container-high"
         >
           {{ t('student.result.back') }}
+        </button>
+        <button
+          type="button"
+          @click="resume()"
+          class="mt-2 w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90"
+        >
+          {{ t('student.result.joinAnother') }}
         </button>
       </template>
 

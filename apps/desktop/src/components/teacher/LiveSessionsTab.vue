@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   CircleCheck,
   CircleX,
   Copy,
+  Link2,
   Pause,
   Play,
   Radio,
@@ -14,12 +15,10 @@ import {
 } from '@lucide/vue'
 import { ApiError } from '../../api/client'
 import {
-  getParticipants,
   listSessions,
   setSessionStatus,
   startSession,
   type LiveSessionStatus,
-  type ParticipantEntry,
   type SessionSummary,
 } from '../../api/sessions'
 import type { TestSummary } from '../../api/types'
@@ -27,6 +26,7 @@ import EmptyState from '../common/EmptyState.vue'
 import SkeletonList from '../common/SkeletonList.vue'
 import TestPicker from './TestPicker.vue'
 import { useConfirm } from '../../composables/confirm'
+import { useSessionChannel } from '../../composables/sessionChannel'
 import { useToast } from '../../composables/toast'
 
 const props = defineProps<{
@@ -38,21 +38,20 @@ const confirm = useConfirm()
 const toast = useToast()
 
 const sessions = ref<SessionSummary[]>([])
-const participants = ref<ParticipantEntry[]>([])
 const selectedId = ref('')
 const loading = ref(false)
-const boardLoading = ref(false)
 const errorKey = ref('')
 const actionError = ref('')
 const starting = ref(false)
 const startingTestId = ref('')
 const showStart = ref(false)
-const boardStatus = ref<LiveSessionStatus>('active')
 const copied = ref(false)
+const linkCopied = ref(false)
 
-/** The board refreshes on a timer; the WebSocket hub replaces this later. */
-const BOARD_INTERVAL_MS = 4000
-let poller: number | undefined
+/** The server pushes the board over a WebSocket; polling is the fallback. */
+const channel = useSessionChannel()
+const participants = channel.participants
+const boardStatus = channel.status
 
 const selected = computed(() => sessions.value.find((session) => session.id === selectedId.value) ?? null)
 const submittedCount = computed(
@@ -96,23 +95,6 @@ async function load(): Promise<void> {
   }
 }
 
-async function refreshBoard(): Promise<void> {
-  if (!selectedId.value) return
-  boardLoading.value = true
-  try {
-    const board = await getParticipants(selectedId.value)
-    participants.value = board.participants
-    boardStatus.value = board.session.status
-  } catch (error) {
-    // A single failed poll must not clear the board; the next tick retries.
-    if (!(error instanceof ApiError && error.code === 'NETWORK')) {
-      actionError.value = errorMessage(error)
-    }
-  } finally {
-    boardLoading.value = false
-  }
-}
-
 async function start(testId: string): Promise<void> {
   starting.value = true
   actionError.value = ''
@@ -144,58 +126,52 @@ async function changeStatus(status: LiveSessionStatus): Promise<void> {
   }
   actionError.value = ''
   try {
-    const session = await setSessionStatus(selected.value.id, status)
-    boardStatus.value = session.status
-    await Promise.all([load(), refreshBoard()])
-    if (status === 'finished') stopPolling()
+    await setSessionStatus(selected.value.id, status)
+    await load()
   } catch (error) {
     actionError.value = errorMessage(error)
   }
 }
 
-async function copyCode(): Promise<void> {
-  if (!selected.value) return
-  const code = selected.value.joinCode
+async function writeClipboard(value: string, flag: 'code' | 'link'): Promise<void> {
   try {
-    await navigator.clipboard.writeText(code)
-    copied.value = true
+    await navigator.clipboard.writeText(value)
+    if (flag === 'code') copied.value = true
+    else linkCopied.value = true
     window.setTimeout(() => {
-      copied.value = false
+      if (flag === 'code') copied.value = false
+      else linkCopied.value = false
     }, 1500)
   } catch {
-    // Clipboard is blocked in some contexts; the code is on screen anyway.
+    // Clipboard is blocked in some contexts; the value is on screen anyway.
     actionError.value = t('teacher.live.copyFailed')
   }
 }
 
-function startPolling(): void {
-  stopPolling()
-  poller = window.setInterval(() => void refreshBoard(), BOARD_INTERVAL_MS)
+function copyCode(): Promise<void> {
+  return selected.value ? writeClipboard(selected.value.joinCode, 'code') : Promise.resolve()
 }
 
-function stopPolling(): void {
-  if (poller !== undefined) {
-    window.clearInterval(poller)
-    poller = undefined
-  }
+/** A link the teacher can paste into a chat; the student lands pre-filled. */
+function joinLink(): string {
+  if (!selected.value) return ''
+  const url = new URL(window.location.href)
+  url.search = ''
+  url.hash = ''
+  url.searchParams.set('join', selected.value.joinCode)
+  return url.toString()
 }
 
-watch(
-  selectedId,
-  async (id) => {
-    participants.value = []
-    if (!id) {
-      stopPolling()
-      return
-    }
-    await refreshBoard()
-    if (boardStatus.value === 'active') startPolling()
-    else stopPolling()
-  },
-)
+function copyLink(): Promise<void> {
+  return writeClipboard(joinLink(), 'link')
+}
+
+watch(selectedId, (id) => {
+  if (id) channel.connect(id)
+  else channel.disconnect()
+})
 
 onMounted(load)
-onBeforeUnmount(stopPolling)
 </script>
 
 <template>
@@ -319,6 +295,17 @@ onBeforeUnmount(stopPolling)
               <Copy v-else class="size-3.5" aria-hidden="true" />
               {{ copied ? t('teacher.live.copied') : t('teacher.live.copy') }}
             </button>
+            <p class="mt-2 text-[11px] text-on-surface-variant">
+              {{ t('teacher.live.linkHint') }}
+            </p>
+            <button
+              type="button"
+              @click="copyLink"
+              class="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-on-surface-variant hover:text-on-surface"
+            >
+              <Link2 class="size-3.5" aria-hidden="true" />
+              {{ linkCopied ? t('teacher.live.copied') : t('teacher.live.copyLink') }}
+            </button>
           </div>
         </div>
 
@@ -351,8 +338,15 @@ onBeforeUnmount(stopPolling)
             {{ t('teacher.live.finish') }}
           </button>
           <span class="inline-flex items-center gap-1.5 text-xs text-on-surface-variant">
-            <RotateCw class="size-3.5" :class="boardLoading ? 'animate-spin' : ''" aria-hidden="true" />
+            <RotateCw
+              class="size-3.5"
+              :class="channel.connected.value ? 'text-success' : 'text-warning'"
+              aria-hidden="true"
+            />
             {{ t('teacher.live.board', { done: submittedCount, joined: participants.length }) }}
+            <span class="sr-only">
+              {{ channel.connected.value ? t('teacher.live.live') : t('teacher.live.polling') }}
+            </span>
           </span>
         </div>
       </section>
