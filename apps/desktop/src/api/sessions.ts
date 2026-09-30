@@ -89,6 +89,19 @@ export interface ParticipantEntry {
   submittedAt: string | null
 }
 
+/** A session with the counts the board needs. */
+export interface SessionSummary extends LiveSession {
+  title: string
+  joinedCount: number
+  submittedCount: number
+}
+
+/** Teacher only: their own sessions (an admin sees every teacher's). */
+export async function listSessions(): Promise<SessionSummary[]> {
+  const result = await apiFetch<{ sessions: SessionSummary[] }>('/api/sessions')
+  return result.sessions
+}
+
 /** Teacher only: starts a run of one of their tests. */
 export async function startSession(testId: string): Promise<LiveSession> {
   const result = await apiFetch<{ session: LiveSession }>('/api/sessions', {
