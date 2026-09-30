@@ -14,6 +14,7 @@ import {
 } from '../../api/courses'
 import { listTests } from '../../api/tests'
 import type { CourseDetails, Material, TestSummary } from '../../api/types'
+import { useConfirm } from '../../composables/confirm'
 
 const props = defineProps<{
   courseId: string
@@ -22,6 +23,7 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>()
 
 const { t } = useI18n()
+const confirm = useConfirm()
 
 const course = ref<CourseDetails | null>(null)
 const loading = ref(false)
@@ -87,8 +89,14 @@ async function enroll() {
   enrollUsername.value = ''
 }
 
-async function detach(testId: string) {
+async function detach(testId: string, testTitle: string) {
+  if (!(await confirm({ message: t('teacher.courses.detachConfirm', { title: testTitle }) }))) return
   await run(() => detachTest(props.courseId, testId))
+}
+
+async function unenroll(student: { id: string; fullName: string }) {
+  if (!(await confirm({ message: t('teacher.courses.unenrollConfirm', { name: student.fullName }) }))) return
+  await run(() => unenrollStudent(props.courseId, student.id))
 }
 
 async function attach() {
@@ -114,7 +122,7 @@ async function download(material: Material) {
 }
 
 async function removeCourse() {
-  if (!window.confirm(t('teacher.courses.deleteConfirm'))) return
+  if (!(await confirm({ message: t('teacher.courses.deleteConfirm') }))) return
   await run(() => deleteCourse(props.courseId))
   emit('close')
 }
@@ -160,7 +168,7 @@ onMounted(load)
           </span>
           <button
             type="button"
-            @click="run(() => unenrollStudent(courseId, student.id))"
+            @click="unenroll(student)"
             class="shrink-0 rounded border border-rose-200 px-2 py-0.5 text-xs font-semibold text-rose-600 hover:bg-rose-50"
           >
             {{ t('teacher.courses.unenroll') }}
@@ -198,7 +206,7 @@ onMounted(load)
           <span class="min-w-0 truncate text-slate-700">{{ test.title }}</span>
           <button
             type="button"
-            @click="detach(test.id)"
+            @click="detach(test.id, test.title)"
             class="shrink-0 rounded border border-rose-200 px-2 py-0.5 text-xs font-semibold text-rose-600 hover:bg-rose-50"
           >
             {{ t('teacher.courses.detach') }}

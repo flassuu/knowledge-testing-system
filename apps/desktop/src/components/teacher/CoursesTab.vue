@@ -5,8 +5,10 @@ import { ApiError } from '../../api/client'
 import { createCourse, deleteCourse, listCourses } from '../../api/courses'
 import type { CourseSummary } from '../../api/types'
 import CourseDetails from './CourseDetails.vue'
+import { useConfirm } from '../../composables/confirm'
 
 const { t } = useI18n()
+const confirm = useConfirm()
 
 const courses = ref<CourseSummary[]>([])
 const loading = ref(false)
@@ -60,7 +62,7 @@ async function create() {
 }
 
 async function remove(course: CourseSummary) {
-  if (!window.confirm(t('teacher.courses.deleteConfirm'))) return
+  if (!(await confirm({ message: t('teacher.courses.deleteConfirm') }))) return
   try {
     await deleteCourse(course.id)
     await load()

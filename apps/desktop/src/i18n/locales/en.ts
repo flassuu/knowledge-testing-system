@@ -18,6 +18,8 @@ export default {
     chooseRoleHint: 'Choose how you are signing in — the UI adapts to your role.',
     username: 'Username',
     password: 'Password',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
     fullName: 'Full name',
     confirmPassword: 'Confirm password',
     signIn: 'Sign in',
@@ -62,6 +64,7 @@ export default {
     empty: 'No users match these filters.',
     approve: 'Approve',
     block: 'Block',
+    blockConfirm: 'Block @{username}? They will be signed out immediately and cannot sign in again until unblocked.',
     newTeacher: 'New teacher',
     cancel: 'Cancel',
     teacherForm: {
@@ -192,6 +195,8 @@ export default {
       noMaterials: 'No materials yet.',
       deleteCourse: 'Delete course',
       studentNotFound: 'No student with that username.',
+      unenrollConfirm: 'Remove {name} from this course?',
+      detachConfirm: 'Detach "{title}" from this course?',
     },
     errors: {
       generic: 'Something went wrong. Please try again.',
@@ -223,6 +228,8 @@ export default {
   common: {
     language: 'Language',
     loading: 'Loading…',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
   },
   footer: {
     message: 'Runs entirely on the local network — no internet required.',

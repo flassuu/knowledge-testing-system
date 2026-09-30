@@ -15,8 +15,12 @@ const { signIn } = useAuth()
 const selectedRole = ref<UserRole>('student')
 const username = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const errorKey = ref('')
 const submitting = ref(false)
+
+const LAST_USERNAME_KEY = 'auth.lastUsername'
+const LAST_ROLE_KEY = 'auth.lastRole'
 
 const roles: Array<{ role: UserRole; icon: string }> = [
   { role: 'student', icon: '🎓' },
@@ -30,9 +34,25 @@ const usernamePlaceholder = computed(() => {
   return 'student1'
 })
 
+function selectRole(role: UserRole) {
+  selectedRole.value = role
+  localStorage.setItem(LAST_ROLE_KEY, role)
+}
+
 onMounted(() => {
-  // Convenience hint for local demos: prefill the built-in admin login.
-  if (selectedRole.value === 'admin') username.value = 'admin'
+  // Restore the last successful sign-in (role + username) so returning
+  // users only type the password.
+  const savedRole = localStorage.getItem(LAST_ROLE_KEY)
+  if (savedRole && roles.some((entry) => entry.role === savedRole)) {
+    selectedRole.value = savedRole as UserRole
+  }
+  const savedUsername = localStorage.getItem(LAST_USERNAME_KEY)
+  if (savedUsername) {
+    username.value = savedUsername
+  } else if (selectedRole.value === 'admin') {
+    // Convenience hint for local demos: prefill the built-in admin login.
+    username.value = 'admin'
+  }
 })
 
 function errorMessage(key: string): string {
@@ -55,6 +75,9 @@ async function submit() {
   submitting.value = true
   try {
     await signIn(username.value.trim(), password.value)
+    // Only persist on success so typos never overwrite the saved username.
+    localStorage.setItem(LAST_USERNAME_KEY, username.value.trim())
+    localStorage.setItem(LAST_ROLE_KEY, selectedRole.value)
   } catch (error) {
     errorKey.value = error instanceof ApiError ? error.code : ''
   } finally {
@@ -89,7 +112,7 @@ async function submit() {
           v-for="{ role, icon } in roles"
           :key="role"
           type="button"
-          @click="selectedRole = role"
+          @click="selectRole(role)"
           class="flex flex-col items-center gap-1 rounded-xl border px-2 py-3 text-xs font-semibold transition-colors"
           :class="
             selectedRole === role
@@ -120,13 +143,24 @@ async function submit() {
           <span class="text-xs font-medium text-slate-500">
             {{ t('auth.password') }}
           </span>
-          <input
-            v-model="password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="••••••••"
-            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-          />
+          <div class="relative mt-1">
+            <input
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              autocomplete="current-password"
+              placeholder="••••••••"
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm outline-none focus:border-slate-500"
+            />
+            <button
+              type="button"
+              :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+              :title="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+              @click="showPassword = !showPassword"
+              class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 transition-colors hover:text-slate-600"
+            >
+              <span aria-hidden="true" class="text-base">{{ showPassword ? '🙈' : '👁️' }}</span>
+            </button>
+          </div>
         </label>
 
         <p

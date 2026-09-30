@@ -3,9 +3,11 @@ import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { listUsers, setUserStatus, createUser } from '../../api/users'
 import { ApiError } from '../../api/client'
+import { useConfirm } from '../../composables/confirm'
 import type { PublicUser, UserRole, UserStatus } from '../../api/types'
 
 const { t } = useI18n()
+const confirm = useConfirm()
 
 const users = ref<PublicUser[]>([])
 const loading = ref(false)
@@ -48,6 +50,12 @@ async function load() {
 }
 
 async function changeStatus(user: PublicUser, status: UserStatus) {
+  if (status === 'blocked') {
+    const ok = await confirm({
+      message: t('admin.blockConfirm', { username: user.username }),
+    })
+    if (!ok) return
+  }
   busyId.value = user.id
   try {
     await setUserStatus(user.id, status)

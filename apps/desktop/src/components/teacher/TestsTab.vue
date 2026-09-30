@@ -11,8 +11,10 @@ import {
   type QuestionForm,
 } from './questionForm'
 import QuestionEditor from './QuestionEditor.vue'
+import { useConfirm } from '../../composables/confirm'
 
 const { t } = useI18n()
+const confirm = useConfirm()
 
 const tests = ref<TestSummary[]>([])
 const loading = ref(false)
@@ -126,7 +128,7 @@ async function save() {
 }
 
 async function remove(test: TestSummary) {
-  if (!window.confirm(t('teacher.tests.deleteConfirm'))) return
+  if (!(await confirm({ message: t('teacher.tests.deleteConfirm') }))) return
   busyId.value = test.id
   try {
     await deleteTest(test.id)

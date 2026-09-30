@@ -1,40 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { useAuth } from './stores/auth'
 import LoginView from './views/LoginView.vue'
 import RegisterView from './views/RegisterView.vue'
 import AdminDashboard from './views/AdminDashboard.vue'
 import TeacherDashboard from './views/TeacherDashboard.vue'
 import StudentDashboard from './views/StudentDashboard.vue'
+import ConfirmDialog from './components/common/ConfirmDialog.vue'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const { status, user, initialize } = useAuth()
 
 const mode = ref<'login' | 'register'>('login')
-
-// Course-project touch: author's name in the window title, localized.
-const windowTitles: Record<string, string> = {
-  en: 'Maksym Halushechenko — Knowledge Testing',
-  uk: 'Максим Галущенко — Тестування знань',
-}
-
-function isTauri(): boolean {
-  return '__TAURI_INTERNALS__' in window
-}
-
-watch(
-  locale,
-  (lang) => {
-    if (!isTauri()) return
-    // Best-effort: WebView-only call, safe to ignore outside Tauri.
-    void getCurrentWebviewWindow().setTitle(
-      windowTitles[lang] ?? windowTitles.en,
-    )
-  },
-  { immediate: true },
-)
 
 onMounted(() => void initialize())
 
@@ -59,4 +37,5 @@ const screen = computed<Screen>(() => {
   <AdminDashboard v-else-if="screen === 'admin'" />
   <TeacherDashboard v-else-if="screen === 'teacher'" />
   <StudentDashboard v-else-if="screen === 'student'" />
+  <ConfirmDialog />
 </template>

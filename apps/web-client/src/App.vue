@@ -7,6 +7,7 @@ import RegisterView from './views/RegisterView.vue'
 import AdminDashboard from './views/AdminDashboard.vue'
 import TeacherDashboard from './views/TeacherDashboard.vue'
 import StudentDashboard from './views/StudentDashboard.vue'
+import ConfirmDialog from './components/common/ConfirmDialog.vue'
 
 const { t } = useI18n()
 const { status, user, initialize } = useAuth()
@@ -36,4 +37,5 @@ const screen = computed<Screen>(() => {
   <AdminDashboard v-else-if="screen === 'admin'" />
   <TeacherDashboard v-else-if="screen === 'teacher'" />
   <StudentDashboard v-else-if="screen === 'student'" />
+  <ConfirmDialog />
 </template>

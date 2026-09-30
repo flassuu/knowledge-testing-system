@@ -20,6 +20,8 @@ const uk: typeof en = {
     chooseRoleHint: 'Оберіть, під якою роллю входите — інтерфейс зміниться відповідно.',
     username: 'Ім\'я користувача',
     password: 'Пароль',
+    showPassword: 'Показати пароль',
+    hidePassword: 'Сховати пароль',
     fullName: 'Повне ім\'я',
     confirmPassword: 'Підтвердіть пароль',
     signIn: 'Увійти',
@@ -64,6 +66,7 @@ const uk: typeof en = {
     empty: 'Немає користувачів за цими фільтрами.',
     approve: 'Підтвердити',
     block: 'Заблокувати',
+    blockConfirm: 'Заблокувати @{username}? Його буде негайно виведено з системи, і він не зможе увійти, поки не розблокували.',
     newTeacher: 'Новий викладач',
     cancel: 'Скасувати',
     teacherForm: {
@@ -194,6 +197,8 @@ const uk: typeof en = {
       noMaterials: 'Матеріалів ще немає.',
       deleteCourse: 'Видалити курс',
       studentNotFound: 'Немає студента з таким іменем користувача.',
+      unenrollConfirm: 'Видалити {name} з курсу?',
+      detachConfirm: 'Відкріпити тест «{title}» від курсу?',
     },
     errors: {
       generic: 'Щось пішло не так. Спробуйте ще раз.',
@@ -225,6 +230,8 @@ const uk: typeof en = {
   common: {
     language: 'Мова',
     loading: 'Завантаження…',
+    cancel: 'Скасувати',
+    confirm: 'Підтвердити',
   },
   footer: {
     message: 'Працює повністю в локальній мережі — інтернет не потрібен.',
