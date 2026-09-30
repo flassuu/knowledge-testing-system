@@ -15,6 +15,7 @@ import {
 import { listTests } from '../../api/tests'
 import type { CourseDetails, Material, TestSummary } from '../../api/types'
 import { useConfirm } from '../../composables/confirm'
+import { useToast } from '../../composables/toast'
 
 const props = defineProps<{
   courseId: string
@@ -24,6 +25,7 @@ const emit = defineEmits<{ close: [] }>()
 
 const { t } = useI18n()
 const confirm = useConfirm()
+const toast = useToast()
 
 const course = ref<CourseDetails | null>(null)
 const loading = ref(false)
@@ -86,30 +88,35 @@ async function enroll() {
   const username = enrollUsername.value.trim()
   if (!username) return
   await run(() => enrollStudent(props.courseId, username))
+  if (!actionError.value) toast.success(t('teacher.courses.enrolled', { name: username }))
   enrollUsername.value = ''
 }
 
 async function detach(testId: string, testTitle: string) {
   if (!(await confirm({ message: t('teacher.courses.detachConfirm', { title: testTitle }) }))) return
   await run(() => detachTest(props.courseId, testId))
+  if (!actionError.value) toast.success(t('teacher.courses.testDetached'))
 }
 
 async function unenroll(student: { id: string; fullName: string }) {
   if (!(await confirm({ message: t('teacher.courses.unenrollConfirm', { name: student.fullName }) }))) return
   await run(() => unenrollStudent(props.courseId, student.id))
+  if (!actionError.value) toast.success(t('teacher.courses.unenrolled', { name: student.fullName }))
 }
 
 async function attach() {
   if (!attachTestId.value) return
   await run(() => attachTest(props.courseId, attachTestId.value))
+  if (!actionError.value) toast.success(t('teacher.courses.testAttached'))
   attachTestId.value = ''
 }
 
-function onFileSelected(event: Event) {
+async function onFileSelected(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-  void run(() => uploadMaterial(props.courseId, file))
+  await run(() => uploadMaterial(props.courseId, file))
+  if (!actionError.value) toast.success(t('teacher.courses.materialUploaded'))
   input.value = ''
 }
 
@@ -124,6 +131,7 @@ async function download(material: Material) {
 async function removeCourse() {
   if (!(await confirm({ message: t('teacher.courses.deleteConfirm') }))) return
   await run(() => deleteCourse(props.courseId))
+  if (!actionError.value) toast.success(t('teacher.courses.deleted'))
   emit('close')
 }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from './stores/auth'
 import LoginView from './views/LoginView.vue'
@@ -8,13 +8,35 @@ import AdminDashboard from './views/AdminDashboard.vue'
 import TeacherDashboard from './views/TeacherDashboard.vue'
 import StudentDashboard from './views/StudentDashboard.vue'
 import ConfirmDialog from './components/common/ConfirmDialog.vue'
+import ToastHost from './components/common/ToastHost.vue'
+import OfflineBanner from './components/common/OfflineBanner.vue'
+import { getHealthState, startHealthPolling, stopHealthPolling } from './composables/health'
+import { useToast } from './composables/toast'
 
 const { t } = useI18n()
 const { status, user, initialize } = useAuth()
+const { info } = useToast()
+const health = getHealthState()
 
 const mode = ref<'login' | 'register'>('login')
 
-onMounted(() => void initialize())
+let wasOffline = false
+watch(
+  () => health.status,
+  (healthStatus) => {
+    if (healthStatus === 'offline') wasOffline = true
+    if (healthStatus === 'online' && wasOffline) {
+      wasOffline = false
+      info(t('server.backOnline'))
+    }
+  },
+)
+
+onMounted(() => {
+  void initialize()
+  startHealthPolling()
+})
+onBeforeUnmount(stopHealthPolling)
 
 type Screen = 'loading' | 'login' | 'register' | 'admin' | 'teacher' | 'student'
 
@@ -28,6 +50,7 @@ const screen = computed<Screen>(() => {
 </script>
 
 <template>
+  <OfflineBanner />
   <div v-if="screen === 'loading'" class="flex min-h-dvh items-center justify-center">
     <p class="text-sm text-slate-400">{{ t('common.loading') }}</p>
   </div>
@@ -38,4 +61,5 @@ const screen = computed<Screen>(() => {
   <TeacherDashboard v-else-if="screen === 'teacher'" />
   <StudentDashboard v-else-if="screen === 'student'" />
   <ConfirmDialog />
+  <ToastHost />
 </template>

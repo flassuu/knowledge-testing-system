@@ -6,9 +6,11 @@ import { createCourse, deleteCourse, listCourses } from '../../api/courses'
 import type { CourseSummary } from '../../api/types'
 import CourseDetails from './CourseDetails.vue'
 import { useConfirm } from '../../composables/confirm'
+import { useToast } from '../../composables/toast'
 
 const { t } = useI18n()
 const confirm = useConfirm()
+const toast = useToast()
 
 const courses = ref<CourseSummary[]>([])
 const loading = ref(false)
@@ -52,6 +54,7 @@ async function create() {
   createError.value = ''
   try {
     await createCourse({ title: newTitle.value.trim(), description: newDescription.value.trim() })
+    toast.success(t('teacher.courses.created'))
     newTitle.value = ''
     newDescription.value = ''
     creating.value = false
@@ -65,6 +68,7 @@ async function remove(course: CourseSummary) {
   if (!(await confirm({ message: t('teacher.courses.deleteConfirm') }))) return
   try {
     await deleteCourse(course.id)
+    toast.success(t('teacher.courses.deleted'))
     await load()
   } catch (error) {
     errorKey.value = apiErrorKey(error)

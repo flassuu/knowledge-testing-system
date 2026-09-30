@@ -27,6 +27,16 @@ export function setToken(token: string | null): void {
   else localStorage.removeItem(TOKEN_KEY)
 }
 
+/** Lightweight reachability probe for the offline banner / health polling. */
+export async function checkHealth(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/health', { cache: 'no-store' })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 export interface ErrorEnvelope {
   error?: { code?: string; message?: string }
 }

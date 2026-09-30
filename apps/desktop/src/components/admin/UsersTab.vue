@@ -4,10 +4,12 @@ import { useI18n } from 'vue-i18n'
 import { listUsers, setUserStatus, createUser } from '../../api/users'
 import { ApiError } from '../../api/client'
 import { useConfirm } from '../../composables/confirm'
+import { useToast } from '../../composables/toast'
 import type { PublicUser, UserRole, UserStatus } from '../../api/types'
 
 const { t } = useI18n()
 const confirm = useConfirm()
+const toast = useToast()
 
 const users = ref<PublicUser[]>([])
 const loading = ref(false)
@@ -59,6 +61,9 @@ async function changeStatus(user: PublicUser, status: UserStatus) {
   busyId.value = user.id
   try {
     await setUserStatus(user.id, status)
+    toast.success(
+      status === 'approved' ? t('admin.toastApproved') : t('admin.toastBlocked'),
+    )
     await load()
   } finally {
     busyId.value = ''
@@ -84,6 +89,7 @@ async function createTeacher() {
   creating.value = true
   try {
     await createUser({ username, password: form.value.password, fullName })
+    toast.success(t('admin.toastTeacherCreated'))
     showCreateForm.value = false
     form.value = { username: '', password: '', fullName: '' }
     await load()

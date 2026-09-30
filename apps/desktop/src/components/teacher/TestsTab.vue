@@ -12,9 +12,11 @@ import {
 } from './questionForm'
 import QuestionEditor from './QuestionEditor.vue'
 import { useConfirm } from '../../composables/confirm'
+import { useToast } from '../../composables/toast'
 
 const { t } = useI18n()
 const confirm = useConfirm()
+const toast = useToast()
 
 const tests = ref<TestSummary[]>([])
 const loading = ref(false)
@@ -118,6 +120,7 @@ async function save() {
     }
     if (editingId.value) await updateTest(editingId.value, payload)
     else await createTest(payload)
+    toast.success(editingId.value ? t('teacher.tests.updated') : t('teacher.tests.created'))
     await load()
     isEditing.value = false
   } catch (error) {
@@ -132,6 +135,7 @@ async function remove(test: TestSummary) {
   busyId.value = test.id
   try {
     await deleteTest(test.id)
+    toast.success(t('teacher.tests.deleted'))
     await load()
   } catch (error) {
     errorKey.value = apiErrorKey(error)
