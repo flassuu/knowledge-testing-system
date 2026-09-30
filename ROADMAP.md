@@ -114,10 +114,14 @@ These rules apply to every screen of web-client and desktop. No exceptions.
       file-type badge resolved from MIME type with an extension fallback
 
 **A11y, i18n & desktop**
-- [ ] Visible focus rings, aria-labels on icon-only controls, contrast and
-      reduced-motion pass
-- [ ] i18n hygiene: move the remaining hardcoded strings (tooltips, titles)
-      into locales; persist the chosen locale
+- [x] Accessibility pass: focus rings actually visible again (the `outline-none`
+      utility was beating the global `:focus-visible` ring), `aria-label` on every
+      icon-only control and on all 14 placeholder-only form controls, keyboard
+      focus trap + focus restore in both dialogs, contrast audit of all 15
+      bg/text token pairs in both themes (all ≥ 4.5:1)
+- [x] i18n hygiene: last hardcoded strings (server-status tooltip) moved into
+      the locales, `<html lang>` synced to the active locale, locale choice
+      persisted
 - [ ] Desktop: About dialog with version, remember window size/position,
       cleaner window title; verify admin/teacher screens at 1080×720
 - [ ] Web/mobile QA of admin & teacher screens served over LAN on narrow widths

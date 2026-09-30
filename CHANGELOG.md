@@ -73,6 +73,30 @@ versioning follows [SemVer](https://semver.org/).
   extension fallback (`utils/fileType.ts`).
 - i18n: `common.fileType.*`, `teacher.courses.attachSearch/attachNoMatch/allTestsAttached`
   — en and uk.
+- **UI/UX polish batch 8 (v0.1.1): accessibility and i18n hygiene.**
+  - *Focus rings fixed*: every input carried Tailwind's `outline-none`, whose
+    utility layer beats the global `:focus-visible` rule in `theme.css`, so
+    keyboard focus was invisible app-wide. The utility is gone, focus now
+    changes the border to `primary` and shows the 2 px ring.
+  - *Labelled controls*: `aria-label` on the two icon-only editor buttons
+    (remove option / remove pair) and on all 14 controls that only had a
+    placeholder (admin search and filters, teacher-creation form, question
+    body/type/option/pair inputs, enroll field, test search).
+  - *Dialogs are keyboard-safe*: a shared `useDialogFocus` composable keeps Tab
+    inside the confirm and test-preview panels, closes on Escape and restores
+    focus to the opener.
+  - *Contrast*: all 15 background/text token pairs used in markup reach at
+    least 4.5:1 in the light and the dark theme.
+  - *i18n*: the server-status tooltip moved into the locales, `<html lang>`
+    now follows the active locale and the choice stays persisted;
+    `aria-pressed` marks the active language button.
+  - i18n: `server.recheckHint`, `admin.roleFilter/statusFilter`,
+    `admin.participants.courseFilter`,
+    `teacher.editor.typeLabel/optionLabel/removeOption/removePair` — en and uk.
+- **Fixed:** toast accents used raw palette colours (`border-l-emerald-500`,
+  `border-l-rose-500`, `border-l-slate-500`), which broke the dark theme and
+  the "semantic tokens only" rule — now `border-l-success/error/outline`.
+- **Fixed:** the "+" glyph buttons in the question editor became Lucide icons.
 
 ### Changed
 - **UI/UX polish batch 3 (v0.1.1): light + dark themes.** The whole UI now
