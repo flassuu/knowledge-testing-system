@@ -128,6 +128,43 @@ versioning follows [SemVer](https://semver.org/).
   endpoint is admin-only) and the teacher dashboard has no approval queue. Both
   locales now say administrator.
 
+### Added
+- **Phase 3: the student side, end to end.** The student home was three
+  placeholder cards; it is now a working flow:
+  - *Join* — the six-character code the teacher reads out. The input upper-cases
+    and drops anything that is not a letter or digit, and the server normalises
+    case and stray spaces, so a code pasted from a slide just works.
+  - *The paper* — questions in a per-student order that stays stable across
+    reloads, with every answer key stripped from the payload. All five types
+    render as real inputs: radio, checkboxes, true/false, free text, matching.
+  - *The clock* — corrected for the round trip to the server, so a device with
+    a drifting clock still sees the real deadline. It turns amber in the last
+    minute and submits the paper itself at zero.
+  - *Submit* — with a confirmation that states how many questions are answered.
+  - *Result* — percentage, score, pass mark and a per-question breakdown with
+    the correct answers, marked green or red.
+- **Phase 3: live session API and schema.** `live_sessions`, `participations`
+  and `participation_answers` (schema v4). Teachers start a run of their own
+  test, pause/resume/finish it, read the participant board and review the paper
+  with the answer key. Students join by code, re-read the paper and the clock,
+  submit, and read their graded result. The time limit and pass mark are
+  snapshotted per session, so editing a test mid-run changes nothing.
+- **Scoring engine** (`lib/scoring.ts`) as pure functions over all five
+  question types: option keys for choices (set equality — duplicates never
+  collapse into a match), booleans, trimmed case-insensitive text against the
+  accepted list, and full pair mapping. Unanswered or malformed input scores
+  zero. 32 unit tests.
+- **Timeout handling in two places.** The client clock submits at zero, and
+  every server entry point that grades or closes a session also sweeps expired
+  participations — so a teacher who forgets to end a session costs nobody their
+  attempt: the paper is auto-submitted with zero and the session closes.
+- **20 server integration tests** over the whole cycle, including that no
+  answer key ever reaches a student, that shuffles are stable, and that a
+  second submission is rejected.
+- **Client-side session logic** (`student/sessionLogic.ts`) — what counts as
+  answered, the answer payload per type, the server-corrected clock and its
+  formatting — under 20 new `node:test` cases.
+
 ### Changed
 - **UI/UX polish batch 3 (v0.1.1): light + dark themes.** The whole UI now
   runs on a semantic Material 3 Expressive token layer defined once in

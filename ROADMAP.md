@@ -141,10 +141,22 @@ These rules apply to every screen of web-client and desktop. No exceptions.
 
 ## Phase 3 — Session runtime (v0.3.0, flexible)
 
-- Session lifecycle (create → active → paused → finished), join code + QR
-- Student join flow; deterministic per-student question shuffle
-- Scoring engine (points + percent); auto-submit on timeout
-- WebSocket hub: live participant board on the teacher side
+- [x] Session lifecycle (create → active → paused → finished) with a 6-character
+      join code (no ambiguous 0/O or 1/I glyphs) and snapshots of the test's time
+      limit and pass mark
+- [x] Student join flow; deterministic per-student question shuffle that
+      survives a reload, with every answer key stripped from the payload
+- [x] Scoring engine (points + percent) as pure functions over all five
+      question types, with unit tests
+- [x] Auto-submit on timeout, enforced both in the client clock and by a
+      server-side sweep on every entry point that grades or closes a session
+- [x] Student UI: code entry, the paper with all five input types, a
+      server-corrected countdown, submit with confirmation, graded result with
+      a per-question breakdown
+- [ ] Teacher side UI: start a session from a test, show the join code big,
+      live participant board, pause/finish controls
+- [ ] WebSocket hub so the participant board updates without polling
+- [ ] QR code for the join link
 
 ## Phase 4 — Reporting (v0.4.0, flexible)
 
