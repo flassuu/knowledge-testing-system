@@ -153,8 +153,9 @@ These rules apply to every screen of web-client and desktop. No exceptions.
 - [x] Student UI: code entry, the paper with all five input types, a
       server-corrected countdown, submit with confirmation, graded result with
       a per-question breakdown
-- [ ] Teacher side UI: start a session from a test, show the join code big,
-      live participant board, pause/finish controls
+- [x] Teacher side UI: start a session from a test, join code shown large with
+      a copy button, participant board (polling every 4s) with working markers,
+      percentages and pass badges, pause / resume / finish with confirmation
 - [ ] WebSocket hub so the participant board updates without polling
 - [ ] QR code for the join link
 

@@ -161,6 +161,19 @@ versioning follows [SemVer](https://semver.org/).
 - **20 server integration tests** over the whole cycle, including that no
   answer key ever reaches a student, that shuffles are stable, and that a
   second submission is rejected.
+- **Phase 3: the teacher side.** The teacher dashboard opens on a **Live** tab:
+  start a session from any of your tests, read the join code at a size you can
+  hold up to the room (with a copy button), and control the run with pause,
+  resume and finish — finishing asks for confirmation and says how many students
+  have not submitted yet. The participant board refreshes every four seconds and
+  shows each student's name, a "working" marker while they are still in the
+  paper, and their percentage with a pass badge once they submit; finished
+  results sort to the top. It polls for now; the WebSocket hub replaces that.
+- **`GET /api/sessions`** returns the teacher's own sessions newest first with
+  joined and submitted counts. An admin sees every teacher's, a student gets 403.
+- **README:** a "Testing from a phone" section — the server already binds
+  `0.0.0.0:3300`, so a device on the same network can open
+  `http://<lan-address>:3300` once the web client is built.
 - **Client-side session logic** (`student/sessionLogic.ts`) — what counts as
   answered, the answer payload per type, the server-corrected clock and its
   formatting — under 20 new `node:test` cases.

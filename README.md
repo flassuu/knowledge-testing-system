@@ -66,6 +66,21 @@ pnpm dev:web           # web client on http://localhost:5173
 pnpm dev:desktop       # desktop client (admin / teacher)
 ```
 
+### Testing from a phone
+
+The server binds `0.0.0.0:3300` by default, so once the web client is built
+(`pnpm build:web`) any device on the same network can open it:
+
+```bash
+ip -4 route get 1.1.1.1 | rg -o 'src [0-9.]+'   # this machine's LAN address
+```
+
+Then browse to `http://<that-address>:3300` on the phone. No configuration
+change is needed; if the device cannot connect, the port is blocked by the
+host firewall (allow TCP 3300) or the two devices are on different networks.
+Vite's dev server (`pnpm dev:web`, port 5173) is separate — for phone testing
+use the built client served by the API server, not the Vite port.
+
 ### Production build
 
 ```bash
