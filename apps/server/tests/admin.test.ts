@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildApp, type TestingApp } from '../src/app'
+import { SCHEMA_VERSION } from '../src/lib/db'
 
 // Deterministic admin bootstrap so the seed warning stays quiet in tests.
 process.env.ADMIN_PASSWORD = 'test-admin-password'
@@ -128,7 +129,7 @@ describe('admin insights (stats & participants)', () => {
     expect(res.statusCode).toBe(200)
     const { stats } = res.json() as StatsBody
     expect(stats.database).toBe('ok')
-    expect(stats.schemaVersion).toBe(3)
+    expect(stats.schemaVersion).toBe(SCHEMA_VERSION)
     expect(stats.counts).toMatchObject({
       admins: 1,
       teachers: 1,

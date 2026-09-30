@@ -12,7 +12,7 @@ export function nowIso(): string {
   return new Date().toISOString()
 }
 
-const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 const MIGRATIONS: Array<{ version: number; up: string }> = [
   {
@@ -112,6 +112,56 @@ const MIGRATIONS: Array<{ version: number; up: string }> = [
         created_at TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_materials_course ON materials(course_id);
+    `,
+  },
+  {
+    version: 4,
+    up: `
+      -- A live session is one run of a test that students join with a short code.
+      CREATE TABLE IF NOT EXISTS live_sessions (
+        id               TEXT PRIMARY KEY,
+        test_id          TEXT NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
+        owner_id         TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        join_code        TEXT NOT NULL UNIQUE,
+        status           TEXT NOT NULL CHECK (status IN ('active', 'paused', 'finished')),
+        -- Snapshots of the test settings, so editing the test mid-run is harmless.
+        time_limit_sec   INTEGER,
+        passing_percent  INTEGER,
+        created_at       TEXT NOT NULL,
+        started_at       TEXT NOT NULL,
+        finished_at      TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_live_sessions_owner ON live_sessions(owner_id);
+      CREATE INDEX IF NOT EXISTS idx_live_sessions_status ON live_sessions(status);
+
+      CREATE TABLE IF NOT EXISTS participations (
+        id             TEXT PRIMARY KEY,
+        session_id     TEXT NOT NULL REFERENCES live_sessions(id) ON DELETE CASCADE,
+        user_id        TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status         TEXT NOT NULL CHECK (status IN ('joined', 'submitted', 'auto_submitted')),
+        -- JSON array of question ids: the per-student order stays stable on reload.
+        question_order TEXT NOT NULL,
+        score          INTEGER,
+        max_score      INTEGER,
+        percent        INTEGER,
+        passed         INTEGER,
+        joined_at      TEXT NOT NULL,
+        submitted_at   TEXT,
+        UNIQUE (session_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_participations_session ON participations(session_id);
+      CREATE INDEX IF NOT EXISTS idx_participations_user ON participations(user_id);
+
+      CREATE TABLE IF NOT EXISTS participation_answers (
+        id               TEXT PRIMARY KEY,
+        participation_id TEXT NOT NULL REFERENCES participations(id) ON DELETE CASCADE,
+        question_id      TEXT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+        payload          TEXT NOT NULL,
+        is_correct       INTEGER NOT NULL,
+        points_awarded   INTEGER NOT NULL,
+        UNIQUE (participation_id, question_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_answers_participation ON participation_answers(participation_id);
     `,
   },
 ]
