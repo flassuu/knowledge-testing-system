@@ -15,6 +15,10 @@ export default {
     offlineBanner: 'Server is unreachable — changes are not saved until it reconnects.',
     backOnline: 'Server is back online.',
   },
+  theme: {
+    switchToLight: 'Switch to light theme',
+    switchToDark: 'Switch to dark theme',
+  },
   auth: {
     chooseRole: 'Sign in to your workspace',
     chooseRoleHint: 'Choose how you are signing in — the UI adapts to your role.',
@@ -70,6 +74,24 @@ export default {
     toastApproved: 'User approved.',
     toastBlocked: 'User blocked.',
     toastTeacherCreated: 'Teacher account created.',
+    total: '{count} total',
+    col: {
+      name: 'Name',
+      role: 'Role',
+      status: 'Status',
+      actions: 'Actions',
+      course: 'Course',
+      student: 'Student',
+      enrolled: 'Enrolled',
+    },
+    bulk: {
+      selectAll: 'Select all pending',
+      clearSelection: 'Clear selection',
+      select: 'Select',
+      selectUser: 'Select @{username}',
+      approveSelected: 'Approve selected ({count})',
+      approved: '{count} account(s) approved.',
+    },
     newTeacher: 'New teacher',
     cancel: 'Cancel',
     teacherForm: {

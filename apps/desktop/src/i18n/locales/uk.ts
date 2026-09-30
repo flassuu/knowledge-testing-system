@@ -17,6 +17,10 @@ const uk: typeof en = {
     offlineBanner: 'Сервер недоступний — зміни не зберігаються, доки зʼєднання не відновиться.',
     backOnline: 'Сервер знову в мережі.',
   },
+  theme: {
+    switchToLight: 'Перемкнути на світлу тему',
+    switchToDark: 'Перемкнути на темну тему',
+  },
   auth: {
     chooseRole: 'Вхід у ваш робочий простір',
     chooseRoleHint: 'Оберіть, під якою роллю входите — інтерфейс зміниться відповідно.',
@@ -72,6 +76,24 @@ const uk: typeof en = {
     toastApproved: 'Користувача підтверджено.',
     toastBlocked: 'Користувача заблоковано.',
     toastTeacherCreated: 'Акаунт викладача створено.',
+    total: 'Усього: {count}',
+    col: {
+      name: 'Імʼя',
+      role: 'Роль',
+      status: 'Статус',
+      actions: 'Дії',
+      course: 'Курс',
+      student: 'Студент',
+      enrolled: 'Зараховано',
+    },
+    bulk: {
+      selectAll: 'Вибрати всіх очікуючих',
+      clearSelection: 'Очистити вибір',
+      select: 'Вибрати',
+      selectUser: 'Вибрати @{username}',
+      approveSelected: 'Підтвердити обраних ({count})',
+      approved: 'Підтверджено акаунтів: {count}.',
+    },
     newTeacher: 'Новий викладач',
     cancel: 'Скасувати',
     teacherForm: {
