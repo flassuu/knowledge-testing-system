@@ -91,6 +91,25 @@ dist/releases/   Downloaded CI bundles (gitignored)
 - Mobile-first: build for narrow screens first, desktop is a progressive
   enhancement (web-client especially).
 
+### Design rules (web-client & desktop)
+
+Binding for every screen — the full rationale lives in ROADMAP.md
+("Design rules").
+
+- **Never use emoji in the UI.** Icons come from Lucide
+  (`lucide-vue-next`) only — no pasted emoji or decorative glyphs in
+  markup, buttons, placeholders or labels.
+- Keep **one cohesive style, modelled on Material 3 Expressive**: rounded
+  shape scale (cards `rounded-2xl`, controls `rounded-xl`, chips pill),
+  tonal surfaces instead of flat white, short expressive motion
+  (150–250 ms) on state changes.
+- Apply colour **only through semantic theme tokens** (`bg-surface`,
+  `text-on-surface`, `bg-primary`, …) defined in the Tailwind v4 `@theme`
+  layer — never raw palette classes (`bg-slate-800`, `text-rose-600`), so
+  both themes keep working.
+- Exactly **two themes: light and dark**; no extra palettes and no
+  per-component hard-coded colours.
+
 ## Desktop (Tauri) rules
 
 - Tauri **v2**. Rust in `src-tauri/`. Keep Rust minimal, prefer JS.

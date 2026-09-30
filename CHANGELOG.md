@@ -25,6 +25,30 @@ versioning follows [SemVer](https://semver.org/).
 - i18n: `server.offlineBanner`, `server.backOnline`, toast strings for
   tests/courses/admin actions, `common.dismiss` — en and uk.
 
+### Changed
+- **UI/UX polish batch 3 (v0.1.1): light + dark themes.** The whole UI now
+  runs on a semantic Material 3 Expressive token layer defined once in
+  `theme.css` (`@theme inline`, `:root` / `.dark`): surfaces, on-surface text,
+  outlines plus primary/secondary/error/success/warning and their containers,
+  and a scrim. Every raw palette class was migrated to the tokens, so both
+  themes work everywhere.
+- Dark mode is class-based (`<html class="dark">`) with a **theme switcher**
+  in every header (Sun/Moon icon). The choice is persisted; on first run the
+  OS preference wins. An inline boot script applies the theme before first
+  paint (no light flash), and `theme-color` meta tags follow the OS scheme.
+- Accessibility defaults: a global `:focus-visible` ring and a
+  `prefers-reduced-motion` guard that neutralises transitions/animations.
+- **New design rule** (ROADMAP "Design rules" + AGENTS.md): no emoji in the
+  UI — icons come from Lucide only; one cohesive M3 Expressive style; colour
+  only through semantic theme tokens; exactly two themes (light and dark).
+
+### Added
+- All emoji and decorative glyphs replaced by Lucide icons
+  (`@lucide/vue`): role picker, show/hide password, student phase cards,
+  material rows, back arrow, question/pair removal, matching pairs swap,
+  toast dismissal, theme switcher. **New dependency: `@lucide/vue`**
+  (the deprecated `lucide-vue-next` package is not used).
+
 ## [0.1.0] — 2026-09-25
 
 Phase 1 release: the role-based foundation ships as a testable product —

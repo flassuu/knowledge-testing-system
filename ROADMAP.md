@@ -54,9 +54,32 @@ while development proceeds.
 Nothing new server-side: make everything 0.1.0 already ships feel finished.
 Released as a separate minor so the polish sprint never blocks Phase 2.
 
+### Design rules (binding)
+
+These rules apply to every screen of web-client and desktop. No exceptions.
+
+1. **No emoji in the UI.** Icons come from Lucide (`lucide-vue-next`) only —
+   never paste an emoji or decorative glyph into markup, buttons, placeholders
+   or labels. The single exception is user-authored content (e.g. a material
+   title), which is rendered as-is.
+2. **One cohesive style, modelled on Material 3 Expressive**: rounded shape
+   scale (cards `rounded-2xl`, controls `rounded-xl`, chips pill), tonal
+   surfaces instead of flat white, and short expressive motion (150–250 ms)
+   on state changes.
+3. **Colour only through semantic theme tokens** (`bg-surface`,
+   `text-on-surface`, `bg-primary`, …), never raw palette classes
+   (`bg-slate-800`, `text-rose-600`, …), so light and dark both work.
+4. **Exactly two themes: light and dark.** No extra palettes, no per-component
+   hard-coded colours.
+
 **Design system & states**
 - [ ] Consistency pass: shared spacing/typography tokens, one set of
       buttons/cards/badges/inputs (drop ad-hoc Tailwind class soup)
+- [x] Light/dark theming: semantic M3 Expressive token layer in Tailwind v4
+      (`@theme inline` + `:root`/`.dark`), class-based dark on `<html>`,
+      theme switcher in every header, system preference as first-run default,
+      persisted choice with an anti-flash boot script, global `:focus-visible`
+      ring and `prefers-reduced-motion` guard
 - [ ] State coverage everywhere: empty states with a call-to-action
       (e.g. "no tests yet → Create test"), loading skeletons, inline errors
 - [x] Global toast notifications (success/error) via a shared, dependency-free
