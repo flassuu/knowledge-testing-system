@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getSystemStats } from '../../api/admin'
 import { ApiError } from '../../api/client'
+import SkeletonList from '../common/SkeletonList.vue'
 import type { SystemStats, TableCounts } from '../../api/types'
 
 const { t } = useI18n()
@@ -73,9 +74,7 @@ onMounted(load)
       {{ errorKey === 'NETWORK' ? t('auth.errors.network') : t('auth.errors.generic') }}
     </p>
 
-    <p v-else-if="loading" class="mt-6 text-center text-sm text-on-surface-variant">
-      {{ t('common.loading') }}
-    </p>
+    <SkeletonList v-else-if="loading" class="mt-4" :rows="3" />
 
     <div v-else-if="stats" class="mt-4 space-y-4">
       <section class="rounded-xl border border-outline-variant bg-surface-container p-4">

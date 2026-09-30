@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowDown, ArrowUp, Check } from '@lucide/vue'
+import { ArrowDown, ArrowUp, Check, FilterX, UserX } from '@lucide/vue'
 import { listUsers, setUserStatus, createUser } from '../../api/users'
 import { ApiError } from '../../api/client'
+import EmptyState from '../common/EmptyState.vue'
+import SkeletonList from '../common/SkeletonList.vue'
 import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
 import { useTableSort } from '../../composables/tableSort'
@@ -52,6 +54,18 @@ const { sorted, toggle, ariaSort } = useTableSort(
 )
 
 const pendingUsers = computed(() => users.value.filter((user) => user.status === 'pending'))
+const filtersActive = computed(
+  () =>
+    query.value.trim().length > 0 ||
+    roleFilter.value !== 'all' ||
+    statusFilter.value !== 'all',
+)
+
+function resetFilters(): void {
+  query.value = ''
+  roleFilter.value = 'all'
+  statusFilter.value = 'all'
+}
 const selectableIds = computed(() => pendingUsers.value.map((user) => user.id))
 const allPendingSelected = computed(
   () => selectableIds.value.length > 0 && selectableIds.value.every((id) => selected.value.includes(id)),
@@ -270,13 +284,18 @@ watch([query, roleFilter, statusFilter], () => void load())
       {{ errorKey === 'NETWORK' ? t('auth.errors.network') : t('auth.errors.generic') }}
     </p>
 
-    <p v-else-if="loading" class="mt-6 text-center text-sm text-on-surface-variant">
-      {{ t('common.loading') }}
-    </p>
+    <SkeletonList v-else-if="loading" class="mt-4" variant="table" :rows="5" />
 
-    <div v-else-if="users.length === 0" class="mt-6 text-center text-sm text-on-surface-variant">
-      {{ t('admin.empty') }}
-    </div>
+    <EmptyState
+      v-else-if="users.length === 0"
+      class="mt-4"
+      :icon="UserX"
+      :title="t('admin.emptyTitle')"
+      :description="t('admin.emptyHint')"
+      :action-label="filtersActive ? t('admin.clearFilters') : ''"
+      :action-icon="FilterX"
+      @action="resetFilters"
+    />
 
     <template v-else>
       <!-- bulk bar for pending accounts -->

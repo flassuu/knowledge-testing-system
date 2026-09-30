@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowDown, ArrowUp } from '@lucide/vue'
+import { ArrowDown, ArrowUp, Users } from '@lucide/vue'
 import { listParticipants } from '../../api/admin'
 import { ApiError } from '../../api/client'
+import EmptyState from '../common/EmptyState.vue'
+import SkeletonList from '../common/SkeletonList.vue'
 import { useTableSort } from '../../composables/tableSort'
 import type { ParticipationEntry, UserStatus } from '../../api/types'
 
@@ -92,19 +94,15 @@ onMounted(load)
       {{ errorKey === 'NETWORK' ? t('auth.errors.network') : t('auth.errors.generic') }}
     </p>
 
-    <p
-      v-else-if="loading"
-      class="mt-6 text-center text-sm text-on-surface-variant"
-    >
-      {{ t('common.loading') }}
-    </p>
+    <SkeletonList v-else-if="loading" class="mt-4" variant="table" :rows="5" />
 
-    <p
+    <EmptyState
       v-else-if="filtered.length === 0"
-      class="mt-6 text-center text-sm text-on-surface-variant"
-    >
-      {{ t('admin.participants.empty') }}
-    </p>
+      class="mt-4"
+      :icon="Users"
+      :title="t('admin.participants.emptyTitle')"
+      :description="t('admin.participants.emptyHint')"
+    />
 
     <template v-else>
       <p class="mt-4 text-xs font-semibold text-on-surface-variant">

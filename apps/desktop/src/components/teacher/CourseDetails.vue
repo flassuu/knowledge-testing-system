@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Paperclip } from '@lucide/vue'
+import { ArrowLeft, ClipboardList, Paperclip, Upload, Users } from '@lucide/vue'
 import { ApiError } from '../../api/client'
+import SkeletonList from '../common/SkeletonList.vue'
 import {
   attachTest,
   deleteCourse,
@@ -140,7 +141,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-if="loading" class="mt-6 text-center text-sm text-on-surface-variant">{{ t('common.loading') }}</div>
+  <SkeletonList v-if="loading" class="mt-4" :rows="3" />
 
   <div v-else-if="course" class="mt-4 space-y-4">
     <div class="flex items-center justify-between">
@@ -185,7 +186,10 @@ onMounted(load)
           </button>
         </li>
       </ul>
-      <p v-else class="mt-3 text-xs text-on-surface-variant">{{ t('teacher.courses.noStudents') }}</p>
+      <p v-else class="mt-3 flex items-center gap-1.5 text-xs text-on-surface-variant">
+        <Users class="size-3.5" aria-hidden="true" />
+        {{ t('teacher.courses.noStudents') }}
+      </p>
       <form class="mt-3 flex gap-2" @submit.prevent="enroll">
         <input
           v-model="enrollUsername"
@@ -223,7 +227,10 @@ onMounted(load)
           </button>
         </li>
       </ul>
-      <p v-else class="mt-3 text-xs text-on-surface-variant">{{ t('teacher.courses.noTests') }}</p>
+      <p v-else class="mt-3 flex items-center gap-1.5 text-xs text-on-surface-variant">
+        <ClipboardList class="size-3.5" aria-hidden="true" />
+        {{ t('teacher.courses.noTests') }}
+      </p>
       <form v-if="availableTests.length" class="mt-3 flex gap-2" @submit.prevent="attach">
         <select
           v-model="attachTestId"
@@ -265,9 +272,15 @@ onMounted(load)
           </button>
         </li>
       </ul>
-      <p v-else class="mt-3 text-xs text-on-surface-variant">{{ t('teacher.courses.noMaterials') }}</p>
-      <label class="mt-3 inline-block cursor-pointer rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high">
-        + {{ t('teacher.courses.upload') }}
+      <p v-else class="mt-3 flex items-center gap-1.5 text-xs text-on-surface-variant">
+        <Paperclip class="size-3.5" aria-hidden="true" />
+        {{ t('teacher.courses.noMaterials') }}
+      </p>
+      <label
+        class="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
+      >
+        <Upload class="size-3.5" aria-hidden="true" />
+        {{ t('teacher.courses.upload') }}
         <input type="file" class="hidden" @change="onFileSelected" />
       </label>
     </section>

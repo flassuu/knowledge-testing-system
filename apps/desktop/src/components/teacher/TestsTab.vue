@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Eye, Plus } from '@lucide/vue'
+import { Eye, FileQuestion, Plus } from '@lucide/vue'
 import { ApiError } from '../../api/client'
+import EmptyState from '../common/EmptyState.vue'
+import SkeletonList from '../common/SkeletonList.vue'
 import { createTest, deleteTest, getTest, listTests, updateTest } from '../../api/tests'
 import type { TestSummary } from '../../api/types'
 import {
@@ -294,10 +296,17 @@ onMounted(load)
       <p v-if="errorKey" role="alert" class="mt-4 rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
         {{ showError(errorKey) }}
       </p>
-      <p v-else-if="loading" class="mt-6 text-center text-sm text-on-surface-variant">{{ t('common.loading') }}</p>
-      <p v-else-if="tests.length === 0" class="mt-6 text-center text-sm text-on-surface-variant">
-        {{ t('teacher.tests.empty') }}
-      </p>
+      <SkeletonList v-else-if="loading" class="mt-4" :rows="3" />
+
+      <EmptyState
+        v-else-if="tests.length === 0"
+        class="mt-4"
+        :icon="FileQuestion"
+        :title="t('teacher.tests.emptyTitle')"
+        :description="t('teacher.tests.emptyHint')"
+        :action-label="t('teacher.tests.newTest')"
+        @action="startCreate"
+      />
       <ul v-else class="mt-4 space-y-2">
         <li
           v-for="test in tests"

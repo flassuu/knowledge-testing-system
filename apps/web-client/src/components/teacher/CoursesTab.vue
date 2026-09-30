@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Library, Plus } from '@lucide/vue'
 import { ApiError } from '../../api/client'
+import EmptyState from '../common/EmptyState.vue'
+import SkeletonList from '../common/SkeletonList.vue'
 import { createCourse, deleteCourse, listCourses } from '../../api/courses'
 import type { CourseSummary } from '../../api/types'
 import CourseDetails from './CourseDetails.vue'
@@ -86,9 +89,10 @@ onMounted(load)
         v-if="!creating && !openCourseId"
         type="button"
         @click="creating = true"
-        class="rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success hover:opacity-90"
+        class="inline-flex items-center gap-1.5 rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success hover:opacity-90"
       >
-        + {{ t('teacher.courses.newCourse') }}
+        <Plus class="size-3.5" aria-hidden="true" />
+        {{ t('teacher.courses.newCourse') }}
       </button>
     </div>
 
@@ -136,10 +140,16 @@ onMounted(load)
       <p v-if="errorKey" role="alert" class="mt-4 rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
         {{ showError(errorKey) }}
       </p>
-      <p v-else-if="loading" class="mt-6 text-center text-sm text-on-surface-variant">{{ t('common.loading') }}</p>
-      <p v-else-if="courses.length === 0" class="mt-6 text-center text-sm text-on-surface-variant">
-        {{ t('teacher.courses.empty') }}
-      </p>
+      <SkeletonList v-else-if="loading" class="mt-4" :rows="3" />
+      <EmptyState
+        v-else-if="courses.length === 0"
+        class="mt-4"
+        :icon="Library"
+        :title="t('teacher.courses.emptyTitle')"
+        :description="t('teacher.courses.emptyHint')"
+        :action-label="t('teacher.courses.newCourse')"
+        @action="creating = true"
+      />
       <ul v-else class="mt-4 space-y-2">
         <li
           v-for="course in courses"
