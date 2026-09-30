@@ -11,10 +11,19 @@ versioning follows [SemVer](https://semver.org/).
   (`useConfirm()` + `<ConfirmDialog/>`, Esc/backdrop to cancel, focus moved to
   Cancel) now guards every destructive action in web-client and desktop —
   delete test, delete course, remove student, detach test, block user (was
-  the native `window.confirm`, or none at all).
+  the native `window.confirm`, or none at all). i18n: new keys in en/uk.
 - **Sign-in UX**: "show password" toggle on the login screen; the last
   successful username **and role** are remembered between sessions (only
   persisted on success, so typos never overwrite them).
+- **UI/UX polish batch 2 (v0.1.1)**: global toast notifications
+  (`useToast()` + `<ToastHost/>`, dependency-free) for test/course/student/
+  material and user-management actions, replacing silent saves and one-off
+  alerts; an app-wide **offline banner** plus a "server is back online"
+  toast, both driven by a single shared health poll (`useServerHealth`
+  powers the ServerStatus pill too). Reachability probe `checkHealth()` in
+  the API layer keeps the desktop app pointing at `VITE_API_TARGET`.
+- i18n: `server.offlineBanner`, `server.backOnline`, toast strings for
+  tests/courses/admin actions, `common.dismiss` — en and uk.
 
 ## [0.1.0] — 2026-09-25
 

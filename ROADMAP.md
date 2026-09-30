@@ -59,8 +59,10 @@ Released as a separate minor so the polish sprint never blocks Phase 2.
       buttons/cards/badges/inputs (drop ad-hoc Tailwind class soup)
 - [ ] State coverage everywhere: empty states with a call-to-action
       (e.g. "no tests yet → Create test"), loading skeletons, inline errors
-- [ ] Global toast notifications (success/error) instead of throwaway inline
-      alerts; offline banner when the server goes away mid-session
+- [x] Global toast notifications (success/error) via a shared, dependency-free
+      `useToast()` + `<ToastHost/>` (tests, courses, students, materials, user
+      actions), plus an app-wide offline banner and a "server is back" toast
+      driven by one shared health-poll composable
 
 **Sign-in & auth UX**
 - [x] Enter-to-submit, "show password" toggle, remember the last username
