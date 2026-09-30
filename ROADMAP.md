@@ -49,10 +49,14 @@ while development proceeds.
 - [x] Admin insights: DB health (+ table counts) and participants list
 - [ ] Import/export share format (JSON) — Phase 2 authoring
 
-## Phase 1.1 — UI/UX polish (v0.1.1, next)
+## Phase 1.1 — UI/UX polish (v0.1.1, almost done)
 
 Nothing new server-side: make everything 0.1.0 already ships feel finished.
 Released as a separate minor so the polish sprint never blocks Phase 2.
+
+Batches 1–8 are in. The two items still open below (component consistency
+pass, desktop About dialog) are visual work — they need a real screen and
+window to judge, so they wait for a dedicated pass rather than a blind refactor.
 
 ### Design rules (binding)
 
