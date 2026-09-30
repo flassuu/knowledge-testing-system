@@ -63,17 +63,21 @@ Released as a separate minor so the polish sprint never blocks Phase 2.
       alerts; offline banner when the server goes away mid-session
 
 **Sign-in & auth UX**
-- [ ] Enter-to-submit, "show password", remember the last username,
-      autocomplete attributes, focus management after login/logout
-- [ ] Keep the role picker fast: one click to switch role, no page reload
+- [x] Enter-to-submit, "show password" toggle, remember the last username
+      and role, autocomplete attributes — the role picker switches instantly
+      without a page reload
+- [x] One-click role switching (no reload); focus management after
+      login/logout still open
 
 **Admin dashboard**
+- [x] Confirm dialog before blocking a user (Users tab)
 - [ ] Users/Participants as proper tables on desktop widths (cards stay for
       narrow) with sortable columns and result counts
-- [ ] Bulk approve of pending students; confirm dialogs before block/delete
+- [ ] Bulk approve of pending students; confirm dialogs before user delete
 
 **Teacher workbench**
-- [ ] Confirm dialogs before any destructive delete (test, course, material)
+- [x] Confirm dialogs before destructive deletes: test, course, remove
+      student, detach test (material delete UI not implemented yet)
 - [ ] Editor ergonomics: duplicate a question, reorder questions, live test
       preview before saving
 - [ ] Course page: clearer test-attach picker and file list with type badges

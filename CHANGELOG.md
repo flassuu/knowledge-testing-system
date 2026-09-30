@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **UI/UX polish batch 1 (v0.1.1)**: a styled, dependency-free confirm dialog
+  (`useConfirm()` + `<ConfirmDialog/>`, Esc/backdrop to cancel, focus moved to
+  Cancel) now guards every destructive action in web-client and desktop —
+  delete test, delete course, remove student, detach test, block user (was
+  the native `window.confirm`, or none at all).
+- **Sign-in UX**: "show password" toggle on the login screen; the last
+  successful username **and role** are remembered between sessions (only
+  persisted on success, so typos never overwrite them).
+
 ## [0.1.0] — 2026-09-25
 
 Phase 1 release: the role-based foundation ships as a testable product —
