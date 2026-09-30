@@ -31,10 +31,36 @@ export function applyTheme(): void {
   document.documentElement.classList.toggle('dark', state.mode === 'dark')
 }
 
+/**
+ * Swaps the theme without the strobing you get from restyling every element at
+ * once. Where the View Transition API exists the whole page cross-fades;
+ * elsewhere transitions are muted for a single frame so only the colours move.
+ */
+async function withSmoothSwitch(change: () => void): Promise<void> {
+  const root = document.documentElement
+  const withViewTransition = (
+    document as Document & {
+      startViewTransition?: (update: () => void) => { finished: Promise<void> }
+    }
+  ).startViewTransition
+
+  if (typeof withViewTransition === 'function') {
+    const transition = withViewTransition.call(document, change)
+    await transition.finished.catch(() => undefined)
+    return
+  }
+
+  root.classList.add('theme-switching')
+  change()
+  // Two frames: one to commit the new colours, one to lift the mute.
+  await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+  root.classList.remove('theme-switching')
+}
+
 export function setTheme(mode: ThemeMode): void {
   state.mode = mode
   localStorage.setItem(STORAGE_KEY, mode)
-  applyTheme()
+  void withSmoothSwitch(applyTheme)
 }
 
 export function toggleTheme(): void {

@@ -89,10 +89,8 @@ async function submit() {
 </script>
 
 <template>
-  <main
-    class="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-6 py-10"
-  >
-    <header class="mb-8 flex items-center justify-between">
+  <main class="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-10 pt-6 sm:pt-10">
+    <header class="flex shrink-0 items-center justify-between pb-6">
       <div>
         <h1 class="text-lg font-bold text-on-surface">{{ t('app.name') }}</h1>
         <p class="text-xs text-on-surface-variant">{{ t('app.tagline') }}</p>
@@ -104,6 +102,7 @@ async function submit() {
       </div>
     </header>
 
+    <div class="flex flex-1 flex-col justify-center py-4">
     <section class="rounded-2xl border border-outline-variant bg-surface-container p-6 shadow-sm">
       <h2 class="text-lg font-semibold text-on-surface">
         {{ t('auth.chooseRole') }}
@@ -185,22 +184,25 @@ async function submit() {
       </form>
 
       <div
-        v-if="selectedRole === 'student'"
-        class="mt-4 border-t border-outline-variant pt-4 text-center text-sm"
+        class="mt-4 flex min-h-11 items-center justify-center border-t border-outline-variant pt-4 text-center text-sm"
       >
-        <span class="text-on-surface-variant">{{ t('auth.needAccount') }}</span>
-        <button
-          type="button"
-          class="ml-1 font-semibold text-on-surface underline underline-offset-2"
-          @click="emit('register')"
-        >
-          {{ t('auth.register') }}
-        </button>
+        <template v-if="selectedRole === 'student'">
+          <span class="text-on-surface-variant">{{ t('auth.needAccount') }}</span>
+          <button
+            type="button"
+            class="ml-1 font-semibold text-on-surface underline underline-offset-2"
+            @click="emit('register')"
+          >
+            {{ t('auth.register') }}
+          </button>
+        </template>
+        <span v-else class="text-on-surface-variant">{{ t('auth.accountHint') }}</span>
       </div>
     </section>
 
     <p class="mt-6 text-center text-xs text-on-surface-variant">
       {{ t('footer.message') }}
     </p>
+    </div>
   </main>
 </template>

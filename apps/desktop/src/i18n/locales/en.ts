@@ -33,6 +33,7 @@ export default {
     signOut: 'Sign out',
     register: 'Create account',
     needAccount: 'Student?',
+    accountHint: 'Teacher and administrator accounts are created by an administrator.',
     registerHeading: 'Create a student account',
     registerHint:
       'An administrator has to approve your account before you can sign in.',
@@ -161,6 +162,8 @@ export default {
       started: 'Session started. Join code: {code}',
       codeLabel: 'Students enter this code',
       copy: 'Copy code',
+      copyLink: 'Copy join link',
+      linkHint: 'Or send this link - it fills the code in:',
       copied: 'Copied',
       copyFailed: 'Could not copy — write the code down instead.',
       pause: 'Pause',
@@ -170,6 +173,8 @@ export default {
       finishConfirmOutstand:
         'Finish this session? {count} student(s) have not submitted yet and will be marked as unanswered.',
       board: 'Board: {done} of {joined} submitted',
+      live: 'Live updates on.',
+      polling: 'Live updates unavailable, refreshing periodically.',
       participants: 'Participants',
       noParticipants: 'Nobody has joined yet.',
       working: 'Working…',
@@ -340,11 +345,13 @@ export default {
     result: {
       passed: 'Passed',
       failed: 'Not passed',
+      none: 'Completed',
       score: '{score} of {max} points',
       passMark: 'pass mark {percent}%',
       accepted: 'Accepted answers',
       autoSubmitted: 'The time ran out, so this paper was submitted automatically.',
       back: 'Back to the student home',
+      joinAnother: 'Join another test',
     },
     errors: {
       joinFailed: 'Could not join. Try again in a moment.',
