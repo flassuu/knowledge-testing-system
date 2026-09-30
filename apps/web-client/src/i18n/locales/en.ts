@@ -15,6 +15,10 @@ export default {
     offlineBanner: 'Server is unreachable — changes are not saved until it reconnects.',
     backOnline: 'Server is back online.',
   },
+  theme: {
+    switchToLight: 'Switch to light theme',
+    switchToDark: 'Switch to dark theme',
+  },
   auth: {
     chooseRole: 'Sign in to your workspace',
     chooseRoleHint: 'Choose how you are signing in — the UI adapts to your role.',

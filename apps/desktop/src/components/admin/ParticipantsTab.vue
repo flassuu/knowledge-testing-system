@@ -24,9 +24,9 @@ const filtered = computed(() =>
 )
 
 const statusBadgeClass: Record<UserStatus, string> = {
-  pending: 'bg-amber-50 text-amber-700',
-  approved: 'bg-emerald-50 text-emerald-700',
-  blocked: 'bg-rose-50 text-rose-700',
+  pending: 'bg-warning-container text-on-warning-container',
+  approved: 'bg-success-container text-on-success-container',
+  blocked: 'bg-error-container text-on-error-container',
 }
 
 function formatDate(iso: string): string {
@@ -53,7 +53,7 @@ onMounted(load)
     <div class="flex items-center justify-between gap-2">
       <select
         v-model="courseFilter"
-        class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+        class="rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
       >
         <option value="all">{{ t('admin.participants.allCourses') }}</option>
         <option v-for="course in courses" :key="course" :value="course">
@@ -63,7 +63,7 @@ onMounted(load)
       <button
         type="button"
         @click="load"
-        class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+        class="rounded-lg border border-outline bg-surface px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-high"
       >
         {{ t('admin.refresh') }}
       </button>
@@ -72,36 +72,36 @@ onMounted(load)
     <p
       v-if="errorKey"
       role="alert"
-      class="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700"
+      class="mt-4 rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container"
     >
       {{ errorKey === 'NETWORK' ? t('auth.errors.network') : t('auth.errors.generic') }}
     </p>
 
-    <p v-else-if="loading" class="mt-6 text-center text-sm text-slate-400">
+    <p v-else-if="loading" class="mt-6 text-center text-sm text-on-surface-variant">
       {{ t('common.loading') }}
     </p>
 
     <p
       v-else-if="filtered.length === 0"
-      class="mt-6 text-center text-sm text-slate-400"
+      class="mt-6 text-center text-sm text-on-surface-variant"
     >
       {{ t('admin.participants.empty') }}
     </p>
 
     <div v-else class="mt-4">
-      <p class="text-xs font-semibold text-slate-500">
+      <p class="text-xs font-semibold text-on-surface-variant">
         {{ t('admin.participants.students', { count: filtered.length }) }}
       </p>
       <ul class="mt-2 space-y-2">
         <li
           v-for="entry in filtered"
           :key="`${entry.courseId}-${entry.studentId}`"
-          class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+          class="rounded-xl border border-outline-variant bg-surface-container p-4 shadow-sm"
         >
-          <p class="text-xs font-semibold text-slate-500">{{ entry.courseTitle }}</p>
+          <p class="text-xs font-semibold text-on-surface-variant">{{ entry.courseTitle }}</p>
           <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p class="truncate text-sm font-semibold text-slate-800">{{ entry.fullName }}</p>
-            <p class="text-xs text-slate-400">@{{ entry.username }}</p>
+            <p class="truncate text-sm font-semibold text-on-surface">{{ entry.fullName }}</p>
+            <p class="text-xs text-on-surface-variant">@{{ entry.username }}</p>
             <span
               class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold"
               :class="statusBadgeClass[entry.status]"
@@ -109,7 +109,7 @@ onMounted(load)
               {{ t(`admin.status.${entry.status}`) }}
             </span>
           </div>
-          <p class="mt-1 text-xs text-slate-400">
+          <p class="mt-1 text-xs text-on-surface-variant">
             {{ t('admin.participants.enrolledAt', { date: formatDate(entry.enrolledAt) }) }}
           </p>
         </li>

@@ -24,15 +24,15 @@ const formError = ref('')
 const form = ref({ username: '', password: '', fullName: '' })
 
 const roleBadgeClass: Record<UserRole, string> = {
-  admin: 'bg-violet-100 text-violet-700',
-  teacher: 'bg-sky-100 text-sky-700',
-  student: 'bg-amber-100 text-amber-700',
+  admin: 'bg-primary-container text-on-primary-container',
+  teacher: 'bg-secondary-container text-on-secondary-container',
+  student: 'bg-warning-container text-on-warning-container',
 }
 
 const statusBadgeClass: Record<UserStatus, string> = {
-  pending: 'bg-amber-50 text-amber-700',
-  approved: 'bg-emerald-50 text-emerald-700',
-  blocked: 'bg-rose-50 text-rose-700',
+  pending: 'bg-warning-container text-on-warning-container',
+  approved: 'bg-success-container text-on-success-container',
+  blocked: 'bg-error-container text-on-error-container',
 }
 
 async function load() {
@@ -120,11 +120,11 @@ watch([query, roleFilter, statusFilter], () => void load())
         v-model="query"
         type="search"
         :placeholder="t('admin.searchPlaceholder')"
-        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 sm:max-w-56"
+        class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline sm:max-w-56"
       />
       <select
         v-model="roleFilter"
-        class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+        class="rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
       >
         <option value="all">{{ t('admin.anyRole') }}</option>
         <option value="student">{{ t('role.student') }}</option>
@@ -133,7 +133,7 @@ watch([query, roleFilter, statusFilter], () => void load())
       </select>
       <select
         v-model="statusFilter"
-        class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+        class="rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
       >
         <option value="all">{{ t('admin.anyStatus') }}</option>
         <option value="pending">{{ t('admin.status.pending') }}</option>
@@ -143,14 +143,14 @@ watch([query, roleFilter, statusFilter], () => void load())
       <button
         type="button"
         @click="load"
-        class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+        class="rounded-lg border border-outline bg-surface px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-high"
       >
         {{ t('admin.refresh') }}
       </button>
       <button
         type="button"
         @click="showCreateForm = !showCreateForm"
-        class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+        class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:opacity-90"
       >
         {{ t('admin.newTeacher') }}
       </button>
@@ -158,10 +158,10 @@ watch([query, roleFilter, statusFilter], () => void load())
 
     <form
       v-if="showCreateForm"
-      class="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+      class="mt-4 rounded-xl border border-outline-variant bg-surface-container p-4 shadow-sm"
       @submit.prevent="createTeacher"
     >
-      <h3 class="text-sm font-semibold text-slate-700">
+      <h3 class="text-sm font-semibold text-on-surface">
         {{ t('admin.teacherForm.title') }}
       </h3>
       <div class="mt-3 grid gap-3 sm:grid-cols-2">
@@ -170,7 +170,7 @@ watch([query, roleFilter, statusFilter], () => void load())
           type="text"
           required
           :placeholder="t('admin.teacherForm.fullName')"
-          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
         />
         <input
           v-model="form.username"
@@ -178,7 +178,7 @@ watch([query, roleFilter, statusFilter], () => void load())
           required
           autocomplete="username"
           :placeholder="t('admin.teacherForm.username')"
-          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
         />
         <input
           v-model="form.password"
@@ -186,24 +186,24 @@ watch([query, roleFilter, statusFilter], () => void load())
           required
           autocomplete="new-password"
           :placeholder="t('admin.teacherForm.password')"
-          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 sm:col-span-2"
+          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline sm:col-span-2"
         />
       </div>
-      <p v-if="formError" role="alert" class="mt-3 text-sm text-rose-700">
+      <p v-if="formError" role="alert" class="mt-3 text-sm text-error">
         {{ formError }}
       </p>
       <div class="mt-4 flex justify-end gap-2">
         <button
           type="button"
           @click="showCreateForm = false; formError = ''"
-          class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          class="rounded-lg border border-outline bg-surface px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-high"
         >
           {{ t('admin.cancel') }}
         </button>
         <button
           type="submit"
           :disabled="creating"
-          class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-opacity disabled:opacity-60"
+          class="rounded-lg bg-success px-4 py-2 text-sm font-semibold text-on-success transition-opacity disabled:opacity-60"
         >
           {{ t('admin.teacherForm.create') }}
         </button>
@@ -213,16 +213,16 @@ watch([query, roleFilter, statusFilter], () => void load())
     <p
       v-if="errorKey"
       role="alert"
-      class="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700"
+      class="mt-4 rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container"
     >
       {{ errorKey === 'NETWORK' ? t('auth.errors.network') : t('auth.errors.generic') }}
     </p>
 
-    <p v-else-if="loading" class="mt-6 text-center text-sm text-slate-400">
+    <p v-else-if="loading" class="mt-6 text-center text-sm text-on-surface-variant">
       {{ t('common.loading') }}
     </p>
 
-    <div v-else-if="users.length === 0" class="mt-6 text-center text-sm text-slate-400">
+    <div v-else-if="users.length === 0" class="mt-6 text-center text-sm text-on-surface-variant">
       {{ t('admin.empty') }}
     </div>
 
@@ -230,11 +230,11 @@ watch([query, roleFilter, statusFilter], () => void load())
       <li
         v-for="user in users"
         :key="user.id"
-        class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
+        class="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container p-4 shadow-sm sm:flex-row sm:items-center"
       >
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
-            <p class="truncate text-sm font-semibold text-slate-800">
+            <p class="truncate text-sm font-semibold text-on-surface">
               {{ user.fullName }}
             </p>
             <span
@@ -250,7 +250,7 @@ watch([query, roleFilter, statusFilter], () => void load())
               {{ t(`admin.status.${user.status}`) }}
             </span>
           </div>
-          <p class="mt-0.5 text-xs text-slate-400">@{{ user.username }}</p>
+          <p class="mt-0.5 text-xs text-on-surface-variant">@{{ user.username }}</p>
         </div>
 
         <div
@@ -262,7 +262,7 @@ watch([query, roleFilter, statusFilter], () => void load())
             type="button"
             :disabled="busyId === user.id"
             @click="changeStatus(user, 'approved')"
-            class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-opacity disabled:opacity-60"
+            class="rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success transition-opacity disabled:opacity-60"
           >
             {{ t('admin.approve') }}
           </button>
@@ -271,7 +271,7 @@ watch([query, roleFilter, statusFilter], () => void load())
             type="button"
             :disabled="busyId === user.id"
             @click="changeStatus(user, 'blocked')"
-            class="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60"
+            class="rounded-lg border border-outline-variant px-3 py-1.5 text-xs font-semibold text-on-error-container hover:bg-error-container disabled:opacity-60"
           >
             {{ t('admin.block') }}
           </button>

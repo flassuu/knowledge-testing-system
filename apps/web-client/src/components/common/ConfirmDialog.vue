@@ -35,24 +35,24 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       :aria-label="state.message"
     >
       <div
-        class="absolute inset-0 bg-slate-900/40"
+        class="absolute inset-0 bg-scrim"
         @click="settleConfirm(false)"
       />
-      <div class="relative w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
-        <p class="text-sm text-slate-700">{{ state.message }}</p>
+      <div class="relative w-full max-w-sm rounded-xl bg-surface-container p-5 shadow-xl">
+        <p class="text-sm text-on-surface">{{ state.message }}</p>
         <div class="mt-5 flex justify-end gap-2">
           <button
             ref="cancelRef"
             type="button"
             @click="settleConfirm(false)"
-            class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+            class="rounded-lg border border-outline bg-surface px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-high"
           >
             {{ t('common.cancel') }}
           </button>
           <button
             type="button"
             @click="settleConfirm(true)"
-            class="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+            class="rounded-lg bg-error px-4 py-2 text-sm font-semibold text-on-error hover:opacity-90"
           >
             {{ state.confirmLabel || t('common.confirm') }}
           </button>

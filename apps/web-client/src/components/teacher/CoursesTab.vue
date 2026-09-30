@@ -81,12 +81,12 @@ onMounted(load)
 <template>
   <section>
     <div class="flex items-center justify-between">
-      <h3 class="text-base font-semibold text-slate-800">{{ t('teacher.courses.heading') }}</h3>
+      <h3 class="text-base font-semibold text-on-surface">{{ t('teacher.courses.heading') }}</h3>
       <button
         v-if="!creating && !openCourseId"
         type="button"
         @click="creating = true"
-        class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+        class="rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success hover:opacity-90"
       >
         + {{ t('teacher.courses.newCourse') }}
       </button>
@@ -98,34 +98,34 @@ onMounted(load)
       @close="openCourseId = null; load()"
     />
 
-    <form v-else-if="creating" class="mt-4 space-y-3 rounded-xl border border-slate-200 bg-white p-4" @submit.prevent="create">
+    <form v-else-if="creating" class="mt-4 space-y-3 rounded-xl border border-outline-variant bg-surface-container p-4" @submit.prevent="create">
       <label class="block">
-        <span class="text-xs font-semibold text-slate-500">{{ t('teacher.courses.title') }}</span>
+        <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.courses.title') }}</span>
         <input
           v-model="newTitle"
           type="text"
-          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+          class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
         />
       </label>
       <label class="block">
-        <span class="text-xs font-semibold text-slate-500">{{ t('teacher.courses.description') }}</span>
+        <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.courses.description') }}</span>
         <textarea
           v-model="newDescription"
           rows="2"
-          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+          class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
         />
       </label>
-      <p v-if="createError" role="alert" class="text-sm text-rose-600">
+      <p v-if="createError" role="alert" class="text-sm text-error">
         {{ createError === 'titleRequired' ? t('teacher.form.err.titleRequired') : showError(createError) }}
       </p>
       <div class="flex gap-2">
-        <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+        <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:opacity-90">
           {{ t('teacher.courses.save') }}
         </button>
         <button
           type="button"
           @click="creating = false; createError = ''"
-          class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+          class="rounded-lg border border-outline bg-surface px-4 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high"
         >
           {{ t('teacher.tests.cancel') }}
         </button>
@@ -133,26 +133,26 @@ onMounted(load)
     </form>
 
     <template v-else>
-      <p v-if="errorKey" role="alert" class="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+      <p v-if="errorKey" role="alert" class="mt-4 rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
         {{ showError(errorKey) }}
       </p>
-      <p v-else-if="loading" class="mt-6 text-center text-sm text-slate-400">{{ t('common.loading') }}</p>
-      <p v-else-if="courses.length === 0" class="mt-6 text-center text-sm text-slate-400">
+      <p v-else-if="loading" class="mt-6 text-center text-sm text-on-surface-variant">{{ t('common.loading') }}</p>
+      <p v-else-if="courses.length === 0" class="mt-6 text-center text-sm text-on-surface-variant">
         {{ t('teacher.courses.empty') }}
       </p>
       <ul v-else class="mt-4 space-y-2">
         <li
           v-for="course in courses"
           :key="course.id"
-          class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
+          class="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container p-4 shadow-sm sm:flex-row sm:items-center"
         >
           <button
             type="button"
             class="min-w-0 flex-1 text-left"
             @click="openCourseId = course.id"
           >
-            <p class="truncate text-sm font-semibold text-slate-800">{{ course.title }}</p>
-            <p class="mt-0.5 text-xs text-slate-400">
+            <p class="truncate text-sm font-semibold text-on-surface">{{ course.title }}</p>
+            <p class="mt-0.5 text-xs text-on-surface-variant">
               {{ t('teacher.courses.studentsCount', { count: course.studentsCount }) }} ·
               {{ t('teacher.courses.testsCount', { count: course.testsCount }) }} ·
               {{ t('teacher.courses.materialsCount', { count: course.materialsCount }) }}
@@ -161,7 +161,7 @@ onMounted(load)
           <button
             type="button"
             @click="remove(course)"
-            class="shrink-0 rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+            class="shrink-0 rounded-lg border border-outline-variant px-3 py-1.5 text-xs font-semibold text-on-error-container hover:bg-error-container"
           >
             {{ t('teacher.tests.delete') }}
           </button>

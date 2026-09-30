@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { ArrowLeftRight, X } from '@lucide/vue'
 import { QUESTION_TYPES } from '../../api/types'
 import type { QuestionType } from '../../api/types'
 import type { QuestionForm } from './questionForm'
@@ -51,39 +52,39 @@ function removePair(index: number): void {
 </script>
 
 <template>
-  <fieldset class="rounded-xl border border-slate-200 bg-white p-4">
+  <fieldset class="rounded-xl border border-outline-variant bg-surface-container p-4">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-start">
       <input
         v-model="question.body"
         type="text"
         :placeholder="t('teacher.editor.bodyPlaceholder')"
-        class="w-full flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+        class="w-full flex-1 rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
       />
       <div class="flex items-center gap-2">
         <select
           v-model="question.type"
-          class="rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm outline-none focus:border-slate-500"
+          class="rounded-lg border border-outline bg-surface px-2 py-2 text-sm outline-none focus:border-outline"
         >
           <option v-for="type in QUESTION_TYPES" :key="type" :value="type">
             {{ typeLabel(type) }}
           </option>
         </select>
-        <label class="flex items-center gap-1 text-xs text-slate-500">
+        <label class="flex items-center gap-1 text-xs text-on-surface-variant">
           {{ t('teacher.editor.points') }}
           <input
             v-model.number="question.points"
             type="number"
             min="1"
-            class="w-16 rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm outline-none focus:border-slate-500"
+            class="w-16 rounded-lg border border-outline bg-surface px-2 py-2 text-sm outline-none focus:border-outline"
           />
         </label>
         <button
           type="button"
           @click="emit('remove', index)"
-          class="rounded-lg border border-rose-200 px-2 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+          class="rounded-lg border border-outline-variant px-2 py-2 text-xs font-semibold text-on-error-container hover:bg-error-container"
           :aria-label="t('teacher.editor.removeQuestion')"
         >
-          ✕
+          <X class="size-4" aria-hidden="true" />
         </button>
       </div>
     </div>
@@ -93,7 +94,7 @@ function removePair(index: number): void {
       v-if="question.type === 'single_choice' || question.type === 'multiple_choice'"
       class="mt-3 space-y-2"
     >
-      <p class="text-xs font-semibold text-slate-500">{{ t('teacher.editor.options') }}</p>
+      <p class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.editor.options') }}</p>
       <div
         v-for="(_, index) in question.options"
         :key="index"
@@ -117,21 +118,21 @@ function removePair(index: number): void {
         <input
           v-model="question.options[index]"
           type="text"
-          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
         />
         <button
           type="button"
           :disabled="question.options.length <= 2"
           @click="removeOption(index)"
-          class="shrink-0 rounded px-2 text-xs text-slate-400 hover:text-rose-600 disabled:opacity-30"
+          class="shrink-0 rounded p-1.5 text-on-surface-variant hover:text-error disabled:opacity-30"
         >
-          ✕
+          <X class="size-4" aria-hidden="true" />
         </button>
       </div>
       <button
         type="button"
         @click="addOption"
-        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+        class="rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
       >
         + {{ t('teacher.editor.addOption') }}
       </button>
@@ -139,11 +140,11 @@ function removePair(index: number): void {
 
     <!-- true / false -->
     <div v-else-if="question.type === 'true_false'" class="mt-3 flex gap-4">
-      <label class="flex items-center gap-2 text-sm text-slate-700">
+      <label class="flex items-center gap-2 text-sm text-on-surface">
         <input v-model="question.isTrue" type="radio" :value="true" class="shrink-0" />
         {{ t('teacher.editor.trueValue') }}
       </label>
-      <label class="flex items-center gap-2 text-sm text-slate-700">
+      <label class="flex items-center gap-2 text-sm text-on-surface">
         <input v-model="question.isTrue" type="radio" :value="false" class="shrink-0" />
         {{ t('teacher.editor.falseValue') }}
       </label>
@@ -151,17 +152,17 @@ function removePair(index: number): void {
 
     <!-- short answer -->
     <div v-else-if="question.type === 'short_answer'" class="mt-3">
-      <p class="text-xs font-semibold text-slate-500">{{ t('teacher.editor.accepted') }}</p>
+      <p class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.editor.accepted') }}</p>
       <textarea
         v-model="question.accepted"
         rows="3"
-        class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+        class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
       />
     </div>
 
     <!-- matching -->
     <div v-else class="mt-3 space-y-2">
-      <p class="text-xs font-semibold text-slate-500">{{ t('teacher.editor.pairs') }}</p>
+      <p class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.editor.pairs') }}</p>
       <div
         v-for="(_, index) in question.pairs"
         :key="index"
@@ -171,28 +172,28 @@ function removePair(index: number): void {
           v-model="question.pairs[index].left"
           type="text"
           :placeholder="t('teacher.editor.left')"
-          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
         />
-        <span class="text-slate-400">⇄</span>
+        <ArrowLeftRight class="size-4 text-on-surface-variant" aria-hidden="true" />
         <input
           v-model="question.pairs[index].right"
           type="text"
           :placeholder="t('teacher.editor.right')"
-          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
         />
         <button
           type="button"
           :disabled="question.pairs.length <= 2"
           @click="removePair(index)"
-          class="shrink-0 rounded px-2 text-xs text-slate-400 hover:text-rose-600 disabled:opacity-30"
+          class="shrink-0 rounded p-1.5 text-on-surface-variant hover:text-error disabled:opacity-30"
         >
-          ✕
+          <X class="size-4" aria-hidden="true" />
         </button>
       </div>
       <button
         type="button"
         @click="addPair"
-        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+        class="rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
       >
         + {{ t('teacher.editor.addPair') }}
       </button>

@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 import { register } from '../api/auth'
 import { ApiError } from '../api/client'
 
@@ -76,13 +77,14 @@ function back() {
     class="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-6 py-10"
   >
     <header class="mb-8 flex items-center justify-between">
-      <h1 class="text-lg font-bold text-slate-800">{{ t('app.name') }}</h1>
+      <h1 class="text-lg font-bold text-on-surface">{{ t('app.name') }}</h1>
       <div class="flex items-center gap-2">
+        <ThemeSwitcher />
         <LanguageSwitcher />
         <button
           type="button"
           @click="back"
-          class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          class="rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface"
         >
           {{ t('auth.backToLogin') }}
         </button>
@@ -91,16 +93,16 @@ function back() {
 
     <section
       v-if="created"
-      class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center shadow-sm"
+      class="rounded-2xl border border-outline-variant bg-success-container p-6 text-center shadow-sm"
     >
-      <p class="text-lg font-semibold text-emerald-800">
+      <p class="text-lg font-semibold text-success">
         {{ t('auth.pendingTitle') }}
       </p>
-      <p class="mt-2 text-sm text-emerald-700">{{ t('auth.pendingNote') }}</p>
+      <p class="mt-2 text-sm text-success">{{ t('auth.pendingNote') }}</p>
       <button
         type="button"
         @click="back"
-        class="mt-5 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white"
+        class="mt-5 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-on-success"
       >
         {{ t('auth.backToLogin') }}
       </button>
@@ -108,68 +110,68 @@ function back() {
 
     <section
       v-else
-      class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+      class="rounded-2xl border border-outline-variant bg-surface-container p-6 shadow-sm"
     >
-      <h2 class="text-lg font-semibold text-slate-900">
+      <h2 class="text-lg font-semibold text-on-surface">
         {{ t('auth.registerHeading') }}
       </h2>
-      <p class="mt-1 text-sm text-slate-500">
+      <p class="mt-1 text-sm text-on-surface-variant">
         {{ t('auth.registerHint') }}
       </p>
 
       <form class="mt-5 space-y-4" @submit.prevent="submit">
         <label class="block">
-          <span class="text-xs font-medium text-slate-500">
+          <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.fullName') }}
           </span>
           <input
             v-model="fullName"
             type="text"
             autocomplete="name"
-            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm outline-none focus:border-outline"
           />
         </label>
 
         <label class="block">
-          <span class="text-xs font-medium text-slate-500">
+          <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.username') }}
           </span>
           <input
             v-model="username"
             type="text"
             autocomplete="username"
-            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm outline-none focus:border-outline"
           />
         </label>
 
         <label class="block">
-          <span class="text-xs font-medium text-slate-500">
+          <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.password') }}
           </span>
           <input
             v-model="password"
             type="password"
             autocomplete="new-password"
-            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm outline-none focus:border-outline"
           />
         </label>
 
         <label class="block">
-          <span class="text-xs font-medium text-slate-500">
+          <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.confirmPassword') }}
           </span>
           <input
             v-model="confirmPassword"
             type="password"
             autocomplete="new-password"
-            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm outline-none focus:border-outline"
           />
         </label>
 
         <p
           v-if="errorKey"
           role="alert"
-          class="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700"
+          class="rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container"
         >
           {{ errorMessage(errorKey) }}
         </p>
@@ -177,7 +179,7 @@ function back() {
         <button
           type="submit"
           :disabled="submitting"
-          class="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-60"
+          class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition-opacity disabled:opacity-60"
         >
           {{ submitting ? t('common.loading') : t('auth.register') }}
         </button>

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { BookOpen, Eye, EyeOff, GraduationCap, ShieldCheck } from '@lucide/vue'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 import ServerStatus from '../components/ServerStatus.vue'
+import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 import { useAuth } from '../stores/auth'
 import { ApiError } from '../api/client'
 import type { UserRole } from '../api/types'
@@ -22,10 +24,10 @@ const submitting = ref(false)
 const LAST_USERNAME_KEY = 'auth.lastUsername'
 const LAST_ROLE_KEY = 'auth.lastRole'
 
-const roles: Array<{ role: UserRole; icon: string }> = [
-  { role: 'student', icon: '🎓' },
-  { role: 'teacher', icon: '📚' },
-  { role: 'admin', icon: '🛡️' },
+const roles: Array<{ role: UserRole; icon: typeof GraduationCap }> = [
+  { role: 'student', icon: GraduationCap },
+  { role: 'teacher', icon: BookOpen },
+  { role: 'admin', icon: ShieldCheck },
 ]
 
 const usernamePlaceholder = computed(() => {
@@ -92,20 +94,21 @@ async function submit() {
   >
     <header class="mb-8 flex items-center justify-between">
       <div>
-        <h1 class="text-lg font-bold text-slate-800">{{ t('app.name') }}</h1>
-        <p class="text-xs text-slate-400">{{ t('app.tagline') }}</p>
+        <h1 class="text-lg font-bold text-on-surface">{{ t('app.name') }}</h1>
+        <p class="text-xs text-on-surface-variant">{{ t('app.tagline') }}</p>
       </div>
       <div class="flex items-center gap-2">
         <ServerStatus />
+        <ThemeSwitcher />
         <LanguageSwitcher />
       </div>
     </header>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 class="text-lg font-semibold text-slate-900">
+    <section class="rounded-2xl border border-outline-variant bg-surface-container p-6 shadow-sm">
+      <h2 class="text-lg font-semibold text-on-surface">
         {{ t('auth.chooseRole') }}
       </h2>
-      <p class="mt-1 text-sm text-slate-500">{{ t('auth.chooseRoleHint') }}</p>
+      <p class="mt-1 text-sm text-on-surface-variant">{{ t('auth.chooseRoleHint') }}</p>
 
       <div class="mt-4 grid grid-cols-3 gap-2">
         <button
@@ -116,18 +119,18 @@ async function submit() {
           class="flex flex-col items-center gap-1 rounded-xl border px-2 py-3 text-xs font-semibold transition-colors"
           :class="
             selectedRole === role
-              ? 'border-slate-900 bg-slate-900 text-white'
-              : 'border-slate-200 text-slate-600 hover:border-slate-400'
+              ? 'border-primary bg-primary text-on-primary'
+              : 'border-outline-variant text-on-surface-variant hover:border-outline'
           "
         >
-          <span class="text-xl" aria-hidden="true">{{ icon }}</span>
+          <component :is="icon" class="size-6" aria-hidden="true" />
           {{ t(`role.${role}`) }}
         </button>
       </div>
 
       <form class="mt-5 space-y-4" @submit.prevent="submit">
         <label class="block">
-          <span class="text-xs font-medium text-slate-500">
+          <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.username') }}
           </span>
           <input
@@ -135,12 +138,12 @@ async function submit() {
             type="text"
             autocomplete="username"
             :placeholder="usernamePlaceholder"
-            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm outline-none focus:border-outline"
           />
         </label>
 
         <label class="block">
-          <span class="text-xs font-medium text-slate-500">
+          <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.password') }}
           </span>
           <div class="relative mt-1">
@@ -149,16 +152,17 @@ async function submit() {
               :type="showPassword ? 'text' : 'password'"
               autocomplete="current-password"
               placeholder="••••••••"
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm outline-none focus:border-slate-500"
+              class="w-full rounded-lg border border-outline px-3 py-2 pr-11 text-sm outline-none focus:border-outline"
             />
             <button
               type="button"
               :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
               :title="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
               @click="showPassword = !showPassword"
-              class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 transition-colors hover:text-slate-600"
+              class="absolute inset-y-0 right-0 flex items-center px-3 text-on-surface-variant transition-colors hover:text-on-surface-variant"
             >
-              <span aria-hidden="true" class="text-base">{{ showPassword ? '🙈' : '👁️' }}</span>
+              <EyeOff v-if="showPassword" class="size-4" aria-hidden="true" />
+              <Eye v-else class="size-4" aria-hidden="true" />
             </button>
           </div>
         </label>
@@ -166,7 +170,7 @@ async function submit() {
         <p
           v-if="errorKey"
           role="alert"
-          class="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700"
+          class="rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container"
         >
           {{ errorMessage(errorKey) }}
         </p>
@@ -174,7 +178,7 @@ async function submit() {
         <button
           type="submit"
           :disabled="submitting"
-          class="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-60"
+          class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition-opacity disabled:opacity-60"
         >
           {{ submitting ? t('common.loading') : t('auth.signIn') }}
         </button>
@@ -182,12 +186,12 @@ async function submit() {
 
       <div
         v-if="selectedRole === 'student'"
-        class="mt-4 border-t border-slate-100 pt-4 text-center text-sm"
+        class="mt-4 border-t border-outline-variant pt-4 text-center text-sm"
       >
-        <span class="text-slate-500">{{ t('auth.needAccount') }}</span>
+        <span class="text-on-surface-variant">{{ t('auth.needAccount') }}</span>
         <button
           type="button"
-          class="ml-1 font-semibold text-slate-900 underline underline-offset-2"
+          class="ml-1 font-semibold text-on-surface underline underline-offset-2"
           @click="emit('register')"
         >
           {{ t('auth.register') }}
@@ -195,7 +199,7 @@ async function submit() {
       </div>
     </section>
 
-    <p class="mt-6 text-center text-xs text-slate-400">
+    <p class="mt-6 text-center text-xs text-on-surface-variant">
       {{ t('footer.message') }}
     </p>
   </main>

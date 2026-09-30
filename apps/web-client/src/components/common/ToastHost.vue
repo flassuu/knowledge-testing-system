@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { X } from '@lucide/vue'
 import { dismissToast, getToastState, type ToastKind } from '../../composables/toast'
 
 const { t } = useI18n()
@@ -27,17 +28,17 @@ const kindClass: Record<ToastKind, string> = {
           v-for="item in state.items"
           :key="item.id"
           role="status"
-          class="pointer-events-auto flex items-start gap-2 rounded-lg border border-slate-200 border-l-4 bg-white px-3 py-2.5 shadow-lg"
+          class="pointer-events-auto flex items-start gap-2 rounded-lg border border-outline-variant border-l-4 bg-surface-container px-3 py-2.5 shadow-lg"
           :class="kindClass[item.kind]"
         >
-          <p class="min-w-0 flex-1 text-sm text-slate-700">{{ item.message }}</p>
+          <p class="min-w-0 flex-1 text-sm text-on-surface">{{ item.message }}</p>
           <button
             type="button"
             :aria-label="t('common.dismiss')"
             @click="dismissToast(item.id)"
-            class="shrink-0 text-slate-400 transition-colors hover:text-slate-600"
+            class="shrink-0 text-on-surface-variant transition-colors hover:text-on-surface-variant"
           >
-            <span aria-hidden="true" class="text-xs font-bold">✕</span>
+            <X class="size-3.5" aria-hidden="true" />
           </button>
         </div>
       </TransitionGroup>

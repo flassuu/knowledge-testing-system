@@ -150,12 +150,12 @@ onMounted(load)
 <template>
   <section>
     <div class="flex items-center justify-between">
-      <h3 class="text-base font-semibold text-slate-800">{{ t('teacher.tests.heading') }}</h3>
+      <h3 class="text-base font-semibold text-on-surface">{{ t('teacher.tests.heading') }}</h3>
       <button
         v-if="!isEditing"
         type="button"
         @click="startCreate"
-        class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+        class="rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success hover:opacity-90"
       >
         + {{ t('teacher.tests.newTest') }}
       </button>
@@ -163,54 +163,54 @@ onMounted(load)
 
     <!-- editor (also renders while creating: editingId === null is handled by `isEditing`) -->
     <form v-if="isEditing" class="mt-4 space-y-4" @submit.prevent="save">
-      <div class="rounded-xl border border-slate-200 bg-white p-4">
+      <div class="rounded-xl border border-outline-variant bg-surface-container p-4">
         <div class="grid gap-3 sm:grid-cols-2">
           <label class="block">
-            <span class="text-xs font-semibold text-slate-500">{{ t('teacher.tests.title') }}</span>
+            <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.title') }}</span>
             <input
               v-model="title"
               type="text"
-              class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+              class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
             />
           </label>
           <div class="grid grid-cols-2 gap-3">
             <label class="block">
-              <span class="text-xs font-semibold text-slate-500">{{ t('teacher.tests.timeLimit') }}</span>
+              <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.timeLimit') }}</span>
               <input
                 v-model="timeLimitMin"
                 type="number"
                 min="0"
-                class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+                class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
               />
             </label>
             <label class="block">
-              <span class="text-xs font-semibold text-slate-500">{{ t('teacher.tests.passingPercent') }}</span>
+              <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.passingPercent') }}</span>
               <input
                 v-model="passingPercent"
                 type="number"
                 min="0"
                 max="100"
-                class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+                class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
               />
             </label>
           </div>
           <label class="block sm:col-span-2">
-            <span class="text-xs font-semibold text-slate-500">{{ t('teacher.tests.description') }}</span>
+            <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.description') }}</span>
             <textarea
               v-model="description"
               rows="2"
-              class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+              class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm outline-none focus:border-outline"
             />
           </label>
         </div>
       </div>
 
-      <div v-if="formError()" role="alert" class="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+      <div v-if="formError()" role="alert" class="rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
         {{ formError() }}
       </div>
 
       <div class="space-y-3">
-        <p class="text-sm font-semibold text-slate-700">{{ t('teacher.tests.questions') }}</p>
+        <p class="text-sm font-semibold text-on-surface">{{ t('teacher.tests.questions') }}</p>
         <QuestionEditor
           v-for="(question, index) in questionForms"
           :key="question.key"
@@ -221,7 +221,7 @@ onMounted(load)
         <button
           type="button"
           @click="addQuestion"
-          class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+          class="rounded-lg border border-outline bg-surface px-3 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high"
         >
           + {{ t('teacher.tests.addQuestion') }}
         </button>
@@ -231,14 +231,14 @@ onMounted(load)
         <button
           type="submit"
           :disabled="saving"
-          class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:bg-slate-700 disabled:opacity-60"
+          class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           {{ t('teacher.tests.save') }}
         </button>
         <button
           type="button"
           @click="isEditing = false"
-          class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+          class="rounded-lg border border-outline bg-surface px-4 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high"
         >
           {{ t('teacher.tests.cancel') }}
         </button>
@@ -247,22 +247,22 @@ onMounted(load)
 
     <!-- list -->
     <template v-else>
-      <p v-if="errorKey" role="alert" class="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+      <p v-if="errorKey" role="alert" class="mt-4 rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
         {{ showError(errorKey) }}
       </p>
-      <p v-else-if="loading" class="mt-6 text-center text-sm text-slate-400">{{ t('common.loading') }}</p>
-      <p v-else-if="tests.length === 0" class="mt-6 text-center text-sm text-slate-400">
+      <p v-else-if="loading" class="mt-6 text-center text-sm text-on-surface-variant">{{ t('common.loading') }}</p>
+      <p v-else-if="tests.length === 0" class="mt-6 text-center text-sm text-on-surface-variant">
         {{ t('teacher.tests.empty') }}
       </p>
       <ul v-else class="mt-4 space-y-2">
         <li
           v-for="test in tests"
           :key="test.id"
-          class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
+          class="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container p-4 shadow-sm sm:flex-row sm:items-center"
         >
           <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-semibold text-slate-800">{{ test.title }}</p>
-            <p class="mt-0.5 text-xs text-slate-400">
+            <p class="truncate text-sm font-semibold text-on-surface">{{ test.title }}</p>
+            <p class="mt-0.5 text-xs text-on-surface-variant">
               {{ t('teacher.tests.questionCount', { count: test.questionCount }) }}
               <span v-if="test.timeLimitSec"> · {{ t('teacher.tests.timeLimit') }}:
                 {{ Math.round(test.timeLimitSec / 60) }} {{ t('teacher.tests.minutes') }}</span>
@@ -274,7 +274,7 @@ onMounted(load)
               type="button"
               :disabled="busyId === test.id"
               @click="startEdit(test)"
-              class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-60"
+              class="rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high disabled:opacity-60"
             >
               {{ t('teacher.tests.edit') }}
             </button>
@@ -282,7 +282,7 @@ onMounted(load)
               type="button"
               :disabled="busyId === test.id"
               @click="remove(test)"
-              class="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60"
+              class="rounded-lg border border-outline-variant px-3 py-1.5 text-xs font-semibold text-on-error-container hover:bg-error-container disabled:opacity-60"
             >
               {{ t('teacher.tests.delete') }}
             </button>

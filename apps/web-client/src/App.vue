@@ -52,7 +52,7 @@ const screen = computed<Screen>(() => {
 <template>
   <OfflineBanner />
   <div v-if="screen === 'loading'" class="flex min-h-dvh items-center justify-center">
-    <p class="text-sm text-slate-400">{{ t('common.loading') }}</p>
+    <p class="text-sm text-on-surface-variant">{{ t('common.loading') }}</p>
   </div>
 
   <LoginView v-else-if="screen === 'login'" @register="mode = 'register'" />

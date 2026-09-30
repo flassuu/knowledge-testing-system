@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ArrowLeft, Paperclip } from '@lucide/vue'
 import { ApiError } from '../../api/client'
 import {
   attachTest,
@@ -139,30 +140,31 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-if="loading" class="mt-6 text-center text-sm text-slate-400">{{ t('common.loading') }}</div>
+  <div v-if="loading" class="mt-6 text-center text-sm text-on-surface-variant">{{ t('common.loading') }}</div>
 
   <div v-else-if="course" class="mt-4 space-y-4">
     <div class="flex items-center justify-between">
       <div>
-        <h4 class="text-base font-semibold text-slate-800">{{ course.title }}</h4>
-        <p v-if="course.description" class="mt-0.5 text-sm text-slate-500">{{ course.description }}</p>
+        <h4 class="text-base font-semibold text-on-surface">{{ course.title }}</h4>
+        <p v-if="course.description" class="mt-0.5 text-sm text-on-surface-variant">{{ course.description }}</p>
       </div>
       <button
         type="button"
         @click="emit('close')"
-        class="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+        class="shrink-0 rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
       >
-        ← {{ t('teacher.courses.back') }}
+        <ArrowLeft class="size-3.5" aria-hidden="true" />
+        {{ t('teacher.courses.back') }}
       </button>
     </div>
 
-    <p v-if="actionError" role="alert" class="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+    <p v-if="actionError" role="alert" class="rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
       {{ actionError }}
     </p>
 
     <!-- students -->
-    <section class="rounded-xl border border-slate-200 bg-white p-4">
-      <h5 class="text-sm font-semibold text-slate-700">
+    <section class="rounded-xl border border-outline-variant bg-surface-container p-4">
+      <h5 class="text-sm font-semibold text-on-surface">
         {{ t('teacher.courses.students') }} ({{ course.students.length }})
       </h5>
       <ul v-if="course.students.length" class="mt-3 space-y-1.5">
@@ -171,29 +173,29 @@ onMounted(load)
           :key="student.id"
           class="flex items-center justify-between gap-2 text-sm"
         >
-          <span class="min-w-0 truncate text-slate-700">
-            {{ student.fullName }} <span class="text-slate-400">@{{ student.username }}</span>
+          <span class="min-w-0 truncate text-on-surface">
+            {{ student.fullName }} <span class="text-on-surface-variant">@{{ student.username }}</span>
           </span>
           <button
             type="button"
             @click="unenroll(student)"
-            class="shrink-0 rounded border border-rose-200 px-2 py-0.5 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+            class="shrink-0 rounded border border-outline-variant px-2 py-0.5 text-xs font-semibold text-on-error-container hover:bg-error-container"
           >
             {{ t('teacher.courses.unenroll') }}
           </button>
         </li>
       </ul>
-      <p v-else class="mt-3 text-xs text-slate-400">{{ t('teacher.courses.noStudents') }}</p>
+      <p v-else class="mt-3 text-xs text-on-surface-variant">{{ t('teacher.courses.noStudents') }}</p>
       <form class="mt-3 flex gap-2" @submit.prevent="enroll">
         <input
           v-model="enrollUsername"
           type="text"
           :placeholder="t('teacher.courses.enrollPlaceholder')"
-          class="w-full max-w-52 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-slate-500"
+          class="w-full max-w-52 rounded-lg border border-outline bg-surface px-3 py-1.5 text-sm outline-none focus:border-outline"
         />
         <button
           type="submit"
-          class="shrink-0 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+          class="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:opacity-90"
         >
           {{ t('teacher.courses.enroll') }}
         </button>
@@ -201,8 +203,8 @@ onMounted(load)
     </section>
 
     <!-- tests -->
-    <section class="rounded-xl border border-slate-200 bg-white p-4">
-      <h5 class="text-sm font-semibold text-slate-700">
+    <section class="rounded-xl border border-outline-variant bg-surface-container p-4">
+      <h5 class="text-sm font-semibold text-on-surface">
         {{ t('teacher.courses.tests') }} ({{ course.tests.length }})
       </h5>
       <ul v-if="course.tests.length" class="mt-3 space-y-1.5">
@@ -211,21 +213,21 @@ onMounted(load)
           :key="test.id"
           class="flex items-center justify-between gap-2 text-sm"
         >
-          <span class="min-w-0 truncate text-slate-700">{{ test.title }}</span>
+          <span class="min-w-0 truncate text-on-surface">{{ test.title }}</span>
           <button
             type="button"
             @click="detach(test.id, test.title)"
-            class="shrink-0 rounded border border-rose-200 px-2 py-0.5 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+            class="shrink-0 rounded border border-outline-variant px-2 py-0.5 text-xs font-semibold text-on-error-container hover:bg-error-container"
           >
             {{ t('teacher.courses.detach') }}
           </button>
         </li>
       </ul>
-      <p v-else class="mt-3 text-xs text-slate-400">{{ t('teacher.courses.noTests') }}</p>
+      <p v-else class="mt-3 text-xs text-on-surface-variant">{{ t('teacher.courses.noTests') }}</p>
       <form v-if="availableTests.length" class="mt-3 flex gap-2" @submit.prevent="attach">
         <select
           v-model="attachTestId"
-          class="w-full max-w-52 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-slate-500"
+          class="w-full max-w-52 rounded-lg border border-outline bg-surface px-3 py-1.5 text-sm outline-none focus:border-outline"
         >
           <option value="" disabled>{{ t('teacher.courses.attachTest') }}</option>
           <option v-for="test in availableTests" :key="test.id" :value="test.id">
@@ -235,7 +237,7 @@ onMounted(load)
         <button
           type="submit"
           :disabled="!attachTestId"
-          class="shrink-0 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
+          class="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:opacity-90 disabled:opacity-60"
         >
           {{ t('teacher.courses.attach') }}
         </button>
@@ -243,25 +245,28 @@ onMounted(load)
     </section>
 
     <!-- materials -->
-    <section class="rounded-xl border border-slate-200 bg-white p-4">
-      <h5 class="text-sm font-semibold text-slate-700">
+    <section class="rounded-xl border border-outline-variant bg-surface-container p-4">
+      <h5 class="text-sm font-semibold text-on-surface">
         {{ t('teacher.courses.materials') }} ({{ course.materials.length }})
       </h5>
       <ul v-if="course.materials.length" class="mt-3 space-y-1.5">
         <li v-for="material in course.materials" :key="material.id" class="flex items-center gap-2 text-sm">
-          <span class="min-w-0 flex-1 truncate text-slate-700">📎 {{ material.title }}</span>
-          <span class="shrink-0 text-xs text-slate-400">{{ formatBytes(material.sizeBytes) }}</span>
+          <span class="flex min-w-0 flex-1 items-center gap-1.5 truncate text-on-surface">
+            <Paperclip class="size-3.5 shrink-0 text-on-surface-variant" aria-hidden="true" />
+            {{ material.title }}
+          </span>
+          <span class="shrink-0 text-xs text-on-surface-variant">{{ formatBytes(material.sizeBytes) }}</span>
           <button
             type="button"
             @click="download(material)"
-            class="shrink-0 rounded border border-slate-300 px-2 py-0.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+            class="shrink-0 rounded border border-outline px-2 py-0.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
           >
             {{ t('teacher.courses.download') }}
           </button>
         </li>
       </ul>
-      <p v-else class="mt-3 text-xs text-slate-400">{{ t('teacher.courses.noMaterials') }}</p>
-      <label class="mt-3 inline-block cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100">
+      <p v-else class="mt-3 text-xs text-on-surface-variant">{{ t('teacher.courses.noMaterials') }}</p>
+      <label class="mt-3 inline-block cursor-pointer rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high">
         + {{ t('teacher.courses.upload') }}
         <input type="file" class="hidden" @change="onFileSelected" />
       </label>
@@ -270,13 +275,13 @@ onMounted(load)
     <button
       type="button"
       @click="removeCourse"
-      class="rounded-lg border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50"
+      class="rounded-lg border border-outline-variant px-4 py-2 text-sm font-semibold text-on-error-container hover:bg-error-container"
     >
       {{ t('teacher.courses.deleteCourse') }}
     </button>
   </div>
 
-  <p v-else-if="errorKey" role="alert" class="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+  <p v-else-if="errorKey" role="alert" class="mt-4 rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
     {{ showError(errorKey) }}
   </p>
 </template>

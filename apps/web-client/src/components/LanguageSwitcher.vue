@@ -12,7 +12,7 @@ function setLocale(next: (typeof supportedLocales)[number]) {
 
 <template>
   <div class="flex items-center gap-1">
-    <span class="mr-1 hidden text-xs text-slate-400 sm:inline">
+    <span class="mr-1 hidden text-xs text-on-surface-variant sm:inline">
       {{ t('common.language') }}:
     </span>
     <button
@@ -24,8 +24,8 @@ function setLocale(next: (typeof supportedLocales)[number]) {
       :disabled="locale === code"
       :class="
         locale === code
-          ? 'bg-slate-900 text-white'
-          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+          ? 'bg-primary text-on-primary'
+          : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
       "
     >
       {{ code }}

@@ -14,20 +14,20 @@ const health = getHealthState()
     class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors"
     :class="
       health.status === 'checking'
-        ? 'bg-slate-100 text-slate-500'
+        ? 'bg-surface-container-high text-on-surface-variant'
         : health.status === 'online'
-          ? 'bg-emerald-50 text-emerald-700'
-          : 'bg-rose-50 text-rose-700'
+          ? 'bg-success-container text-on-success-container'
+          : 'bg-error-container text-on-error-container'
     "
   >
     <span
       class="size-2 rounded-full"
       :class="
         health.status === 'checking'
-          ? 'bg-slate-400'
+          ? 'bg-outline'
           : health.status === 'online'
-            ? 'bg-emerald-500'
-            : 'bg-rose-500'
+            ? 'bg-success'
+            : 'bg-error'
       "
     />
     {{ t(`server.${health.status}`) }}

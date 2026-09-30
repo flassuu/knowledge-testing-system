@@ -1,0 +1,149 @@
+@import 'tailwindcss';
+
+/* Class-based dark theme: toggled on <html> by the theme composable. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Material 3 Expressive palette, two themes only (light + dark).
+ * Components must use the semantic tokens below — never raw palette classes —
+ * so both themes keep working (see AGENTS.md → Design rules).
+ */
+:root {
+  color-scheme: light;
+
+  --surface: #fdfbff;
+  --surface-container: #f2f0f7;
+  --surface-container-high: #ebe8f1;
+  --surface-container-highest: #e4e1ea;
+  --on-surface: #1b1a20;
+  --on-surface-variant: #46454f;
+  --outline: #777680;
+  --outline-variant: #c9c5d0;
+
+  --primary: #4b4acf;
+  --on-primary: #ffffff;
+  --primary-container: #e1e0ff;
+  --on-primary-container: #060663;
+
+  --secondary: #5d5c72;
+  --on-secondary: #ffffff;
+  --secondary-container: #e2e0f9;
+  --on-secondary-container: #1a1a2c;
+
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #410002;
+
+  --success: #0e7a45;
+  --on-success: #ffffff;
+  --success-container: #b6f2cd;
+  --on-success-container: #00210f;
+
+  --warning: #8a5000;
+  --on-warning: #ffffff;
+  --warning-container: #ffddb0;
+  --on-warning-container: #2c1600;
+
+  --scrim: rgb(0 0 0 / 0.45);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --surface: #131318;
+  --surface-container: #1f1e25;
+  --surface-container-high: #2a2930;
+  --surface-container-highest: #35343b;
+  --on-surface: #e5e1e9;
+  --on-surface-variant: #c9c5d0;
+  --outline: #928f9a;
+  --outline-variant: #46454f;
+
+  --primary: #c0c1ff;
+  --on-primary: #1c1a8e;
+  --primary-container: #3332b0;
+  --on-primary-container: #e1e0ff;
+
+  --secondary: #c6c4dd;
+  --on-secondary: #2f2f42;
+  --secondary-container: #454459;
+  --on-secondary-container: #e2e0f9;
+
+  --error: #ffb4ab;
+  --on-error: #690005;
+  --error-container: #93000a;
+  --on-error-container: #ffdad6;
+
+  --success: #8fd6ab;
+  --on-success: #00391d;
+  --success-container: #00522f;
+  --on-success-container: #b6f2cd;
+
+  --warning: #ffb960;
+  --on-warning: #492900;
+  --warning-container: #6a3c00;
+  --on-warning-container: #ffddb0;
+
+  --scrim: rgb(0 0 0 / 0.6);
+}
+
+/* Exposes the tokens as Tailwind utilities (bg-surface, text-on-surface, …). */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--on-secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
+
+  --color-success: var(--success);
+  --color-on-success: var(--on-success);
+  --color-success-container: var(--success-container);
+  --color-on-success-container: var(--on-success-container);
+
+  --color-warning: var(--warning);
+  --color-on-warning: var(--on-warning);
+  --color-warning-container: var(--warning-container);
+  --color-on-warning-container: var(--on-warning-container);
+
+  --color-scrim: var(--scrim);
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
