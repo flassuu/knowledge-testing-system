@@ -33,6 +33,20 @@ versioning follows [SemVer](https://semver.org/).
 - **Bulk approval**: pending accounts get row checkboxes plus
   "select all pending", and one click approves the selection sequentially
   (with a toast). A confirm dialog still guards blocking.
+- **UI/UX polish batch 5 (v0.1.1): test editor ergonomics.** Every question
+  row now carries a numbered badge and icon controls to move it up/down,
+  duplicate it or delete it. `+` glyph buttons were replaced with Lucide
+  icons.
+- **Live test preview** (`TestPreviewDialog`): before saving, a teacher can
+  open a student-like rendering of the test — title, description, question
+  count, total points, time limit and pass mark as chips, and each question
+  type rendered read-only with the correct answers highlighted. The preview
+  reuses `buildQuestions()`, so an incomplete question surfaces its
+  validation message instead of a broken preview. Escape, a click on the
+  scrim or the close button dismiss it.
+- i18n: `teacher.editor.duplicateQuestion/moveUp/moveDown`,
+  `teacher.tests.preview/previewTitle/previewUntitled/totalPoints`,
+  `common.close` — en and uk.
 
 ### Changed
 - **UI/UX polish batch 3 (v0.1.1): light + dark themes.** The whole UI now

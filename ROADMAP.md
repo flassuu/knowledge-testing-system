@@ -58,7 +58,7 @@ Released as a separate minor so the polish sprint never blocks Phase 2.
 
 These rules apply to every screen of web-client and desktop. No exceptions.
 
-1. **No emoji in the UI.** Icons come from Lucide (`lucide-vue-next`) only —
+1. **No emoji in the UI.** Icons come from Lucide (`@lucide/vue`) only —
    never paste an emoji or decorative glyph into markup, buttons, placeholders
    or labels. The single exception is user-authored content (e.g. a material
    title), which is rendered as-is.
@@ -104,8 +104,9 @@ These rules apply to every screen of web-client and desktop. No exceptions.
 **Teacher workbench**
 - [x] Confirm dialogs before destructive deletes: test, course, remove
       student, detach test (material delete UI not implemented yet)
-- [ ] Editor ergonomics: duplicate a question, reorder questions, live test
-      preview before saving
+- [x] Editor ergonomics: duplicate a question, move questions up/down, and a
+      live test preview (student view with the correct answers highlighted)
+      before saving
 - [ ] Course page: clearer test-attach picker and file list with type badges
 
 **A11y, i18n & desktop**
