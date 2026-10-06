@@ -4,10 +4,13 @@ import { sendError } from '../lib/http'
 import {
   createTest,
   deleteTest,
+  duplicateTest,
+  exportTest,
   findTestRow,
   listQuestions,
   listTestRows,
   updateTest,
+  validateExchange,
   validateQuestion,
   type Question,
   type QuestionInput,
@@ -159,6 +162,79 @@ export const testRoutes: FastifyPluginAsync<TestsDeps> = async (
         return sendError(reply, 403, 'FORBIDDEN', 'insufficient role')
       }
       return { test: fullTest(test, listQuestions(db, test.id)) }
+    },
+  )
+
+  /**
+   * The test as a shareable file: no ids, no owner, answer keys included.
+   * Answer keys are the point - a colleague has to be able to run it.
+   */
+  app.get(
+    '/api/tests/:id/export',
+    {
+      preHandler: requireRoles('admin', 'teacher'),
+      schema: { params: idParamsSchema },
+    },
+    async (request, reply) => {
+      const session = request.session!
+      const test = findTestRow(db, (request.params as { id: string }).id)
+      if (!test) return sendError(reply, 404, 'NOT_FOUND', 'test not found')
+      if (!canAccess(session, test.owner_id)) {
+        return sendError(reply, 403, 'FORBIDDEN', 'insufficient role')
+      }
+      const document = exportTest(db, test)
+      const safeName = test.title.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase()
+      return reply
+        .type('application/json; charset=utf-8')
+        .header('content-disposition', `attachment; filename="${safeName || 'test'}.json"`)
+        .send(`${JSON.stringify(document, null, 2)}\n`)
+    },
+  )
+
+  /** Copies a test - with fresh question ids - so it can be edited independently. */
+  app.post(
+    '/api/tests/:id/duplicate',
+    {
+      preHandler: requireRoles('admin', 'teacher'),
+      schema: { params: idParamsSchema },
+    },
+    async (request, reply) => {
+      const session = request.session!
+      const test = findTestRow(db, (request.params as { id: string }).id)
+      if (!test) return sendError(reply, 404, 'NOT_FOUND', 'test not found')
+      if (!canAccess(session, test.owner_id)) {
+        return sendError(reply, 403, 'FORBIDDEN', 'insufficient role')
+      }
+      const copy = duplicateTest(db, session.userId, test)
+      return reply.code(201).send({ test: fullTest(copy, listQuestions(db, copy.id)) })
+    },
+  )
+
+  /** Reads a test file written by the export, and creates it for the caller. */
+  app.post(
+    '/api/tests/import',
+    {
+      preHandler: requireRoles('admin', 'teacher'),
+    },
+    async (request, reply) => {
+      const session = request.session!
+      const parsed = validateExchange(request.body)
+      if (!parsed.value) {
+        return sendError(reply, 400, 'VALIDATION', parsed.error ?? 'the file could not be read')
+      }
+      const document = parsed.value
+      const created = createTest(
+        db,
+        session.userId,
+        {
+          title: document.title,
+          description: document.description,
+          timeLimitSec: document.timeLimitSec,
+          passingPercent: document.passingPercent,
+        },
+        document.questions,
+      )
+      return reply.code(201).send({ test: fullTest(created, listQuestions(db, created.id)) })
     },
   )
 

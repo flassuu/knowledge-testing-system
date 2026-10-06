@@ -317,3 +317,116 @@ export function updateTest(
 export function deleteTest(db: DatabaseSync, id: string): void {
   db.prepare('DELETE FROM tests WHERE id = ?').run(id)
 }
+/**
+ * The exchange format: one test with its questions, no ids, no owner, no
+ * timestamps. It is what an export writes and what an import reads, so a file
+ * can be handed to another teacher without carrying anything about this system.
+ */
+export interface TestExchange {
+  format: 'knowledge-testing.test'
+  version: 1
+  title: string
+  description: string
+  timeLimitSec: number | null
+  passingPercent: number | null
+  questions: QuestionInput[]
+}
+
+/** Builds the exchange document for a stored test, answer keys included. */
+export function exportTest(db: DatabaseSync, test: TestRow): TestExchange {
+  return {
+    format: 'knowledge-testing.test',
+    version: 1,
+    title: test.title,
+    description: test.description,
+    timeLimitSec: test.time_limit_sec,
+    passingPercent: test.passing_percent,
+    questions: listQuestions(db, test.id).map((question) => ({
+      type: question.type,
+      body: question.body,
+      payload: question.payload,
+      points: question.points,
+      position: question.position,
+    })),
+  }
+}
+
+export function validateExchange(raw: unknown): { value?: TestExchange; error?: string } {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    return { error: 'the file must contain one test object' }
+  }
+  const document = raw as Record<string, unknown>
+  if (document.format !== 'knowledge-testing.test') {
+    return { error: 'unrecognised format: not a Knowledge Testing test file' }
+  }
+  if (document.version !== 1) {
+    return { error: 'unsupported file version' }
+  }
+  if (typeof document.title !== 'string' || document.title.trim() === '') {
+    return { error: 'the test needs a title' }
+  }
+  if (!Array.isArray(document.questions) || document.questions.length === 0) {
+    return { error: 'the test needs at least one question' }
+  }
+
+  const questions: QuestionInput[] = []
+  for (const [index, entry] of document.questions.entries()) {
+    const candidate = entry as Record<string, unknown>
+    const question: QuestionInput = {
+      type: candidate.type as QuestionType,
+      body: typeof candidate.body === 'string' ? candidate.body : '',
+      payload:
+        typeof candidate.payload === 'object' && candidate.payload !== null
+          ? (candidate.payload as Record<string, unknown>)
+          : {},
+      points: typeof candidate.points === 'number' ? candidate.points : 1,
+      position: index,
+    }
+    const problem = validateQuestion(question)
+    if (problem) return { error: `question ${index + 1}: ${problem}` }
+    questions.push(question)
+  }
+
+  const timeLimitSec = document.timeLimitSec
+  const passingPercent = document.passingPercent
+  return {
+    value: {
+      format: 'knowledge-testing.test',
+      version: 1,
+      title: document.title,
+      description: typeof document.description === 'string' ? document.description : '',
+      timeLimitSec: typeof timeLimitSec === 'number' ? timeLimitSec : null,
+      passingPercent: typeof passingPercent === 'number' ? passingPercent : null,
+      questions,
+    },
+  }
+}
+
+/**
+ * Copies a test into a new one the caller owns. Question ids are new, so the
+ * copy can be edited without touching the original - which is the whole point
+ * of duplicating rather than retyping.
+ */
+export function duplicateTest(
+  db: DatabaseSync,
+  ownerId: string,
+  source: TestRow,
+): TestRow {
+  return createTest(
+    db,
+    ownerId,
+    {
+      title: `${source.title} (copy)`,
+      description: source.description,
+      timeLimitSec: source.time_limit_sec,
+      passingPercent: source.passing_percent,
+    },
+    listQuestions(db, source.id).map((question) => ({
+      type: question.type,
+      body: question.body,
+      payload: question.payload,
+      points: question.points,
+      position: question.position,
+    })),
+  )
+}
