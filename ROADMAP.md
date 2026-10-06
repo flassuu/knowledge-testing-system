@@ -12,7 +12,7 @@ while development proceeds.
 | Phase 1.1 — UI/UX polish | **shipped in 0.2.0** | Design & feedback pass over what 0.1.0 already ships |
 | Phase 2 — Teacher workbench | **0.2.0** (done) | Test/course authoring and sharing |
 | Phase 3 — Session runtime | **0.3.0** (done) | Live testing: join, answer, score, WS board |
-| Phase 4 — Reporting | 0.4.0 (current) | Statistics, journals, printable + CSV export |
+| Phase 4 — Reporting | 0.4.0 (done) | Statistics, journals, printable + CSV export |
 | Phase 5 — MVP polish | 1.0.0 | Packaging, e2e, README polish |
 
 The UI/UX polish pass (originally planned as its own 0.1.1) shipped together
@@ -175,7 +175,7 @@ These rules apply to every screen of web-client and desktop. No exceptions.
       on the student's phone; a scannable QR code for the same link is part of
       Phase 4
 
-## Phase 4 — Reporting (v0.4.0, in progress)
+## Phase 4 — Reporting (v0.4.0, done)
 
 - [x] Grade journal per test: one row per student across every session of that
       test (attempts, best, last and average percent), class average and pass
@@ -192,7 +192,7 @@ These rules apply to every screen of web-client and desktop. No exceptions.
 - [x] Printable report: the journal screen prints through the browser's own
       dialog with the app chrome dropped and the theme collapsed to ink on
       white (no PDF library needed)
-- [ ] Tag `v0.4.0` and publish the release
+- [x] Tag `v0.4.0` and publish the release
 
 ## Phase 5 — MVP polish (v1.0.0)
 

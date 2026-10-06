@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
-## [0.4.0] — unreleased
+## [0.4.0] — 2026-10-06
 
 Reporting: the numbers a teacher acts on, and the ways to get them out of the
 building.
