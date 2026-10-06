@@ -313,14 +313,22 @@ export default {
     subheading: 'Join tests, read course materials, and track your results.',
     cards: {
       phase: 'Phase {phase}',
-      materials: {
-        title: 'Course materials',
-        description: 'Files and notes attached by your teacher.',
-      },
       results: {
         title: 'My results',
         description: 'Your scores and statistics across tests.',
       },
+    },
+    courses: {
+      heading: 'Course materials',
+      hint: 'Files your teacher uploaded for the courses you are in.',
+      counts: 'Files: {materials} · Tests: {tests}',
+      materials: 'Files',
+      tests: 'Tests in this course',
+      noMaterials: 'No files here yet.',
+      noTests: 'No tests attached to this course yet.',
+      download: 'Download {title}',
+      emptyTitle: 'No courses yet',
+      emptyHint: 'Your teacher enrols you in a course - its files show up here.',
     },
     join: {
       title: 'Join a test',
@@ -365,6 +373,8 @@ export default {
       submitFailed: 'Could not send your answers. Try again.',
       alreadySubmitted: 'This paper is already submitted.',
       resultFailed: 'Could not load the result.',
+      coursesFailed: 'Could not load your courses.',
+      downloadFailed: 'Could not download the file.',
     },
   },
   common: {

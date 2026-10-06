@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { FileText, TrendingUp } from '@lucide/vue'
+import { TrendingUp } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
 import JoinSessionCard from '../components/student/JoinSessionCard.vue'
 import SessionResult from '../components/student/SessionResult.vue'
+import StudentCourses from '../components/student/StudentCourses.vue'
 import SessionRunner from '../components/student/SessionRunner.vue'
 import { ApiError } from '../api/client'
 import {
@@ -25,10 +26,7 @@ const result = ref<SessionResultBody | null>(null)
 const loading = ref(false)
 const loadError = ref('')
 
-const futureCards = [
-  { key: 'materials', icon: FileText, phase: '2' },
-  { key: 'results', icon: TrendingUp, phase: '4' },
-] as const
+const futureCards = [{ key: 'results', icon: TrendingUp, phase: '4' }] as const
 
 /**
  * A teacher can hand out a link (or a QR of it) that lands the student straight
@@ -85,17 +83,17 @@ async function showResult(sessionId: string): Promise<void> {
   }
 }
 
-/** A reload mid-session must land the student back on their paper, not the gate. */
+/**
+ * A reload mid-session must land the student back on their paper, not the gate.
+ * Deliberately silent: toggling the skeleton here would tear the course list
+ * down and mount it again, fetching the courses twice on every page load.
+ */
 async function resume(): Promise<void> {
-  loading.value = true
-  loadError.value = ''
   try {
     state.value = await getCurrentSession()
   } catch {
     // No active session is the normal case, not an error worth showing.
     state.value = null
-  } finally {
-    loading.value = false
   }
 }
 
@@ -173,6 +171,10 @@ onMounted(() => {
             v-model:error="joinError"
             @joined="join"
           />
+        </div>
+
+        <div class="mt-6">
+          <StudentCourses />
         </div>
 
         <div class="mt-4 grid gap-3 sm:grid-cols-2">
