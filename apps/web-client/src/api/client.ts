@@ -47,7 +47,12 @@ export interface ErrorEnvelope {
  */
 async function request(path: string, init: RequestInit): Promise<Response> {
   const headers = new Headers(init.headers)
-  if (init.method && init.method !== 'GET' && !headers.has('content-type')) {
+  // Only claim a JSON body when there is one: a bodyless POST with
+  // `content-type: application/json` is rejected by Fastify as an empty body,
+  // which broke every mutation that carries no payload (delete, duplicate,
+  // pause/resume/finish, approve, block).
+  const hasBody = init.body !== undefined && init.body !== null && init.body !== ''
+  if (init.method && init.method !== 'GET' && hasBody && !headers.has('content-type')) {
     headers.set('content-type', 'application/json')
   }
   const token = getToken()

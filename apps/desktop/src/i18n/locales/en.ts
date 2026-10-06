@@ -239,6 +239,12 @@ export default {
       edit: 'Edit',
       delete: 'Delete',
       results: 'Results',
+      duplicate: 'Duplicate',
+      duplicated: 'Created {title}',
+      exportJson: 'Save as a file',
+      exported: 'File saved',
+      importJson: 'Import',
+      imported: 'Imported {title}',
       deleteConfirm: 'Delete this test? All of its questions will be removed.',
       created: 'Test created.',
       updated: 'Test updated.',
@@ -422,15 +428,6 @@ export default {
     cancel: 'Cancel',
     confirm: 'Confirm',
     close: 'Close',
-    about: {
-      title: 'About',
-      tagline: 'Offline classroom testing',
-      version: 'Version',
-      versionUnknown: 'unknown',
-      server: 'Server',
-      offline: 'The server and the database run on this machine or on the local network. No internet account is needed.',
-    },
-
     dismiss: 'Dismiss',
   },
   footer: {

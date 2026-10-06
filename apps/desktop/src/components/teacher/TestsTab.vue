@@ -1,11 +1,21 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { BarChart3, Eye, FileQuestion, Plus } from '@lucide/vue'
+import { BarChart3, Copy, Download, Eye, FileQuestion, Plus, Upload } from '@lucide/vue'
 import { ApiError } from '../../api/client'
 import EmptyState from '../common/EmptyState.vue'
 import SkeletonList from '../common/SkeletonList.vue'
-import { createTest, deleteTest, getTest, getTestResults, listTests, updateTest } from '../../api/tests'
+import {
+  createTest,
+  deleteTest,
+  duplicateTest,
+  exportTestFile,
+  getTest,
+  getTestResults,
+  importTestFile,
+  listTests,
+  updateTest,
+} from '../../api/tests'
 import type { TestSummary } from '../../api/types'
 import type { TestResults } from '../../api/tests'
 import {
@@ -45,6 +55,12 @@ const busyId = ref('')
 const resultsFor = ref<TestSummary | null>(null)
 const results = ref<TestResults | null>(null)
 const resultsLoading = ref(false)
+/** Скрытый input[type=file]: импорт запускается кнопкой, а не выбором файла наугад. */
+const importInput = ref<HTMLInputElement | null>(null)
+/** Файл читается сразу же — иначе диалог выбора остаётся открытым во время запроса. */
+const importedFile = ref<File | null>(null)
+/** Что именно не так с файлом: сервер объясняет, и это полезнее общего «не вышло». */
+const importError = ref('')
 const showPreview = ref(false)
 
 function apiErrorKey(error: unknown): string {
@@ -181,6 +197,55 @@ async function save() {
   }
 }
 
+async function duplicate(test: TestSummary): Promise<void> {
+  busyId.value = test.id
+  try {
+    const copy = await duplicateTest(test.id)
+    toast.success(t('teacher.tests.duplicated', { title: copy.title }))
+    await load()
+  } catch (error) {
+    errorKey.value = apiErrorKey(error)
+  } finally {
+    busyId.value = ''
+  }
+}
+
+async function exportFile(test: TestSummary): Promise<void> {
+  busyId.value = test.id
+  try {
+    await exportTestFile(test.id, test.title)
+    toast.success(t('teacher.tests.exported'))
+  } catch (error) {
+    errorKey.value = apiErrorKey(error)
+  } finally {
+    busyId.value = ''
+  }
+}
+
+function openImportPicker(): void {
+  importInput.value?.click()
+}
+
+/** Файл уже выбран — импортируем его и показываем, что именно не так, если не выйдет. */
+async function runImport(): Promise<void> {
+  const file = importedFile.value
+  importedFile.value = null
+  if (!file) return
+  busyId.value = 'import'
+  try {
+    const created = await importTestFile(file)
+    toast.success(t('teacher.tests.imported', { title: created.title }))
+    errorKey.value = ''
+    await load()
+  } catch (error) {
+    errorKey.value = error instanceof ApiError ? 'teacher.tests.errors.generic' : 'teacher.errors.network'
+    importError.value =
+      error instanceof ApiError && error.code !== 'NETWORK' ? error.message : ''
+  } finally {
+    busyId.value = ''
+  }
+}
+
 async function remove(test: TestSummary) {
   if (!(await confirm({ message: t('teacher.tests.deleteConfirm') }))) return
   busyId.value = test.id
@@ -202,11 +267,39 @@ onMounted(load)
   <section>
     <div class="flex items-center justify-between">
       <h3 class="text-base font-semibold text-on-surface">{{ t('teacher.tests.heading') }}</h3>
-      <AppButton variant="success" v-if="!isEditing" @click="startCreate">
-        <Plus class="size-3.5" aria-hidden="true" />
-        {{ t('teacher.tests.newTest') }}
-      </AppButton>
+      <div v-if="!isEditing" class="flex shrink-0 items-center gap-2">
+        <AppButton
+          variant="secondaryMuted"
+          size="sm"
+          :disabled="busyId === 'import'"
+          @click="openImportPicker"
+        >
+          <Upload class="size-3.5" aria-hidden="true" />
+          {{ t('teacher.tests.importJson') }}
+        </AppButton>
+        <AppButton variant="success" @click="startCreate">
+          <Plus class="size-3.5" aria-hidden="true" />
+          {{ t('teacher.tests.newTest') }}
+        </AppButton>
+      </div>
     </div>
+
+    <input
+      ref="importInput"
+      type="file"
+      accept="application/json,.json"
+      class="sr-only"
+      :aria-label="t('teacher.tests.importJson')"
+      @change="(event) => { importedFile = (event.target as HTMLInputElement).files?.[0] ?? null; runImport() }"
+    />
+
+    <p
+      v-if="importError"
+      role="alert"
+      class="mt-3 rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container"
+    >
+      {{ importError }}
+    </p>
 
     <!-- editor (also renders while creating: editingId === null is handled by `isEditing`) -->
     <form v-if="isEditing" class="mt-4 space-y-4" @submit.prevent="save">
@@ -345,7 +438,24 @@ onMounted(load)
               <span v-if="test.passingPercent != null"> · {{ t('teacher.tests.passing', { percent: test.passingPercent }) }}</span>
             </p>
           </div>
-          <div class="flex shrink-0 items-center gap-2">
+          <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <AppButton
+              variant="ghost"
+              size="icon"
+              :disabled="busyId === test.id"
+              :aria-label="t('teacher.tests.exportJson')"
+              @click="exportFile(test)"
+            >
+              <Download class="size-4" aria-hidden="true" />
+            </AppButton>
+            <AppButton
+              variant="secondaryMuted"
+              :disabled="busyId === test.id"
+              @click="duplicate(test)"
+            >
+              <Copy class="size-3.5" aria-hidden="true" />
+              {{ t('teacher.tests.duplicate') }}
+            </AppButton>
             <AppButton variant="secondaryMuted" :disabled="busyId === test.id" @click="openResults(test)">
               <BarChart3 class="size-3.5" aria-hidden="true" />
               {{ t('teacher.tests.results') }}

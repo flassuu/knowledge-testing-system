@@ -241,6 +241,12 @@ const uk: typeof en = {
       edit: 'Редагувати',
       delete: 'Видалити',
       results: 'Результати',
+      duplicate: 'Дублювати',
+      duplicated: 'Створено {title}',
+      exportJson: 'Зберегти як файл',
+      exported: 'Файл збережено',
+      importJson: 'Імпорт',
+      imported: 'Імпортовано {title}',
       deleteConfirm: 'Видалити цей тест? Усі його питання буде видалено.',
       created: 'Тест створено.',
       updated: 'Тест оновлено.',
@@ -423,15 +429,6 @@ const uk: typeof en = {
     cancel: 'Скасувати',
     confirm: 'Підтвердити',
     close: 'Закрити',
-    about: {
-      title: 'Про програму',
-      tagline: 'Офлайн-тестування в класі',
-      version: 'Версія',
-      versionUnknown: 'невідомо',
-      server: 'Сервер',
-      offline: 'Сервер і база даних працюють на цьому комп’ютері або в локальній мережі. Обліковий запис в інтернеті не потрібен.',
-    },
-
     dismiss: 'Закрити',
   },
   footer: {
