@@ -1,14 +1,23 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Info } from '@lucide/vue'
 import LanguageSwitcher from './LanguageSwitcher.vue'
 import ServerStatus from './ServerStatus.vue'
 import ThemeSwitcher from './ThemeSwitcher.vue'
 import { useAuth } from '../stores/auth'
 import AppButton from '../components/common/AppButton.vue'
+import AboutDialog from '../components/common/AboutDialog.vue'
+// Desktop-only, like the API base: the web client has no version to show.
+import { isDesktop } from '../composables/desktop'
 
 const { t } = useI18n()
 const { user, signOut } = useAuth()
+
+const aboutOpen = ref(false)
+// The environment never changes at runtime, so this is decided once per mount
+// instead of on every render.
+const desktop = isDesktop()
 
 const roleLabel = computed(() => t(`role.${user.value?.role ?? 'student'}`))
 
@@ -43,13 +52,24 @@ const roleBadgeClass: Record<string, string> = {
       <ThemeSwitcher />
       <LanguageSwitcher />
       <AppButton
+        v-if="desktop"
+        variant="ghost"
+        size="icon"
+        :aria-label="t('common.about.title')"
+        @click="aboutOpen = true"
+      >
+        <Info class="size-4" aria-hidden="true" />
+      </AppButton>
+      <AppButton
         v-if="user"
-        type="button"
         @click="signOut"
-        variant="secondaryMuted" size="sm"
+        variant="secondaryMuted"
+        size="sm"
       >
         {{ t('auth.signOut') }}
       </AppButton>
     </div>
   </header>
+
+  <AboutDialog :open="aboutOpen" @close="aboutOpen = false" />
 </template>

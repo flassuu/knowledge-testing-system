@@ -422,6 +422,15 @@ export default {
     cancel: 'Cancel',
     confirm: 'Confirm',
     close: 'Close',
+    about: {
+      title: 'About',
+      tagline: 'Offline classroom testing',
+      version: 'Version',
+      versionUnknown: 'unknown',
+      server: 'Server',
+      offline: 'The server and the database run on this machine or on the local network. No internet account is needed.',
+    },
+
     dismiss: 'Dismiss',
   },
   footer: {

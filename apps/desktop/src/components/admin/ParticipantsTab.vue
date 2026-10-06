@@ -117,7 +117,7 @@ onMounted(load)
               <th scope="col" class="px-3 py-2.5" :aria-sort="ariaSort('course')">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 font-semibold hover:text-on-surface"
+                  class="inline-flex min-h-8 items-center gap-1 px-1 font-semibold hover:text-on-surface"
                   @click="toggle('course')"
                 >
                   {{ t('admin.col.course') }}
@@ -128,7 +128,7 @@ onMounted(load)
               <th scope="col" class="px-3 py-2.5" :aria-sort="ariaSort('student')">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 font-semibold hover:text-on-surface"
+                  class="inline-flex min-h-8 items-center gap-1 px-1 font-semibold hover:text-on-surface"
                   @click="toggle('student')"
                 >
                   {{ t('admin.col.student') }}
@@ -139,7 +139,7 @@ onMounted(load)
               <th scope="col" class="px-3 py-2.5" :aria-sort="ariaSort('enrolled')">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 font-semibold hover:text-on-surface"
+                  class="inline-flex min-h-8 items-center gap-1 px-1 font-semibold hover:text-on-surface"
                   @click="toggle('enrolled')"
                 >
                   {{ t('admin.col.enrolled') }}
@@ -150,7 +150,7 @@ onMounted(load)
               <th scope="col" class="px-3 py-2.5" :aria-sort="ariaSort('status')">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 font-semibold hover:text-on-surface"
+                  class="inline-flex min-h-8 items-center gap-1 px-1 font-semibold hover:text-on-surface"
                   @click="toggle('status')"
                 >
                   {{ t('admin.col.status') }}

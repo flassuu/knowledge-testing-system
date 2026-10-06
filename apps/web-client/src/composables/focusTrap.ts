@@ -7,11 +7,18 @@ const FOCUSABLE =
  * Dialog keyboard behaviour: Escape closes, Tab cycles inside the panel and
  * focus returns to the element that opened the dialog.
  */
+function resolveElement(value: unknown): HTMLElement | null {
+  if (value instanceof HTMLElement) return value
+  const element = (value as { $el?: unknown } | null)?.$el
+  return element instanceof HTMLElement ? element : null
+}
 export function useDialogFocus(
   open: () => boolean,
   close: () => void,
   panel: Ref<HTMLElement | null>,
-  initialFocus?: Ref<HTMLElement | null>,
+  // A template ref on a component resolves to the instance, not to its element,
+  // so this may be either; resolveElement() copes with both.
+  initialFocus?: Ref<unknown>,
 ): void {
   let opener: HTMLElement | null = null
 
@@ -50,7 +57,9 @@ export function useDialogFocus(
       if (isOpen) {
         opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
         await nextTick()
-        const target = initialFocus?.value ?? panel.value?.querySelector<HTMLElement>(FOCUSABLE)
+        const target =
+          resolveElement(initialFocus?.value) ??
+          panel.value?.querySelector<HTMLElement>(FOCUSABLE)
         target?.focus()
         return
       }

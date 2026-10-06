@@ -339,7 +339,7 @@ watch(
               <th scope="col" class="px-3 py-2.5" :aria-sort="ariaSort('name')">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 font-semibold hover:text-on-surface"
+                  class="inline-flex min-h-8 items-center gap-1 px-1 font-semibold hover:text-on-surface"
                   @click="toggle('name')"
                 >
                   {{ t('admin.col.name') }}
@@ -350,7 +350,7 @@ watch(
               <th scope="col" class="px-3 py-2.5" :aria-sort="ariaSort('role')">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 font-semibold hover:text-on-surface"
+                  class="inline-flex min-h-8 items-center gap-1 px-1 font-semibold hover:text-on-surface"
                   @click="toggle('role')"
                 >
                   {{ t('admin.col.role') }}
@@ -361,7 +361,7 @@ watch(
               <th scope="col" class="px-3 py-2.5" :aria-sort="ariaSort('status')">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 font-semibold hover:text-on-surface"
+                  class="inline-flex min-h-8 items-center gap-1 px-1 font-semibold hover:text-on-surface"
                   @click="toggle('status')"
                 >
                   {{ t('admin.col.status') }}
