@@ -166,6 +166,9 @@ const uk: typeof en = {
       copy: 'Скопіювати код',
       copyLink: 'Скопіювати посилання',
       linkHint: 'Або надішліть це посилання — код підставиться:',
+      showQr: 'Показати QR-код',
+      hideQr: 'Сховати QR-код',
+      qrCaption: 'Скануйте, щоб приєднатися до тесту',
       copied: 'Скопійовано',
       copyFailed: 'Не вдалося скопіювати — запишіть код вручну.',
       pause: 'Пауза',
@@ -367,6 +370,7 @@ const uk: typeof en = {
   },
   common: {
     language: 'Мова',
+    qr: { for: 'QR-код для {target}' },
     fileType: {
       pdf: 'PDF',
       document: 'Документ',

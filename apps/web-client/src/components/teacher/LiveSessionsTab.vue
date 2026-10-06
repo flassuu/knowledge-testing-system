@@ -6,6 +6,7 @@ import {
   CircleX,
   Copy,
   Link2,
+  QrCode,
   Pause,
   Play,
   Radio,
@@ -23,6 +24,7 @@ import {
 } from '../../api/sessions'
 import type { TestSummary } from '../../api/types'
 import EmptyState from '../common/EmptyState.vue'
+import QrCodeCard from '../common/QrCode.vue'
 import SkeletonList from '../common/SkeletonList.vue'
 import TestPicker from './TestPicker.vue'
 import { useConfirm } from '../../composables/confirm'
@@ -47,6 +49,7 @@ const startingTestId = ref('')
 const showStart = ref(false)
 const copied = ref(false)
 const linkCopied = ref(false)
+const showQr = ref(false)
 
 /** The server pushes the board over a WebSocket; polling is the fallback. */
 const channel = useSessionChannel()
@@ -295,19 +298,32 @@ onMounted(load)
               <Copy v-else class="size-3.5" aria-hidden="true" />
               {{ copied ? t('teacher.live.copied') : t('teacher.live.copy') }}
             </button>
-            <p class="mt-2 text-[11px] text-on-surface-variant">
-              {{ t('teacher.live.linkHint') }}
-            </p>
             <button
               type="button"
               @click="copyLink"
-              class="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-on-surface-variant hover:text-on-surface"
+              class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-on-surface-variant hover:text-on-surface"
             >
               <Link2 class="size-3.5" aria-hidden="true" />
               {{ linkCopied ? t('teacher.live.copied') : t('teacher.live.copyLink') }}
             </button>
+            <button
+              type="button"
+              :aria-pressed="showQr"
+              @click="showQr = !showQr"
+              class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-on-surface-variant hover:text-on-surface"
+            >
+              <QrCode class="size-3.5" aria-hidden="true" />
+              {{ showQr ? t('teacher.live.hideQr') : t('teacher.live.showQr') }}
+            </button>
           </div>
         </div>
+
+        <div v-if="showQr" class="mt-4 flex justify-center sm:justify-end">
+          <QrCodeCard :text="joinLink()" :caption="t('teacher.live.qrCaption')" />
+        </div>
+        <p v-else class="mt-3 text-[11px] text-on-surface-variant">
+          {{ t('teacher.live.linkHint') }}
+        </p>
 
         <div class="mt-4 flex flex-wrap items-center gap-2">
           <button

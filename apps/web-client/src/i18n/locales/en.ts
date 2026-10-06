@@ -164,6 +164,9 @@ export default {
       copy: 'Copy code',
       copyLink: 'Copy join link',
       linkHint: 'Or send this link - it fills the code in:',
+      showQr: 'Show QR code',
+      hideQr: 'Hide QR code',
+      qrCaption: 'Scan to join this test',
       copied: 'Copied',
       copyFailed: 'Could not copy — write the code down instead.',
       pause: 'Pause',
@@ -366,6 +369,7 @@ export default {
   },
   common: {
     language: 'Language',
+    qr: { for: 'QR code for {target}' },
     fileType: {
       pdf: 'PDF',
       document: 'Doc',
