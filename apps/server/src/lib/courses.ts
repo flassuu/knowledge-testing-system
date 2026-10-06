@@ -92,6 +92,33 @@ export function listCourseRows(
   return rows.map(toCourse)
 }
 
+/**
+ * The courses a student is enrolled in. Students see only what a teacher put
+ * them into; the roster of other students is never exposed.
+ */
+export function listEnrolledCourses(db: DatabaseSync, userId: string): Course[] {
+  const sub = `
+    (SELECT COUNT(*) FROM course_enrollments e2 WHERE e2.course_id = c.id) AS students_count,
+    (SELECT COUNT(*) FROM course_tests t WHERE t.course_id = c.id) AS tests_count,
+    (SELECT COUNT(*) FROM materials m WHERE m.course_id = c.id) AS materials_count`
+  const rows = db
+    .prepare(
+      `SELECT c.*, ${sub}
+         FROM courses c
+         JOIN course_enrollments e ON e.course_id = c.id AND e.user_id = ?
+        ORDER BY c.created_at DESC`,
+    )
+    .all(userId) as unknown as CourseWithCountsRow[]
+  return rows.map(toCourse)
+}
+
+export function isEnrolled(db: DatabaseSync, courseId: string, userId: string): boolean {
+  const row = db
+    .prepare('SELECT 1 FROM course_enrollments WHERE course_id = ? AND user_id = ?')
+    .get(courseId, userId)
+  return row !== undefined
+}
+
 export function listMaterials(db: DatabaseSync, courseId: string): Material[] {
   const rows = db
     .prepare('SELECT * FROM materials WHERE course_id = ? ORDER BY created_at DESC')

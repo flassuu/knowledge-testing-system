@@ -31,6 +31,7 @@ let adminToken: string
 let teacherToken: string
 let teacher2Token: string
 let studentUsername = 'stu-course'
+let studentToken = ''
 
 async function login(username: string, password: string) {
   return app.server.inject({
@@ -93,6 +94,14 @@ describe('courses & materials CRUD', () => {
       headers: bearer(adminToken),
       payload: { status: 'approved' },
     })
+    // Only an approved account can sign in, so the token is taken here.
+    const signedIn = await app.server.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { username: studentUsername, password: 'student-pass-1' },
+    })
+    expect(signedIn.statusCode).toBe(200)
+    studentToken = (signedIn.json() as { token: string }).token
   })
 
   it('creates a course as teacherA', async () => {
@@ -272,5 +281,174 @@ describe('courses & materials CRUD', () => {
       headers: bearer(teacherToken),
     })
     expect(after.statusCode).toBe(404)
+  })
+
+  /** A course the student is in, with one material, and one they are not in. */
+  async function seedForStudent(): Promise<{ mine: string; other: string; materialId: string }> {
+    const admin = adminToken
+    const teacher = teacherToken
+    const make = async (ownerToken: string, title: string): Promise<string> => {
+      const res = await app.server.inject({
+        method: 'POST',
+        url: '/api/courses',
+        headers: bearer(ownerToken),
+        payload: { title, description: 'for students' },
+      })
+      return (res.json() as CoursePayload).id
+    }
+    const mine = await make(teacher, 'Shared with the class')
+    const other = await make(teacher2Token, 'Someone else course')
+
+    await app.server.inject({
+      method: 'POST',
+      url: `/api/courses/${mine}/enrollments`,
+      headers: bearer(teacher),
+      payload: { username: studentUsername },
+    })
+    await app.server.inject({
+      method: 'POST',
+      url: `/api/courses/${other}/enrollments`,
+      headers: bearer(teacher2Token),
+      payload: { username: studentUsername },
+    })
+
+    const upload = await app.server.inject({
+      method: 'POST',
+      url: `/api/courses/${mine}/materials?name=lecture.pdf`,
+      headers: { 'content-type': 'application/octet-stream', ...bearer(teacher) },
+      payload: Buffer.from('%PDF-1.4\nstudent material\n'),
+    })
+    const materialId = (upload.json() as MaterialPayload).id
+    expect(admin).toBeTruthy()
+    return { mine, other, materialId }
+  }
+
+  it('lists only the courses the student is enrolled in', async () => {
+    const seeded = await seedForStudent()
+    const res = await app.server.inject({
+      method: 'GET',
+      url: '/api/courses',
+      headers: bearer(studentToken),
+    })
+    expect(res.statusCode).toBe(200)
+    const { courses } = res.json() as { courses: Array<{ id: string; title: string }> }
+    const ids = courses.map((course) => course.id)
+    expect(ids).toContain(seeded.mine)
+    // Enrolled in it too, but through the other teacher: still visible, since a
+    // student may read any course they are in.
+    expect(ids).toContain(seeded.other)
+    // The teacher's own courses that nobody was enrolled in stay hidden.
+    expect(courses.every((course) => typeof course.title === 'string')).toBe(true)
+  })
+
+  it('hides courses the student is not enrolled in', async () => {
+    const teacher = teacherToken
+    const res = await app.server.inject({
+      method: 'POST',
+      url: '/api/courses',
+      headers: bearer(teacher),
+      payload: { title: 'Not for this student' },
+    })
+    const hidden = (res.json() as CoursePayload).id
+
+    const denied = await app.server.inject({
+      method: 'GET',
+      url: `/api/courses/${hidden}`,
+      headers: bearer(studentToken),
+    })
+    expect(denied.statusCode).toBe(403)
+
+    const list = await app.server.inject({
+      method: 'GET',
+      url: '/api/courses',
+      headers: bearer(studentToken),
+    })
+    const ids = (list.json() as { courses: Array<{ id: string }> }).courses.map((c) => c.id)
+    expect(ids).not.toContain(hidden)
+  })
+
+  it('serves the course with its materials and test titles, but no student roster', async () => {
+    const seeded = await seedForStudent()
+    const res = await app.server.inject({
+      method: 'GET',
+      url: `/api/courses/${seeded.mine}`,
+      headers: bearer(studentToken),
+    })
+    expect(res.statusCode).toBe(200)
+    const course = res.json() as {
+      materials: Array<{ id: string; title: string }>
+      tests: unknown[]
+      students: unknown[]
+    }
+    expect(course.materials.map((m) => m.title)).toContain('lecture.pdf')
+    // Attached tests come back as id + title only, never with questions.
+    for (const test of course.tests) {
+      expect(Object.keys(test as object).sort()).toEqual(['id', 'title'])
+    }
+    // The roster belongs to the teacher; a student has no business reading it.
+    expect(course.students).toEqual([])
+  })
+
+  it('lets the student download a material of their course', async () => {
+    const seeded = await seedForStudent()
+    const res = await app.server.inject({
+      method: 'GET',
+      url: `/api/courses/${seeded.mine}/materials/${seeded.materialId}/file`,
+      headers: bearer(studentToken),
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.headers['content-type']).toContain('application/pdf')
+  })
+
+  it('refuses a material download from a course the student is not in', async () => {
+    const teacher = teacherToken
+    const course = (
+      await app.server.inject({
+        method: 'POST',
+        url: '/api/courses',
+        headers: bearer(teacher),
+        payload: { title: 'Private archive' },
+      })
+    ).json() as CoursePayload
+    const upload = await app.server.inject({
+      method: 'POST',
+      url: `/api/courses/${course.id}/materials?name=secret.pdf`,
+      headers: { 'content-type': 'application/octet-stream', ...bearer(teacher) },
+      payload: Buffer.from('%PDF-1.4\nsecret\n'),
+    })
+    const materialId = (upload.json() as MaterialPayload).id
+
+    const res = await app.server.inject({
+      method: 'GET',
+      url: `/api/courses/${course.id}/materials/${materialId}/file`,
+      headers: bearer(studentToken),
+    })
+    expect(res.statusCode).toBe(403)
+  })
+
+  it('still refuses every write endpoint to a student', async () => {
+    const seeded = await seedForStudent()
+    // A real UUID: schema validation answers 400 before the role guard runs, so
+    // a malformed id would test the wrong thing.
+    const someId = '00000000-0000-4000-8000-000000000000'
+    const cases: Array<{ method: 'POST' | 'PATCH' | 'DELETE'; url: string }> = [
+      { method: 'POST', url: '/api/courses' },
+      { method: 'PATCH', url: `/api/courses/${seeded.mine}` },
+      { method: 'DELETE', url: `/api/courses/${seeded.mine}` },
+      { method: 'POST', url: `/api/courses/${seeded.mine}/enrollments` },
+      { method: 'DELETE', url: `/api/courses/${seeded.mine}/enrollments/${someId}` },
+      { method: 'POST', url: `/api/courses/${seeded.mine}/tests` },
+      { method: 'DELETE', url: `/api/courses/${seeded.mine}/tests/${someId}` },
+      { method: 'POST', url: `/api/courses/${seeded.mine}/materials?name=x.pdf` },
+    ]
+    for (const probe of cases) {
+      const res = await app.server.inject({
+        method: probe.method,
+        url: probe.url,
+        headers: { 'content-type': 'application/json', ...bearer(studentToken) },
+        payload: { title: 'nope', username: studentUsername, testId: someId },
+      })
+      expect(res.statusCode, `${probe.method} ${probe.url}`).toBe(403)
+    }
   })
 })

@@ -13,7 +13,9 @@ import {
   enrollStudent,
   findCourseRow,
   findMaterialRow,
+  isEnrolled,
   listCourseRows,
+  listEnrolledCourses,
   listMaterials,
   unenrollStudent,
   updateCourse,
@@ -128,7 +130,8 @@ export const courseRoutes: FastifyPluginAsync<CoursesDeps> = async (
     payload.on('error', (error: Error) => done(error))
   })
 
-  function courseDetails(courseId: string): CourseWithRelations {
+  /** `forStudent` drops the roster: who else is in the class is the teacher's business. */
+  function courseDetails(courseId: string, forStudent = false): CourseWithRelations {
     const course = findCourseRow(db, courseId) as NonNullable<ReturnType<typeof findCourseRow>>
     const testRows = db
       .prepare(
@@ -154,21 +157,26 @@ export const courseRoutes: FastifyPluginAsync<CoursesDeps> = async (
       studentsCount: studentRows.length,
       materials: listMaterials(db, courseId),
       tests: testRows,
-      students: studentRows.map((row) => ({
-        id: row.id,
-        username: row.username,
-        fullName: row.full_name,
-      })),
+      students: forStudent
+        ? []
+        : studentRows.map((row) => ({
+            id: row.id,
+            username: row.username,
+            fullName: row.full_name,
+          })),
     }
   }
 
   app.get(
     '/api/courses',
-    { preHandler: requireRoles('admin', 'teacher') },
+    { preHandler: requireRoles('admin', 'teacher', 'student') },
     async (request) => {
       const session = request.session!
       return {
-        courses: listCourseRows(db, session.userId, session.role === 'admin'),
+        courses:
+          session.role === 'student'
+            ? listEnrolledCourses(db, session.userId)
+            : listCourseRows(db, session.userId, session.role === 'admin'),
       }
     },
   )
@@ -193,7 +201,7 @@ export const courseRoutes: FastifyPluginAsync<CoursesDeps> = async (
   app.get(
     '/api/courses/:id',
     {
-      preHandler: requireRoles('admin', 'teacher'),
+      preHandler: requireRoles('admin', 'teacher', 'student'),
       schema: { params: idParamsSchema },
     },
     async (request, reply) => {
@@ -201,10 +209,15 @@ export const courseRoutes: FastifyPluginAsync<CoursesDeps> = async (
       const params = request.params as { id: string }
       const course = findCourseRow(db, params.id)
       if (!course) return sendError(reply, 404, 'NOT_FOUND', 'course not found')
-      if (!canManage(session, course.owner_id)) {
+      // A student may open a course they are enrolled in, never anyone else's.
+      const allowed =
+        session.role === 'student'
+          ? isEnrolled(db, course.id, session.userId)
+          : canManage(session, course.owner_id)
+      if (!allowed) {
         return sendError(reply, 403, 'FORBIDDEN', 'insufficient role')
       }
-      return courseDetails(course.id)
+      return courseDetails(course.id, session.role === 'student')
     },
   )
 
@@ -390,7 +403,7 @@ export const courseRoutes: FastifyPluginAsync<CoursesDeps> = async (
   app.get(
     '/api/courses/:id/materials/:materialId/file',
     {
-      preHandler: requireRoles('admin', 'teacher'),
+      preHandler: requireRoles('admin', 'teacher', 'student'),
       schema: { params: materialParamsSchema },
     },
     async (request, reply) => {
@@ -398,7 +411,11 @@ export const courseRoutes: FastifyPluginAsync<CoursesDeps> = async (
       const params = request.params as { id: string; materialId: string }
       const course = findCourseRow(db, params.id)
       if (!course) return sendError(reply, 404, 'NOT_FOUND', 'course not found')
-      if (!canManage(session, course.owner_id)) {
+      const allowed =
+        session.role === 'student'
+          ? isEnrolled(db, course.id, session.userId)
+          : canManage(session, course.owner_id)
+      if (!allowed) {
         return sendError(reply, 403, 'FORBIDDEN', 'insufficient role')
       }
       const material = findMaterialRow(db, params.materialId)
