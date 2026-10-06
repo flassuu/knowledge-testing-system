@@ -313,12 +313,13 @@ const uk: typeof en = {
   student: {
     heading: 'Сторінка студента',
     subheading: 'Проходьте тести, читайте матеріали курсу та слідкуйте за результатами.',
-    cards: {
-      phase: 'Фаза {phase}',
-      results: {
-        title: 'Мої результати',
-        description: 'Ваші бали та статистика за всіма тестами.',
-      },
+    history: {
+      heading: 'Мої результати',
+      passed: 'Складено',
+      failed: 'Не складено',
+      autoSubmitted: 'Авто',
+      emptyTitle: 'Результатів ще немає',
+      emptyHint: 'Пройдіть тест — він з’явиться тут із вашим балом.',
     },
     courses: {
       heading: 'Матеріали курсу',
@@ -375,6 +376,7 @@ const uk: typeof en = {
       alreadySubmitted: 'Цю роботу вже надіслано.',
       resultFailed: 'Не вдалося завантажити результат.',
       coursesFailed: 'Не вдалося завантажити ваші курси.',
+      resultsFailed: 'Не вдалося завантажити ваші результати.',
       downloadFailed: 'Не вдалося завантажити файл.',
     },
   },

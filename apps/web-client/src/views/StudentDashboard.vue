@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { TrendingUp } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
 import JoinSessionCard from '../components/student/JoinSessionCard.vue'
 import SessionResult from '../components/student/SessionResult.vue'
 import StudentCourses from '../components/student/StudentCourses.vue'
+import StudentResults from '../components/student/StudentResults.vue'
 import SessionRunner from '../components/student/SessionRunner.vue'
 import { ApiError } from '../api/client'
 import {
@@ -25,8 +25,6 @@ const state = ref<SessionState | null>(null)
 const result = ref<SessionResultBody | null>(null)
 const loading = ref(false)
 const loadError = ref('')
-
-const futureCards = [{ key: 'results', icon: TrendingUp, phase: '4' }] as const
 
 /**
  * A teacher can hand out a link (or a QR of it) that lands the student straight
@@ -177,27 +175,8 @@ onMounted(() => {
           <StudentCourses />
         </div>
 
-        <div class="mt-4 grid gap-3 sm:grid-cols-2">
-          <div
-            v-for="card in futureCards"
-            :key="card.key"
-            class="rounded-xl border border-outline-variant bg-surface-container p-4 shadow-sm"
-          >
-            <div class="flex items-center gap-2">
-              <component :is="card.icon" class="size-5" aria-hidden="true" />
-              <h3 class="text-sm font-semibold text-on-surface">
-                {{ t(`student.cards.${card.key}.title`) }}
-              </h3>
-            </div>
-            <p class="mt-2 text-xs text-on-surface-variant">
-              {{ t(`student.cards.${card.key}.description`) }}
-            </p>
-            <span
-              class="mt-3 inline-block rounded-full bg-surface-container-high px-2 py-0.5 text-[11px] font-semibold text-on-surface-variant"
-            >
-              {{ t('student.cards.phase', { phase: card.phase }) }}
-            </span>
-          </div>
+        <div class="mt-6">
+          <StudentResults @open="showResult" />
         </div>
       </template>
 

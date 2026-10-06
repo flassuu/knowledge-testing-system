@@ -154,6 +154,28 @@ export async function submitSession(
   })
 }
 
+/** One finished attempt in the student's own history. */
+export interface StudentResult {
+  participationId: string
+  sessionId: string
+  joinCode: string
+  testId: string
+  testTitle: string
+  questionCount: number
+  status: ParticipationStatus
+  score: number | null
+  maxScore: number | null
+  percent: number | null
+  passed: boolean | null
+  submittedAt: string | null
+}
+
+/** Student only: every finished attempt, newest first. */
+export async function listStudentResults(): Promise<StudentResult[]> {
+  const result = await apiFetch<{ results: StudentResult[] }>('/api/student/results')
+  return result.results
+}
+
 export async function getSessionResult(sessionId: string): Promise<SessionResultBody> {
   return apiFetch<SessionResultBody>(`/api/sessions/${sessionId}/result`)
 }

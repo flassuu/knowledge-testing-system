@@ -311,12 +311,13 @@ export default {
   student: {
     heading: 'Student home',
     subheading: 'Join tests, read course materials, and track your results.',
-    cards: {
-      phase: 'Phase {phase}',
-      results: {
-        title: 'My results',
-        description: 'Your scores and statistics across tests.',
-      },
+    history: {
+      heading: 'My results',
+      passed: 'Passed',
+      failed: 'Not passed',
+      autoSubmitted: 'Auto',
+      emptyTitle: 'No results yet',
+      emptyHint: 'Finish a test and it will show up here with your score.',
     },
     courses: {
       heading: 'Course materials',
@@ -374,6 +375,7 @@ export default {
       alreadySubmitted: 'This paper is already submitted.',
       resultFailed: 'Could not load the result.',
       coursesFailed: 'Could not load your courses.',
+      resultsFailed: 'Could not load your results.',
       downloadFailed: 'Could not download the file.',
     },
   },
