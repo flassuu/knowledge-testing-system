@@ -1,13 +1,17 @@
 # Database schema
 
-Schema of the system at v0.3.0. SQLite via `node:sqlite` (`DatabaseSync`);
+Schema of the system at v0.4.0. SQLite via `node:sqlite` (`DatabaseSync`);
 ids are server-side UUIDs; timestamps are stored as ISO-8601 UTC strings. The
 schema is enforced by idempotent, versioned migrations run at server startup;
 `GET /api/admin/stats` reports the applied version as `schemaVersion`.
 
-> Status: **current**. Phases 1–3 are implemented: roles and auth, the
-> test/course core, and the live-session runtime. Reporting tables
-> (grade journals) arrive with Phase 4.
+> Status: **current**, still at version 4. Phases 1–3 added the tables:
+> roles and auth, the test/course core, and the live-session runtime.
+> **Reporting (Phase 4) added no tables on purpose** — the grade journal and
+> per-question difficulty are derived from `participations` and
+> `participation_answers`, which already record who answered what and whether
+> it was right. Storing an aggregate would only add a second source of truth
+> that has to be recomputed every time a session is graded.
 
 ## Conventions
 

@@ -4,6 +4,50 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
+## [0.4.0] — unreleased
+
+Reporting: the numbers a teacher acts on, and the ways to get them out of the
+building.
+
+### Added
+- **Grade journal per test** (`GET /api/tests/:id/results`, teacher only). One
+  row per student across every session that test was run in: attempts, best,
+  last and average percent, plus the class figures. The class average and the
+  pass rate are judged on each student's *last* attempt, so someone who improved
+  since the first try is not counted as a fail, and the pass rate stays unknown
+  (`null`) for a test without a pass mark instead of reading as 0 percent.
+- **Per-question difficulty**, in the same response: for every question, how many
+  students answered and how many got it right, across all attempts. The journal
+  screen opens from a test row and leads with the questions under 50 percent,
+  because that list is what says what to reteach.
+- **CSV export per session** (`GET /api/sessions/:id/results.csv`): a header
+  block with the test and the session, then one row per participant. Fields are
+  escaped, the file carries a UTF-8 BOM so spreadsheets do not mangle non-ASCII
+  names, and a session nobody joined exports the header rather than dividing by
+  zero. The board button fetches it with the bearer token instead of a plain
+  link — the API authenticates with a header, not a cookie.
+- **Printable report.** The journal screen prints through the browser's own
+  dialog: the app chrome is dropped, the theme collapses to ink on white, and
+  the difficulty bars keep their fill (`print-color-adjust`). No PDF library.
+- **Student side, completed**: the courses the student is enrolled in with
+  their materials, the result of every finished attempt on the home screen, and
+  a QR code for the join link on the teacher's board (rendered by `uqr`, the one
+  dependency added).
+
+### Changed
+- `apiFetch` and the new file download share one `request()` helper in the
+  client API layer, so the bearer token, the content-type default and the error
+  envelope are handled in one place instead of twice.
+- The client API layer exposes `downloadFile(path, filename)`: fetch with the
+  token, save through a blob URL, never write an error body to disk.
+
+### Fixed
+- **`/api/sessions/current`** no longer hands a student a session they only
+  opened. It returns participations in status `joined`, so a finished attempt no
+  longer hides the "you already took this" state.
+- **Double course fetch on the student home**: the dashboard and the course card
+  both loaded the same list on mount.
+
 ## [0.3.0] — 2026-09-30
 
 The classroom loop, end to end: a teacher starts a live session, students

@@ -123,14 +123,23 @@ true/false, short answer, matching) · `live_sessions` · `participations` ·
 6. The teacher's **live board** streams over **WebSocket**: status changes for
    everyone in the session, the participant list for the teacher. The client
    falls back to polling where a socket cannot be opened.
-7. *Planned (Phase 4):* the teacher exports a report — PDF (printable) + CSV —
-   stamped per session.
+7. **Reporting.** A test is judged across *every* session it was run in, not
+   one: the journal gives each student their attempts, best, last and average
+   percent, and the class its average and pass rate — both judged on the last
+   attempt, so a student who improved is not counted as a fail. Per-question
+   difficulty comes from the same query, because the questions the class missed
+   are what says what to reteach.
+8. **Getting it out.** The report prints through the browser's own dialog (no
+   PDF library; the print stylesheet collapses the theme to ink on white), and
+   one session exports as CSV through a fetch with the bearer token — a plain
+   link cannot authenticate here.
 
 ## Communication
 
 | Flow | Channel |
 |------|---------|
 | Everyone ↔ Server (CRUD, join, submit, results) | REST `/api/*`, bearer token (the student's own account token) |
+| Teacher → Server (report export) | REST `/api/sessions/:id/results.csv`, fetched with the token and saved as a blob — a plain link would arrive unauthenticated |
 | Server → Teacher (live board: joins, submissions, status) | WebSocket `/ws/sessions/:id` |
 | Server → Student (pause, finish, time) | same WebSocket, status only |
 | Fallback when a socket cannot be opened | REST polling (cheap, LAN scale) |

@@ -19,13 +19,15 @@ application serves an **administrator**, **teachers** and **students**.
 - **Administrator** — hosts the system: runs the embedded server (in the
   desktop client or headless CLI), manages the database, users, participants.
 - **Teacher** — desktop app and/or web app: creates and edits tests with all
-  five question types, builds courses with materials, and runs a **live
-  session** — start a test, read the join code to the room, watch the
-  participant board in real time, pause or finish.
-- **Student** — signs in on a phone (PWA) or PC, joins a session with a
-  six-character code or a link, answers the paper against a countdown, and sees
-  the graded result with the correct answers. *(Course materials and a
-  results history are next, in Phase 4.)*
+  five question types, builds courses with materials, runs a **live session**
+  (start a test, read the join code to the room or show the QR code, watch the
+  participant board in real time, pause or finish), and afterwards reads the
+  **grade journal** — who is where, and which questions the class missed — then
+  prints the report or exports the session as CSV.
+- **Student** — signs in on a phone (PWA) or PC, browses the courses they are
+  enrolled in and their materials, joins a session with a six-character code or
+  a link, answers the paper against a countdown, and sees the graded result with
+  the correct answers plus a history of every attempt.
 
 ## Architecture
 

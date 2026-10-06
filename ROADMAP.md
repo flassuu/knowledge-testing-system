@@ -12,7 +12,7 @@ while development proceeds.
 | Phase 1.1 — UI/UX polish | **shipped in 0.2.0** | Design & feedback pass over what 0.1.0 already ships |
 | Phase 2 — Teacher workbench | **0.2.0** (done) | Test/course authoring and sharing |
 | Phase 3 — Session runtime | **0.3.0** (done) | Live testing: join, answer, score, WS board |
-| Phase 4 — Reporting | 0.4.0 (next) | Statistics, journals, PDF + CSV export |
+| Phase 4 — Reporting | 0.4.0 (current) | Statistics, journals, printable + CSV export |
 | Phase 5 — MVP polish | 1.0.0 | Packaging, e2e, README polish |
 
 The UI/UX polish pass (originally planned as its own 0.1.1) shipped together
@@ -165,14 +165,27 @@ These rules apply to every screen of web-client and desktop. No exceptions.
       resume, finish and timeout sweep; the client falls back to polling when
       the socket cannot be opened
 - [x] Join link: the teacher copies a `?join=CODE` link, which fills the code in
-      on the student's phone (`QR code for the link would need a dependency -
-      not done`)
+      on the student's phone; a scannable QR code for the same link is part of
+      Phase 4
 
-## Phase 4 — Reporting (v0.4.0, next)
+## Phase 4 — Reporting (v0.4.0, in progress)
 
-- Results API + teacher live dashboard; grade journals
-- Student result screen (per test settings)
-- Report export: PDF (printable) + CSV (spreadsheets) per session
+- [x] Grade journal per test: one row per student across every session of that
+      test (attempts, best, last and average percent), class average and pass
+      rate judged on each student's last attempt, so someone who improved since
+      the first try is not counted as a fail
+- [x] Per-question difficulty across every attempt, with the questions most of
+      the class missed called out at the top of the report
+- [x] Student side: the courses the student is enrolled in with their materials,
+      the result of every finished attempt on the home screen, and the QR code
+      on the teacher's board to join a session
+- [x] CSV export per session (`GET /api/sessions/:id/results.csv`), fetched with
+      the bearer token rather than a plain link, UTF-8 BOM and escaped fields so
+      spreadsheets open non-ASCII names correctly
+- [x] Printable report: the journal screen prints through the browser's own
+      dialog with the app chrome dropped and the theme collapsed to ink on
+      white (no PDF library needed)
+- [ ] Tag `v0.4.0` and publish the release
 
 ## Phase 5 — MVP polish (v1.0.0)
 

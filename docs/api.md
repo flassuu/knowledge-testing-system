@@ -155,6 +155,29 @@ sequential). Same body and errors as `POST`.
 
 Removes the test; questions cascade. → `204`.
 
+### `GET /api/tests/:id/results`
+
+Grade journal for one test, aggregated over **every** session it was run in.
+Attempts still in progress are ignored. Both class figures are judged on each
+student's last attempt, so a student who improved since the first try is not
+counted as a fail; `passRate` is `null` when the test has no pass mark rather
+than reading as 0 percent.
+
+```json
+{
+  "test": { "id": "…", "title": "Photosynthesis", "passingPercent": 50 },
+  "students": 2, "submissions": 3, "averagePercent": 50, "passRate": 67,
+  "journal": [{ "userId": "…", "username": "ana", "fullName": "Ana K.",
+                "attempts": 2, "bestPercent": 100, "lastPercent": 25,
+                "lastPassed": false, "averagePercent": 63, "lastSubmittedAt": "…" }],
+  "questions": [{ "questionId": "…", "body": "…", "type": "true_false", "points": 1,
+                  "answers": 24, "correct": 7, "percent": 29 }]
+}
+```
+
+`questions` lists every question of the test, including ones nobody has answered
+yet (`answers: 0`). → `403` for a student or another teacher · `404`.
+
 ## Courses (`/api/courses`, admin & teacher)
 
 A course groups materials (files) and tests, and enrolls students.
@@ -334,8 +357,11 @@ short answers. Re-joining returns the same participation and the same order.
 
 ### `GET /api/sessions/current`
 
-Student only. The session in progress with the same shape as `join`, so a
-reload lands back on the same paper. `404 NOT_FOUND` when nothing is running.
+Student only. The session **still in progress** with the same shape as `join`,
+so a reload lands back on the same paper. Only a participation with status
+`joined` counts: a finished attempt is history, not something to resume, and the
+student home shows it in the results list instead. `404 NOT_FOUND` when nothing
+is running.
 
 ### `POST /api/sessions/:id/submit`
 
@@ -354,6 +380,36 @@ Student only. Body `{ "answers": { "<questionId>": … } }`.
 Student only, their own participation. `409 CONFLICT` before submitting.
 Returns the graded paper, each question with `isCorrect`, `pointsAwarded` and
 **the answer key**, so the student can learn from the result.
+
+### `GET /api/student/results`
+
+Student only. The student's own finished attempts (status `joined` excluded),
+newest first, capped at 50 — the results list on the student home.
+
+```json
+{ "results": [{ "participationId": "…", "sessionId": "…", "joinCode": "ABC123",
+                "testId": "…", "testTitle": "Photosynthesis", "questionCount": 2,
+                "status": "submitted", "score": 4, "maxScore": 4,
+                "percent": 100, "passed": true, "submittedAt": "…" }] }
+```
+
+`passed` is `null` for a test without a pass mark, which the client shows as a
+neutral "Completed" rather than a failure.
+
+### `GET /api/sessions/:id/results.csv`
+
+Admin & teacher (owner). The session as a spreadsheet: `text/csv; charset=utf-8`
+with a `content-disposition` filename, a header block (test, join code, status,
+start/finish, pass mark), a blank line, then one row per participant with
+score, percent, pass and submission time. Fields containing a comma or a quote
+are quoted, and the file starts with a UTF-8 BOM so spreadsheet apps read
+non-ASCII names correctly.
+
+Because the API authenticates with an `Authorization` header rather than a
+cookie, a plain `<a href>` to this endpoint is rejected — the client fetches it
+with the token and saves it as a blob.
+
+→ `403` for another teacher's session · `404`
 
 ## Realtime (`/ws`)
 
@@ -382,12 +438,21 @@ teacher who does not own it), `4404` unknown session.
 | `POST /api/auth/logout`, `GET /api/auth/me` | + | + | + |
 | `GET/POST /api/users`, `PATCH/DELETE /api/users/:id` | + | – | – |
 | `/api/tests`, `/api/tests/:id`, `/api/courses*` | + | + (own) | – |
-| `GET/POST /api/sessions`, `PATCH /api/sessions/:id`, `/participants`, `/review` | + | + (own) | – |
-| `POST /api/sessions/join`, `GET /api/sessions/current`, `/:id/submit`, `/:id/result` | – | – | + |
+| `GET/POST /api/sessions`, `PATCH /api/sessions/:id`, `/participants`, `/review`, `/:id/results.csv` | + | + (own) | – |
+| `GET /api/tests/:id/results` | + | + (own) | – |
+| `POST /api/sessions/join`, `GET /api/sessions/current`, `/:id/submit`, `/:id/result`, `/api/student/results` | – | – | + |
 | `GET /ws/sessions/:id` | + (board) | + (board) | + (status only) |
 | `/api/admin/stats`, `/api/admin/participants` | + | – | – |
 
-## Roadmap
+## Reporting
 
-Phase 4 adds reporting: a results API, grade journals and PDF/CSV export.
-Endpoint shapes
+Two endpoints cover what a teacher needs after a run, and they answer different
+questions:
+
+| Question | Endpoint |
+|----------|----------|
+| How did the class do, and which question needs reteaching? | `GET /api/tests/:id/results` — the journal plus per-question difficulty, across every session of that test |
+| Give me the sheet for this session | `GET /api/sessions/:id/results.csv` — one row per participant |
+
+Both are teacher-or-admin, scoped to what the caller owns. The journal is what
+the app's report screen renders; the CSV is meant to leave the app.
