@@ -92,6 +92,33 @@ pnpm build:web         # web client → apps/web-client/dist
 pnpm build:desktop     # Tauri bundles (.deb / .AppImage / .exe)
 ```
 
+### Running without the desktop app
+
+Every release also ships the two artifacts a headless install needs: the
+standalone server binary and the built web client. Download both from the
+release page, unpack the client, then:
+
+```bash
+ADMIN_PASSWORD='choose-a-real-one' \
+  ./testing-server_0.3.0_linux-x64 \
+    --port 3300 \
+    --data ./data \
+    --webroot ./dist
+```
+
+Then open `http://<this-machine>:3300`. The CLI flags:
+
+| Flag | Default | Notes |
+|------|---------|-------|
+| `--port` | `3300` | also read from `$PORT` |
+| `--host` | `0.0.0.0` | binds every interface, so phones on the LAN can reach it |
+| `--data` | `./data` | database (`app.db`) plus `uploads/`; resolved to an absolute path |
+| `--webroot` | auto-detected | folder with the built client; resolved to an absolute path |
+
+`ADMIN_USERNAME` and `ADMIN_PASSWORD` override the seeded bootstrap admin, which
+otherwise prints a warning on first run. The database migrates itself on start,
+so a newer binary always opens an older database.
+
 ## Documentation
 
 - [Architecture](./docs/architecture.md)

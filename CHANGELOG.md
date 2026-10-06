@@ -92,6 +92,13 @@ graded result. Schema moves to version 4.
 ### Changed
 - The teacher dashboard opens on a **Live** tab (sessions) ahead of tests
   and courses.
+- **Every release now ships a headless distribution** alongside the desktop
+  bundles: the standalone server binary
+  (`testing-server_<version>_linux-x64`) and the built web client
+  (`web-client_<version>.tar.gz`). The release workflow builds them, smoke-tests
+  the binary (version check, database check and a request to the web root) and
+  only uploads if that passes. README documents the CLI flags and how to run
+  the system without Tauri.
 - `GET /api/admin/stats` now reports `schemaVersion: 4`.
 
 

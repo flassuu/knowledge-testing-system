@@ -64,3 +64,84 @@ jobs:
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: false
           prerelease: false
+  # Headless distribution: the standalone server binary plus the built web
+  # client, so the whole system can run without Tauri.
+  #
+  # Note: this job creates the release if the desktop build has not got there
+  # yet, and tauri-action then updates its name and body - so the release notes
+  # are written by hand afterwards (`gh release edit v0.x.y --notes-file …`).
+  server:
+    name: Standalone server (Linux)
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Read the release version
+        id: version
+        run: echo "version=$(node -p "require('./apps/server/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Build the web client
+        run: pnpm build:web
+
+      - name: Build the standalone server binary
+        run: pnpm build:server
+
+      - name: Smoke-test the artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rel-data"
+          ADMIN_PASSWORD=ci-smoke-test \
+            ./apps/server/dist/testing-server \
+              --port 3499 \
+              --data "$RUNNER_TEMP/rel-data" \
+              --webroot apps/web-client/dist &
+          server_pid=$!
+          trap 'kill $server_pid || true' EXIT
+          for _ in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3499/api/health -o "$RUNNER_TEMP/health.json"; then break; fi
+            sleep 0.5
+          done
+          cat "$RUNNER_TEMP/health.json"
+          curl -sf -o /dev/null -w 'web root: HTTP %{http_code}\n' http://127.0.0.1:3499/
+          node -e "
+            const health = require('$RUNNER_TEMP/health.json')
+            if (health.version !== '${{ steps.version.outputs.version }}') {
+              console.error('version mismatch: ' + health.version)
+              process.exit(1)
+            }
+            if (health.database !== 'ok') {
+              console.error('database not ok')
+              process.exit(1)
+            }
+          "
+
+      - name: Package the artifacts
+        run: |
+          cp apps/server/dist/testing-server "testing-server_${{ steps.version.outputs.version }}_linux-x64"
+          tar -czf "web-client_${{ steps.version.outputs.version }}.tar.gz" -C apps/web-client dist
+
+      - name: Upload the artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            testing-server_${{ steps.version.outputs.version }}_linux-x64
+            web-client_${{ steps.version.outputs.version }}.tar.gz
