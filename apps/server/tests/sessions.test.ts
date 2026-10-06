@@ -166,14 +166,15 @@ afterAll(() => {
 })
 
 
-/** Registers and approves a student, returning a token. */
-async function approvedStudentForList(): Promise<string> {
+/** Registers and approves a student with a unique username, returning a token. */
+async function approvedStudentForList(username = 'liststudent'): Promise<string> {
   const adminToken = await login('admin', process.env.ADMIN_PASSWORD!)
   const registered = await app.server.inject({
     method: 'POST',
     url: '/api/auth/register',
-    payload: { username: 'liststudent', password: 'student-pass-1', fullName: 'List Student' },
+    payload: { username, password: 'student-pass-1', fullName: username },
   })
+  expect(registered.statusCode).toBe(201)
   const id = (registered.json() as { user: { id: string } }).user.id
   await app.server.inject({
     method: 'PATCH',
@@ -181,7 +182,7 @@ async function approvedStudentForList(): Promise<string> {
     headers: bearer(adminToken),
     payload: { status: 'approved' },
   })
-  return login('liststudent', 'student-pass-1')
+  return login(username, 'student-pass-1')
 }
 
 describe('live sessions: teacher side', () => {
@@ -935,6 +936,94 @@ describe('live sessions: teacher board', () => {
     expect(body.session.id).toBe(session.id)
     expect(body.questions.map((question) => question.id)).toEqual(firstQuestions)
     expect(body.session.serverNow).toBeTruthy()
+  })
+
+  it('lists the student own results, newest first, and nobody elses', async () => {
+    const teacherToken = await login('teacher1', 'teacher-pass-1')
+    const testId = await seedTest(teacherToken)
+    const started = await app.server.inject({
+      method: 'POST',
+      url: '/api/sessions',
+      headers: bearer(teacherToken),
+      payload: { testId },
+    })
+    const { session } = started.json() as SessionBody
+    const studentToken = await approvedStudentForList('historystudent')
+
+    const empty = await app.server.inject({
+      method: 'GET',
+      url: '/api/student/results',
+      headers: bearer(studentToken),
+    })
+    expect(empty.statusCode).toBe(200)
+    expect((empty.json() as { results: unknown[] }).results).toEqual([])
+
+    const joined = await app.server.inject({
+      method: 'POST',
+      url: '/api/sessions/join',
+      headers: bearer(studentToken),
+      payload: { code: session.joinCode },
+    })
+    const { questions } = joined.json() as JoinBody
+    const single = questions.find((question) => question.type === 'single_choice')?.id
+
+    // Still in the paper: not a result yet.
+    const whileWorking = await app.server.inject({
+      method: 'GET',
+      url: '/api/student/results',
+      headers: bearer(studentToken),
+    })
+    expect((whileWorking.json() as { results: unknown[] }).results).toEqual([])
+
+    await app.server.inject({
+      method: 'POST',
+      url: `/api/sessions/${session.id}/submit`,
+      headers: bearer(studentToken),
+      payload: { answers: { [single as string]: { key: 'a' } } },
+    })
+
+    const res = await app.server.inject({
+      method: 'GET',
+      url: '/api/student/results',
+      headers: bearer(studentToken),
+    })
+    expect(res.statusCode).toBe(200)
+    // The session is still running, but this paper is done: the resume
+    // endpoint must not hand it back, or the student lands on a dead screen.
+    const resume = await app.server.inject({
+      method: 'GET',
+      url: '/api/sessions/current',
+      headers: bearer(studentToken),
+    })
+    expect(resume.statusCode).toBe(404)
+
+    const body = res.json() as {
+      results: Array<{
+        testTitle: string
+        status: string
+        percent: number
+        passed: boolean | null
+        questionCount: number
+        submittedAt: string
+        joinCode: string
+      }>
+    }
+    expect(body.results).toHaveLength(1)
+    expect(body.results[0]?.testTitle).toBe('Mixed quiz')
+    expect(body.results[0]?.status).toBe('submitted')
+    expect(body.results[0]?.percent).toBe(25)
+    expect(body.results[0]?.passed).toBe(false)
+    expect(body.results[0]?.questionCount).toBe(5)
+    expect(body.results[0]?.submittedAt).toBeTruthy()
+    expect(body.results[0]?.joinCode).toBe(session.joinCode)
+
+    // Teachers and admins do not have a student history endpoint.
+    const asTeacher = await app.server.inject({
+      method: 'GET',
+      url: '/api/student/results',
+      headers: bearer(teacherToken),
+    })
+    expect(asTeacher.statusCode).toBe(403)
   })
 
   it('reports no active session for a student who never joined', async () => {

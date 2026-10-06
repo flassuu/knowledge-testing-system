@@ -323,6 +323,78 @@ export function listSessions(db: DatabaseSync, ownerId?: string): SessionSummary
   }))
 }
 
+/** One row of the student's own result history, joined with test and session. */
+export interface StudentResult {
+  participationId: string
+  sessionId: string
+  joinCode: string
+  testId: string
+  testTitle: string
+  questionCount: number
+  status: ParticipationStatus
+  score: number | null
+  maxScore: number | null
+  percent: number | null
+  passed: boolean | null
+  submittedAt: string | null
+}
+
+/**
+ * Every attempt the student has finished, newest first. Only rows the student
+ * submitted (or that were auto-submitted for them) count as results.
+ */
+export function listStudentResults(db: DatabaseSync, userId: string, limit = 50): StudentResult[] {
+  const rows = db
+    .prepare(
+      `SELECT p.id              AS participation_id,
+              p.session_id      AS session_id,
+              p.status          AS status,
+              p.score           AS score,
+              p.max_score       AS max_score,
+              p.percent         AS percent,
+              p.passed          AS passed,
+              p.submitted_at    AS submitted_at,
+              s.join_code       AS join_code,
+              s.test_id         AS test_id,
+              t.title           AS test_title,
+              (SELECT COUNT(*) FROM questions q WHERE q.test_id = s.test_id) AS question_count
+         FROM participations p
+         JOIN live_sessions s ON s.id = p.session_id
+         JOIN tests t ON t.id = s.test_id
+        WHERE p.user_id = ? AND p.status != 'joined'
+        ORDER BY p.submitted_at DESC
+        LIMIT ?`,
+    )
+    .all(userId, limit) as unknown as Array<{
+    participation_id: string
+    session_id: string
+    status: ParticipationStatus
+    score: number | null
+    max_score: number | null
+    percent: number | null
+    passed: number | null
+    submitted_at: string | null
+    join_code: string
+    test_id: string
+    test_title: string
+    question_count: number
+  }>
+  return rows.map((row) => ({
+    participationId: row.participation_id,
+    sessionId: row.session_id,
+    joinCode: row.join_code,
+    testId: row.test_id,
+    testTitle: row.test_title,
+    questionCount: row.question_count,
+    status: row.status,
+    score: row.score,
+    maxScore: row.max_score,
+    percent: row.percent,
+    passed: row.passed === null ? null : row.passed === 1,
+    submittedAt: row.submitted_at,
+  }))
+}
+
 export function listParticipations(db: DatabaseSync, sessionId: string): ParticipationRow[] {
   return db
     .prepare('SELECT * FROM participations WHERE session_id = ? ORDER BY joined_at ASC')

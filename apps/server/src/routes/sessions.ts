@@ -13,6 +13,7 @@ import {
   listOpenParticipations,
   listParticipantEntries,
   listSessions,
+  listStudentResults,
   saveSubmission,
   setSessionStatus,
   toParticipation,
@@ -352,11 +353,13 @@ export const sessionRoutes: FastifyPluginAsync<SessionRoutesDeps> = async (
     { preHandler: requireRoles('student') },
     async (request, reply) => {
       const userId = request.session!.userId
+      // Only work still in progress: handing back a paper the student already
+      // submitted would drop them onto a screen they cannot submit again.
       const participationRow = db
         .prepare(
           `SELECT p.* FROM participations p
              JOIN live_sessions s ON s.id = p.session_id
-            WHERE p.user_id = ? AND s.status != 'finished'
+            WHERE p.user_id = ? AND p.status = 'joined' AND s.status != 'finished'
             ORDER BY p.joined_at DESC
             LIMIT 1`,
         )
@@ -424,6 +427,11 @@ export const sessionRoutes: FastifyPluginAsync<SessionRoutesDeps> = async (
       }
     },
   )
+
+  /** The student's own history: every finished attempt, newest first. */
+  app.get('/api/student/results', { preHandler: requireRoles('student') }, async (request) => {
+    return { results: listStudentResults(db, request.session!.userId) }
+  })
 
   /** The student's own result, including the per-question breakdown. */
   app.get(
