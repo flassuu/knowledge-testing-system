@@ -14,6 +14,7 @@ import {
   type TestWithQuestions,
 } from '../lib/tests'
 import { requireRoles } from '../plugins/auth'
+import { testResults } from '../lib/results'
 import type { Session } from '../lib/tokens'
 
 export interface TestsDeps {
@@ -158,6 +159,25 @@ export const testRoutes: FastifyPluginAsync<TestsDeps> = async (
         return sendError(reply, 403, 'FORBIDDEN', 'insufficient role')
       }
       return { test: fullTest(test, listQuestions(db, test.id)) }
+    },
+  )
+
+  /** Grade journal plus per-question difficulty, across every session of the test. */
+  app.get(
+    '/api/tests/:id/results',
+    {
+      preHandler: requireRoles('admin', 'teacher'),
+      schema: { params: idParamsSchema },
+    },
+    async (request, reply) => {
+      const session = request.session!
+      const params = request.params as { id: string }
+      const test = findTestRow(db, params.id)
+      if (!test) return sendError(reply, 404, 'NOT_FOUND', 'test not found')
+      if (!canAccess(session, test.owner_id)) {
+        return sendError(reply, 403, 'FORBIDDEN', 'insufficient role')
+      }
+      return { test: { id: test.id, title: test.title, passingPercent: test.passing_percent }, ...testResults(db, test.id) }
     },
   )
 

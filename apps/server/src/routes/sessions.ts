@@ -27,6 +27,7 @@ import {
 import { broadcast, joinRoom, leaveRoom, sendTo, type LiveClient } from '../lib/live'
 import { requireRoles } from '../plugins/auth'
 import { resolveSession } from '../lib/tokens'
+import { sessionResultsCsv } from '../lib/results'
 
 export interface SessionRoutesDeps {
   database: Database
@@ -274,6 +275,30 @@ export const sessionRoutes: FastifyPluginAsync<SessionRoutesDeps> = async (
       const updated = setSessionStatus(db, id, status) ?? session
       announce(updated)
       return sessionPayload(updated)
+    },
+  )
+
+  /** The session as a spreadsheet: one row per participant, ready to open. */
+  app.get(
+    '/api/sessions/:id/results.csv',
+    {
+      preHandler: requireRoles('admin', 'teacher'),
+      schema: { params: idParamsSchema },
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string }
+      const row = findSessionRow(db, id)
+      if (!row) return sendError(reply, 404, 'NOT_FOUND', 'session not found')
+      const session = toSession(row)
+      if (session.ownerId !== request.session?.userId && request.session?.role !== 'admin') {
+        return sendError(reply, 403, 'FORBIDDEN', 'this session belongs to another teacher')
+      }
+      const test = findTestRow(db, session.testId)
+      const { filename, csv } = sessionResultsCsv(db, id, test ? test.title : '')
+      return reply
+        .type('text/csv; charset=utf-8')
+        .header('content-disposition', `attachment; filename="${filename}"`)
+        .send(csv)
     },
   )
 
