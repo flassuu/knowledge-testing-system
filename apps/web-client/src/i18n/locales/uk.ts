@@ -259,6 +259,7 @@ const uk: typeof en = {
       timeLimit: 'Ліміт часу (хв)',
       minutes: 'хв',
       passing: 'Успішність: {percent}%',
+      passMark: 'Прохідний бал (%)',
       title: 'Назва',
       description: 'Опис',
       save: 'Зберегти тест',

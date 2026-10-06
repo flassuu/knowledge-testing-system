@@ -21,6 +21,7 @@ import TestPicker from './TestPicker.vue'
 import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
 import AppButton from '../../components/common/AppButton.vue'
+import AppCard from '../../components/common/AppCard.vue'
 
 const props = defineProps<{
   courseId: string
@@ -167,7 +168,7 @@ onMounted(load)
     </p>
 
     <!-- students -->
-    <section class="rounded-xl border border-outline-variant bg-surface-container p-4">
+    <AppCard as="section">
       <h5 class="text-sm font-semibold text-on-surface">
         {{ t('teacher.courses.students') }} ({{ course.students.length }})
       </h5>
@@ -205,10 +206,10 @@ onMounted(load)
           {{ t('teacher.courses.enroll') }}
         </AppButton>
       </form>
-    </section>
+    </AppCard>
 
     <!-- tests -->
-    <section class="rounded-xl border border-outline-variant bg-surface-container p-4">
+    <AppCard as="section">
       <h5 class="text-sm font-semibold text-on-surface">
         {{ t('teacher.courses.tests') }} ({{ course.tests.length }})
       </h5>
@@ -233,10 +234,10 @@ onMounted(load)
         {{ t('teacher.courses.noTests') }}
       </p>
       <TestPicker :tests="availableTests" :busy="attaching" @select="attach" />
-    </section>
+    </AppCard>
 
     <!-- materials -->
-    <section class="rounded-xl border border-outline-variant bg-surface-container p-4">
+    <AppCard as="section">
       <h5 class="text-sm font-semibold text-on-surface">
         {{ t('teacher.courses.materials') }} ({{ course.materials.length }})
       </h5>
@@ -267,7 +268,7 @@ onMounted(load)
         {{ t('teacher.courses.upload') }}
         <input type="file" class="hidden" @change="onFileSelected" />
       </label>
-    </section>
+    </AppCard>
 
     <AppButton
       type="button"

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Award, CircleCheck, CircleX, Trophy } from '@lucide/vue'
 import type { GradedQuestion, SessionResultBody } from '../../api/sessions'
+import AppCard from '../../components/common/AppCard.vue'
 
 const props = defineProps<{
   result: SessionResultBody
@@ -97,11 +98,7 @@ function trueFalseAnswer(question: GradedQuestion): boolean | null {
     </div>
 
     <ol class="space-y-3">
-      <li
-        v-for="(question, index) in result.questions"
-        :key="question.id"
-        class="rounded-2xl border border-outline-variant bg-surface-container p-4"
-      >
+      <AppCard as="li" v-for="(question, index) in result.questions" :key="question.id">
         <div class="flex items-start justify-between gap-3">
           <p class="text-sm font-semibold text-on-surface">
             {{ index + 1 }}. {{ question.body }}
@@ -168,7 +165,7 @@ function trueFalseAnswer(question: GradedQuestion): boolean | null {
             <span class="min-w-0 flex-1 truncate">{{ pair.right }}</span>
           </li>
         </ul>
-      </li>
+      </AppCard>
     </ol>
   </section>
 </template>

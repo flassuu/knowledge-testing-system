@@ -11,6 +11,8 @@ import { useToast } from '../../composables/toast'
 import { useTableSort } from '../../composables/tableSort'
 import type { PublicUser, UserRole, UserStatus } from '../../api/types'
 import AppButton from '../../components/common/AppButton.vue'
+import AppCard from '../../components/common/AppCard.vue'
+import AppInput from '../../components/common/AppInput.vue'
 
 const props = defineProps<{
   focusStatus?: UserStatus | ''
@@ -200,12 +202,12 @@ watch(
 <template>
   <section>
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <input
+      <AppInput
         v-model="query"
         type="search"
         :aria-label="t('admin.searchPlaceholder')"
         :placeholder="t('admin.searchPlaceholder')"
-        class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary sm:max-w-56"
+        class="sm:max-w-56"
       />
       <select
         v-model="roleFilter"
@@ -244,22 +246,20 @@ watch(
         {{ t('admin.teacherForm.title') }}
       </h3>
       <div class="mt-3 grid gap-3 sm:grid-cols-2">
-        <input
+        <AppInput
           v-model="form.fullName"
           type="text"
           required
           :aria-label="t('admin.teacherForm.fullName')"
           :placeholder="t('admin.teacherForm.fullName')"
-          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
         />
-        <input
+        <AppInput
           v-model="form.username"
           type="text"
           required
           autocomplete="username"
           :aria-label="t('admin.teacherForm.username')"
           :placeholder="t('admin.teacherForm.username')"
-          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
         />
         <input
           v-model="form.password"
@@ -438,11 +438,7 @@ watch(
 
       <!-- narrow screens: cards -->
       <ul class="mt-4 space-y-2 sm:hidden">
-        <li
-          v-for="user in sorted"
-          :key="user.id"
-          class="flex flex-col gap-3 rounded-2xl border border-outline-variant bg-surface-container p-4 shadow-sm"
-        >
+        <AppCard as="li" v-for="user in sorted" :key="user.id" class="flex flex-col gap-3 shadow-sm">
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
               <p class="truncate text-sm font-semibold text-on-surface">
@@ -494,7 +490,7 @@ watch(
               {{ t('admin.block') }}
             </AppButton>
           </div>
-        </li>
+        </AppCard>
       </ul>
     </template>
   </section>

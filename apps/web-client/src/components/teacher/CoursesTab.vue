@@ -11,6 +11,8 @@ import CourseDetails from './CourseDetails.vue'
 import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
 import AppButton from '../../components/common/AppButton.vue'
+import AppCard from '../../components/common/AppCard.vue'
+import AppInput from '../../components/common/AppInput.vue'
 
 const { t } = useI18n()
 const confirm = useConfirm()
@@ -101,11 +103,7 @@ onMounted(load)
     <form v-else-if="creating" class="mt-4 space-y-3 rounded-xl border border-outline-variant bg-surface-container p-4" @submit.prevent="create">
       <label class="block">
         <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.courses.title') }}</span>
-        <input
-          v-model="newTitle"
-          type="text"
-          class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
-        />
+        <AppInput v-model="newTitle" type="text" class="mt-1" />
       </label>
       <label class="block">
         <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.courses.description') }}</span>
@@ -143,10 +141,11 @@ onMounted(load)
         @action="creating = true"
       />
       <ul v-else class="mt-4 space-y-2">
-        <li
+        <AppCard
+          as="li"
           v-for="course in courses"
           :key="course.id"
-          class="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container p-4 shadow-sm sm:flex-row sm:items-center"
+          class="flex flex-col gap-3 shadow-sm sm:flex-row sm:items-center"
         >
           <button
             type="button"
@@ -167,7 +166,7 @@ onMounted(load)
           >
             {{ t('teacher.tests.delete') }}
           </AppButton>
-        </li>
+        </AppCard>
       </ul>
     </template>
   </section>

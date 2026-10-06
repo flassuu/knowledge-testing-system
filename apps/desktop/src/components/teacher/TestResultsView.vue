@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { ArrowLeft, BarChart3, Printer, TrendingDown, TrendingUp } from '@lucide/vue'
 import type { TestResults } from '../../api/tests'
 import AppButton from '../../components/common/AppButton.vue'
+import AppCard from '../../components/common/AppCard.vue'
 
 const props = defineProps<{
   test: { id: string; title: string; passingPercent: number | null }
@@ -71,16 +72,12 @@ function printReport(): void {
     </header>
 
     <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      <div
-        v-for="card in cards"
-        :key="card.key"
-        class="rounded-2xl border border-outline-variant bg-surface-container p-3 text-center"
-      >
+      <AppCard as="div" padding="sm" v-for="card in cards" :key="card.key" class="text-center">
         <p class="text-xl font-bold tabular-nums text-on-surface">{{ card.value }}</p>
         <p class="mt-0.5 text-[11px] text-on-surface-variant">
           {{ t(`teacher.results.card.${card.key}`) }}
         </p>
-      </div>
+      </AppCard>
     </div>
 
     <section v-if="weakQuestions.length > 0" class="rounded-2xl border border-outline bg-warning-container p-4">
@@ -106,7 +103,7 @@ function printReport(): void {
       </ul>
     </section>
 
-    <section class="rounded-2xl border border-outline-variant bg-surface-container p-4">
+    <AppCard as="section">
       <h4 class="flex items-center gap-2 text-sm font-semibold text-on-surface">
         <TrendingUp class="size-4" aria-hidden="true" />
         {{ t('teacher.results.journal') }}
@@ -152,9 +149,9 @@ function printReport(): void {
           </span>
         </li>
       </ul>
-    </section>
+    </AppCard>
 
-    <section class="rounded-2xl border border-outline-variant bg-surface-container p-4">
+    <AppCard as="section">
       <h4 class="text-sm font-semibold text-on-surface">{{ t('teacher.results.byQuestion') }}</h4>
 
       <p
@@ -196,6 +193,6 @@ function printReport(): void {
           </p>
         </li>
       </ul>
-    </section>
+    </AppCard>
   </div>
 </template>

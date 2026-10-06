@@ -6,6 +6,8 @@ import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 import { register } from '../api/auth'
 import { ApiError } from '../api/client'
 import AppButton from '../components/common/AppButton.vue'
+import AppCard from '../components/common/AppCard.vue'
+import AppInput from '../components/common/AppInput.vue'
 
 const emit = defineEmits<{ back: [] }>()
 
@@ -105,10 +107,7 @@ function back() {
       </AppButton>
     </section>
 
-    <section
-      v-else
-      class="rounded-2xl border border-outline-variant bg-surface-container p-6 shadow-sm"
-    >
+    <AppCard as="section" padding="lg" v-else class="shadow-sm">
       <h2 class="text-lg font-semibold text-on-surface">
         {{ t('auth.registerHeading') }}
       </h2>
@@ -121,48 +120,28 @@ function back() {
           <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.fullName') }}
           </span>
-          <input
-            v-model="fullName"
-            type="text"
-            autocomplete="name"
-            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm focus:border-primary"
-          />
+          <AppInput v-model="fullName" type="text" autocomplete="name" class="mt-1" />
         </label>
 
         <label class="block">
           <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.username') }}
           </span>
-          <input
-            v-model="username"
-            type="text"
-            autocomplete="username"
-            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm focus:border-primary"
-          />
+          <AppInput v-model="username" type="text" autocomplete="username" class="mt-1" />
         </label>
 
         <label class="block">
           <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.password') }}
           </span>
-          <input
-            v-model="password"
-            type="password"
-            autocomplete="new-password"
-            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm focus:border-primary"
-          />
+          <AppInput v-model="password" type="password" autocomplete="new-password" class="mt-1" />
         </label>
 
         <label class="block">
           <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.confirmPassword') }}
           </span>
-          <input
-            v-model="confirmPassword"
-            type="password"
-            autocomplete="new-password"
-            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm focus:border-primary"
-          />
+          <AppInput v-model="confirmPassword" type="password" autocomplete="new-password" class="mt-1" />
         </label>
 
         <p
@@ -177,6 +156,6 @@ function back() {
           {{ submitting ? t('common.loading') : t('auth.register') }}
         </AppButton>
       </form>
-    </section>
+    </AppCard>
   </main>
 </template>

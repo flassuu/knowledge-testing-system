@@ -257,6 +257,7 @@ export default {
       timeLimit: 'Time limit (min)',
       minutes: 'min',
       passing: 'Pass: {percent}%',
+      passMark: 'Pass mark (%)',
       title: 'Title',
       description: 'Description',
       save: 'Save test',

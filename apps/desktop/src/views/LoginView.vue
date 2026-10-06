@@ -9,6 +9,8 @@ import { useAuth } from '../stores/auth'
 import { ApiError } from '../api/client'
 import type { UserRole } from '../api/types'
 import AppButton from '../components/common/AppButton.vue'
+import AppCard from '../components/common/AppCard.vue'
+import AppInput from '../components/common/AppInput.vue'
 
 const emit = defineEmits<{ register: [] }>()
 
@@ -104,7 +106,7 @@ async function submit() {
     </header>
 
     <div class="flex flex-1 flex-col justify-center py-4">
-    <section class="rounded-2xl border border-outline-variant bg-surface-container p-6 shadow-sm">
+    <AppCard as="section" padding="lg" class="shadow-sm">
       <h2 class="text-lg font-semibold text-on-surface">
         {{ t('auth.chooseRole') }}
       </h2>
@@ -133,12 +135,12 @@ async function submit() {
           <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.username') }}
           </span>
-          <input
+          <AppInput
             v-model="username"
             type="text"
             autocomplete="username"
             :placeholder="usernamePlaceholder"
-            class="mt-1 w-full rounded-lg border border-outline px-3 py-2 text-sm focus:border-primary"
+            class="mt-1"
           />
         </label>
 
@@ -195,7 +197,7 @@ async function submit() {
         </template>
         <span v-else class="text-on-surface-variant">{{ t('auth.accountHint') }}</span>
       </div>
-    </section>
+    </AppCard>
 
     <p class="mt-6 text-center text-xs text-on-surface-variant">
       {{ t('footer.message') }}

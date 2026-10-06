@@ -9,6 +9,7 @@ import SkeletonList from '../common/SkeletonList.vue'
 import { useTableSort } from '../../composables/tableSort'
 import type { ParticipationEntry, UserStatus } from '../../api/types'
 import AppButton from '../../components/common/AppButton.vue'
+import AppCard from '../../components/common/AppCard.vue'
 
 const { t } = useI18n()
 
@@ -189,10 +190,11 @@ onMounted(load)
 
       <!-- narrow screens: cards -->
       <ul class="mt-3 space-y-2 sm:hidden">
-        <li
+        <AppCard
+          as="li"
           v-for="entry in sorted"
           :key="`${entry.courseId}-${entry.studentId}`"
-          class="rounded-2xl border border-outline-variant bg-surface-container p-4 shadow-sm"
+          class="shadow-sm"
         >
           <p class="text-xs font-semibold text-on-surface-variant">{{ entry.courseTitle }}</p>
           <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -208,7 +210,7 @@ onMounted(load)
           <p class="mt-1 text-xs text-on-surface-variant">
             {{ t('admin.participants.enrolledAt', { date: formatDate(entry.enrolledAt) }) }}
           </p>
-        </li>
+        </AppCard>
       </ul>
     </template>
   </section>

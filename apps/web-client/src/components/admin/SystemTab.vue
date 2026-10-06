@@ -6,6 +6,7 @@ import { ApiError } from '../../api/client'
 import SkeletonList from '../common/SkeletonList.vue'
 import type { SystemStats, TableCounts } from '../../api/types'
 import AppButton from '../../components/common/AppButton.vue'
+import AppCard from '../../components/common/AppCard.vue'
 
 const { t } = useI18n()
 
@@ -74,7 +75,7 @@ onMounted(load)
     <SkeletonList v-else-if="loading" class="mt-4" :rows="3" />
 
     <div v-else-if="stats" class="mt-4 space-y-4">
-      <section class="rounded-xl border border-outline-variant bg-surface-container p-4">
+      <AppCard as="section">
         <h3 class="text-sm font-semibold text-on-surface">{{ t('admin.system.server') }}</h3>
         <dl class="mt-3 space-y-1.5 text-sm">
           <div class="flex justify-between">
@@ -101,9 +102,9 @@ onMounted(load)
             </dd>
           </div>
         </dl>
-      </section>
+      </AppCard>
 
-      <section class="rounded-xl border border-outline-variant bg-surface-container p-4">
+      <AppCard as="section">
         <h3 class="text-sm font-semibold text-on-surface">{{ t('admin.system.counts') }}</h3>
         <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-3">
           <div
@@ -115,7 +116,7 @@ onMounted(load)
             <dd class="font-semibold tabular-nums text-on-surface">{{ stats.counts[item.key] }}</dd>
           </div>
         </dl>
-      </section>
+      </AppCard>
     </div>
   </section>
 </template>

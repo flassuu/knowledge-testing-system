@@ -18,6 +18,7 @@ import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
 import QuestionAnswerInput from './QuestionAnswerInput.vue'
 import AppButton from '../../components/common/AppButton.vue'
+import AppCard from '../../components/common/AppCard.vue'
 
 const props = defineProps<{
   state: SessionState
@@ -159,11 +160,7 @@ onBeforeUnmount(() => {
     </p>
 
     <ol class="space-y-3">
-      <li
-        v-for="(question, index) in questions"
-        :key="question.id"
-        class="rounded-2xl border border-outline-variant bg-surface-container p-4"
-      >
+      <AppCard as="li" v-for="(question, index) in questions" :key="question.id">
         <div class="flex items-start justify-between gap-3">
           <p class="text-sm font-semibold text-on-surface">
             {{ index + 1 }}. {{ question.body }}
@@ -182,7 +179,7 @@ onBeforeUnmount(() => {
           :model-value="responseFor(question)"
           @update:model-value="responses[question.id] = $event"
         />
-      </li>
+      </AppCard>
     </ol>
 
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

@@ -5,6 +5,7 @@ import { QUESTION_TYPES } from '../../api/types'
 import type { QuestionType } from '../../api/types'
 import type { QuestionForm } from './questionForm'
 import AppButton from '../../components/common/AppButton.vue'
+import AppInput from '../../components/common/AppInput.vue'
 
 const props = defineProps<{
   question: QuestionForm
@@ -161,11 +162,10 @@ function removePair(index: number): void {
           @change="toggleCorrect(index)"
           class="shrink-0"
         />
-        <input
+        <AppInput
           v-model="question.options[index]"
           type="text"
           :aria-label="t('teacher.editor.optionLabel')"
-          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
         />
         <AppButton
           type="button"
@@ -218,20 +218,18 @@ function removePair(index: number): void {
         :key="index"
         class="flex items-center gap-2"
       >
-        <input
+        <AppInput
           v-model="question.pairs[index].left"
           type="text"
           :aria-label="t('teacher.editor.left')"
           :placeholder="t('teacher.editor.left')"
-          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
         />
         <ArrowLeftRight class="size-4 text-on-surface-variant" aria-hidden="true" />
-        <input
+        <AppInput
           v-model="question.pairs[index].right"
           type="text"
           :aria-label="t('teacher.editor.right')"
           :placeholder="t('teacher.editor.right')"
-          class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
         />
         <AppButton
           type="button"

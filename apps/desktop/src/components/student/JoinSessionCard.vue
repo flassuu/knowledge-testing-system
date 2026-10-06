@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { LogIn } from '@lucide/vue'
 import JoinCodeInput from './JoinCodeInput.vue'
 import AppButton from '../../components/common/AppButton.vue'
+import AppCard from '../../components/common/AppCard.vue'
 
 const emit = defineEmits<{ joined: [] }>()
 
@@ -24,9 +25,7 @@ function submit(): void {
 </script>
 
 <template>
-  <section
-    class="rounded-2xl border border-outline-variant bg-surface-container p-4 shadow-sm"
-  >
+  <AppCard as="section" class="shadow-sm">
     <h3 class="text-sm font-semibold text-on-surface">{{ t('student.join.title') }}</h3>
     <p class="mt-1 text-xs text-on-surface-variant">{{ t('student.join.hint') }}</p>
 
@@ -45,5 +44,5 @@ function submit(): void {
     >
       {{ errorMessage }}
     </p>
-  </section>
+  </AppCard>
 </template>

@@ -31,6 +31,8 @@ import TestResultsView from './TestResultsView.vue'
 import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
 import AppButton from '../../components/common/AppButton.vue'
+import AppCard from '../../components/common/AppCard.vue'
+import AppInput from '../../components/common/AppInput.vue'
 
 const { t } = useI18n()
 const confirm = useConfirm()
@@ -303,35 +305,20 @@ onMounted(load)
 
     <!-- editor (also renders while creating: editingId === null is handled by `isEditing`) -->
     <form v-if="isEditing" class="mt-4 space-y-4" @submit.prevent="save">
-      <div class="rounded-xl border border-outline-variant bg-surface-container p-4">
+      <AppCard as="div">
         <div class="grid gap-3 sm:grid-cols-2">
           <label class="block">
             <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.title') }}</span>
-            <input
-              v-model="title"
-              type="text"
-              class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
-            />
+            <AppInput v-model="title" type="text" class="mt-1" />
           </label>
           <div class="grid grid-cols-2 gap-3">
             <label class="block">
               <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.timeLimit') }}</span>
-              <input
-                v-model="timeLimitMin"
-                type="number"
-                min="0"
-                class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
-              />
+              <AppInput v-model="timeLimitMin" type="number" min="0" class="mt-1" />
             </label>
             <label class="block">
-              <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.passingPercent') }}</span>
-              <input
-                v-model="passingPercent"
-                type="number"
-                min="0"
-                max="100"
-                class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
-              />
+              <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.passMark') }}</span>
+              <AppInput v-model="passingPercent" type="number" min="0" max="100" class="mt-1" />
             </label>
           </div>
           <label class="block sm:col-span-2">
@@ -343,7 +330,7 @@ onMounted(load)
             />
           </label>
         </div>
-      </div>
+      </AppCard>
 
       <div v-if="formError()" role="alert" class="rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
         {{ formError() }}
@@ -424,10 +411,11 @@ onMounted(load)
         @action="startCreate"
       />
       <ul v-else class="mt-4 space-y-2">
-        <li
+        <AppCard
+          as="li"
           v-for="test in tests"
           :key="test.id"
-          class="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container p-4 shadow-sm sm:flex-row sm:items-center"
+          class="flex flex-col gap-3 shadow-sm sm:flex-row sm:items-center"
         >
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-semibold text-on-surface">{{ test.title }}</p>
@@ -472,7 +460,7 @@ onMounted(load)
               {{ t('teacher.tests.delete') }}
             </AppButton>
           </div>
-        </li>
+        </AppCard>
       </ul>
     </template>
   </section>

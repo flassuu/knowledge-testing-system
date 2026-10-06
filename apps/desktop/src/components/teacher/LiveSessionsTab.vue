@@ -32,6 +32,7 @@ import { useConfirm } from '../../composables/confirm'
 import { useSessionChannel } from '../../composables/sessionChannel'
 import { useToast } from '../../composables/toast'
 import AppButton from '../../components/common/AppButton.vue'
+import AppCard from '../../components/common/AppCard.vue'
 
 /** True while the spreadsheet download is in flight. */
 const exporting = ref(false)
@@ -220,10 +221,7 @@ onMounted(load)
       {{ errorKey }}
     </p>
 
-    <section
-      v-if="showStart"
-      class="rounded-2xl border border-outline-variant bg-surface-container p-4"
-    >
+    <AppCard as="section" v-if="showStart">
       <h4 class="text-sm font-semibold text-on-surface">{{ t('teacher.live.startTitle') }}</h4>
       <p class="mt-1 text-xs text-on-surface-variant">{{ t('teacher.live.startHint') }}</p>
       <TestPicker
@@ -240,7 +238,7 @@ onMounted(load)
           {{ t('common.cancel') }}
         </AppButton>
       </div>
-    </section>
+    </AppCard>
 
     <p
       v-if="actionError"
@@ -281,7 +279,7 @@ onMounted(load)
         </li>
       </ul>
 
-      <section v-if="selected" class="rounded-2xl border border-outline-variant bg-surface-container p-4">
+      <AppCard as="section" v-if="selected">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div class="min-w-0">
             <p class="truncate text-sm font-semibold text-on-surface">{{ selected.title }}</p>
@@ -352,9 +350,9 @@ onMounted(load)
             </span>
           </span>
         </div>
-      </section>
+      </AppCard>
 
-      <section v-if="selected" class="rounded-2xl border border-outline-variant bg-surface-container p-4">
+      <AppCard as="section" v-if="selected">
         <h4 class="flex items-center gap-2 text-sm font-semibold text-on-surface">
           <Users class="size-4" aria-hidden="true" />
           {{ t('teacher.live.participants') }}
@@ -403,7 +401,7 @@ onMounted(load)
             </span>
           </li>
         </ul>
-      </section>
+      </AppCard>
     </template>
   </div>
 </template>
