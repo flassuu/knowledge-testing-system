@@ -1,9 +1,9 @@
 # Roadmap
 
 Offline-first, role-based knowledge-testing system (admin / teacher / student).
-Progress is tracked as SemVer releases; the phase plan is deliberately
-**flexible** — only Phase 1 is broken down in detail, later phases are refined
-while development proceeds.
+Progress is tracked as SemVer releases; each phase lists what it owes, and the
+checklist is the honest state of it — an item is only ticked when it is done and
+verified, not when it is planned.
 
 | Phase | Version | Goal |
 |-------|---------|------|
@@ -194,12 +194,22 @@ These rules apply to every screen of web-client and desktop. No exceptions.
       white (no PDF library needed)
 - [x] Tag `v0.4.0` and publish the release
 
-## Phase 5 — MVP polish (v1.0.0)
+## Phase 5 — MVP polish (v1.0.0, next)
 
-- Sidecar packaging; offline PWA caching polish
-- Design pass, empty/loading/error states, seed demo data
-- Server scoring unit tests, API integration tests, student flow e2e
-- GitHub-ready README, screenshots, badges
+- [x] Server unit and integration tests: scoring over all five question types,
+      the grade journal and CSV export, the session runtime, auth and the role
+      boundaries (104 tests)
+- [x] Client tests for the logic worth testing: the session clock and answer
+      payloads, the QR generator, the download helper, and an i18n catalogue
+      check that compiles both locales (34 tests)
+- [x] GitHub-ready README: what the project is, the three roles, the topology,
+      headless install with the CLI flags, badges
+- [ ] Seed demo data, so a fresh install can be shown without typing anything in
+- [ ] Screenshots in the README (teacher workbench, live board, journal, student)
+- [ ] Browser e2e for the student flow: join → answer → submit → result
+- [ ] Sidecar packaging: bundle the server binary into the installers properly
+      and keep "server not reachable" graceful on first launch
+- [ ] Offline PWA caching polish, so a room without Wi-Fi still shows what it has
 
 ## Out of scope (v1)
 

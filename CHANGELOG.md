@@ -7,7 +7,8 @@ versioning follows [SemVer](https://semver.org/).
 ## [0.4.0] — 2026-10-06
 
 Reporting: the numbers a teacher acts on, and the ways to get them out of the
-building.
+building. And the consistency pass the UI needed before a release — one button
+component, and touch targets a thumb can actually hit.
 
 ### Added
 - **Grade journal per test** (`GET /api/tests/:id/results`, teacher only). One
@@ -24,24 +25,14 @@ building.
   block with the test and the session, then one row per participant. Fields are
   escaped, the file carries a UTF-8 BOM so spreadsheets do not mangle non-ASCII
   names, and a session nobody joined exports the header rather than dividing by
-  zero. The board button fetches it with the bearer token instead of a plain
-  link — the API authenticates with a header, not a cookie.
+  zero.
 - **Printable report.** The journal screen prints through the browser's own
   dialog: the app chrome is dropped, the theme collapses to ink on white, and
   the difficulty bars keep their fill (`print-color-adjust`). No PDF library.
-- **Student side, completed**: the courses the student is enrolled in with
-  their materials, the result of every finished attempt on the home screen, and
-  a QR code for the join link on the teacher's board (rendered by `uqr`, the one
+- **Student side, completed**: the courses the student is enrolled in with their
+  materials, the result of every finished attempt on the home screen, and a QR
+  code for the join link on the teacher's board (rendered by `uqr`, the one
   dependency added).
-
-### Changed
-- `apiFetch` and the new file download share one `request()` helper in the
-  client API layer, so the bearer token, the content-type default and the error
-  envelope are handled in one place instead of twice.
-- The client API layer exposes `downloadFile(path, filename)`: fetch with the
-  token, save through a blob URL, never write an error body to disk.
-
-### Added
 - **Desktop About dialog** with the app version (read from `tauri.conf.json`,
   the file the bundles are actually built from) and the server address the app
   talks to. Reachable from the header, with the usual focus trap and Escape.
@@ -49,10 +40,6 @@ building.
   when the config asks it to, which would also pin the size across monitors with
   different scaling, so the geometry is stored locally, restored on start and
   written back (debounced) whenever the window is moved or resized.
-- **Tap targets that work on a phone.** The status chip, the locale buttons and
-  the join-code field were 24–28px, and the primary actions 28px — all below
-  what a thumb needs. They are 36–48px now, and the header wraps instead of
-  scrolling sideways at 320px.
 
 ### Changed
 - **One `AppButton`** for the whole system: 66 buttons across both apps used to
@@ -60,13 +47,25 @@ building.
   component holds the variants and enforces the height floor. Text links, table
   sort headers, clickable cards and tab strips are deliberately left as plain
   buttons — they do not look like buttons, so they should not act like one.
+- **The client API layer has one request path.** `apiFetch` and the new
+  `downloadFile(path, filename)` share a `request()` helper, so the bearer
+  token, the content-type default and the error envelope are handled in one
+  place instead of twice. The export is fetched with the token and saved through
+  a blob URL, never a plain link: the API authenticates with a header, not a
+  cookie, so an `<a href>` would have been rejected.
 - **Desktop window title** is `Knowledge Testing`; it no longer carries a
   person's name.
-- **Dialog focus fix.** `ref` on a component resolves to the instance, not to
-  its element, so the dialogs that pass their close button as the initial focus
-  target never moved focus into the panel.
 
 ### Fixed
+- **Touch targets.** The status chip, the locale buttons and the join-code field
+  were 24–28px and the primary actions 28px — below what a thumb needs on a
+  phone. They are 36–48px now, the table sort headers are 32px, and the header
+  wraps instead of scrolling sideways at 320px. Found by measuring every
+  interactive box in a real browser, at 320, 390, 768px and on the desktop at
+  800×560 and 1080×720.
+- **Dialog focus.** A template `ref` on a component resolves to the instance,
+  not to its element, so the dialogs that pass their close button as the initial
+  focus target silently failed to move focus into the panel.
 - **`/api/sessions/current`** no longer hands a student a session they only
   opened. It returns participations in status `joined`, so a finished attempt no
   longer hides the "you already took this" state.
@@ -140,6 +139,19 @@ graded result. Schema moves to version 4.
   answered, the answer payload per type, the server-corrected clock and its
   formatting — under 20 new `node:test` cases.
 
+### Changed
+- The teacher dashboard opens on a **Live** tab (sessions) ahead of tests
+  and courses.
+- **Every release now ships a headless distribution** alongside the desktop
+  bundles: the standalone server binary
+  (`testing-server_<version>_linux-x64`) and the built web client
+  (`web-client_<version>.tar.gz`). The release workflow builds them, smoke-tests
+  the binary (version check, database check and a request to the web root) and
+  only uploads if that passes. README documents the CLI flags and how to run
+  the system without Tauri.
+- `GET /api/admin/stats` now reports `schemaVersion: 4`.
+
+
 ### Fixed
 - **"Not passed" on a perfect score.** A test with no pass mark sends
   `passed: null` from the server, and the result screen read that as a failure.
@@ -157,19 +169,6 @@ graded result. Schema moves to version 4.
 - **Theme switching flickered**, restyling every element at once. It now
   cross-fades through the View Transition API, falls back to muting transitions
   for a single frame elsewhere, and drops the fade under `prefers-reduced-motion`.
-
-### Changed
-- The teacher dashboard opens on a **Live** tab (sessions) ahead of tests
-  and courses.
-- **Every release now ships a headless distribution** alongside the desktop
-  bundles: the standalone server binary
-  (`testing-server_<version>_linux-x64`) and the built web client
-  (`web-client_<version>.tar.gz`). The release workflow builds them, smoke-tests
-  the binary (version check, database check and a request to the web root) and
-  only uploads if that passes. README documents the CLI flags and how to run
-  the system without Tauri.
-- `GET /api/admin/stats` now reports `schemaVersion: 4`.
-
 
 ## [0.2.0] — 2026-09-30
 
@@ -452,4 +451,8 @@ teacher UIs in the web client and the desktop app. 35 integration tests green.
   preloads the system `libwayland-client.so` (bundled one is ABI-incompatible
   with Mesa 26).
 
-[GitHub Release v0.0.1]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.0.1
+[0.4.0]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.4.0
+[0.3.0]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.3.0
+[0.2.0]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.2.0
+[0.1.0]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.1.0
+[0.0.1]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.0.1

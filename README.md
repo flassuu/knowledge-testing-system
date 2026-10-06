@@ -1,5 +1,9 @@
 # Knowledge Testing System
 
+[![Release](https://img.shields.io/github/release/flassuu/knowledge-testing-system.svg?display_name=tag)](https://github.com/flassuu/knowledge-testing-system/releases/latest)
+[![Build desktop app](https://github.com/flassuu/knowledge-testing-system/actions/workflows/build-desktop.yml/badge.svg)](https://github.com/flassuu/knowledge-testing-system/actions/workflows/build-desktop.yml)
+[![Release build](https://github.com/flassuu/knowledge-testing-system/actions/workflows/release.yml/badge.svg)](https://github.com/flassuu/knowledge-testing-system/actions/workflows/release.yml)
+
 Offline classroom knowledge-testing suite — a local client-server system for
 running tests in a computer lab with **no internet access**. One role-based
 application serves an **administrator**, **teachers** and **students**.
@@ -45,10 +49,11 @@ Teacher  Student   Students    (headless
 - **No external internet required** — server + DB + web client live on the
   admin machine; teachers and students connect over the LAN.
 - **Role-based single client**: choose a role at first sign-in; the UI adapts.
-- **Offline mode**: with the server unreachable, only previously cached
-  content is readable (materials, descriptions, statistics) and teachers can
-  author local test drafts to sync later.
-- Real-time updates are pushed over WebSocket (no polling).
+- **Offline mode**: with the server unreachable, the app says so instead of
+  failing silently, and whatever the service worker already cached stays
+  readable. Authoring offline is not implemented — see the roadmap.
+- Live updates arrive over WebSocket; a client that cannot open a socket falls
+  back to polling the same endpoints.
 - The server serves the built web client as static files and is compiled into
   one executable, so the admin machine needs **no Node.js, no database
   installation** — just the single app bundle.
@@ -102,7 +107,7 @@ release page, unpack the client, then:
 
 ```bash
 ADMIN_PASSWORD='choose-a-real-one' \
-  ./testing-server_0.3.0_linux-x64 \
+  ./testing-server_0.4.0_linux-x64 \
     --port 3300 \
     --data ./data \
     --webroot ./dist
