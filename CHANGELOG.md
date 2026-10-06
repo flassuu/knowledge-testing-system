@@ -41,6 +41,31 @@ building.
 - The client API layer exposes `downloadFile(path, filename)`: fetch with the
   token, save through a blob URL, never write an error body to disk.
 
+### Added
+- **Desktop About dialog** with the app version (read from `tauri.conf.json`,
+  the file the bundles are actually built from) and the server address the app
+  talks to. Reachable from the header, with the usual focus trap and Escape.
+- **The desktop window remembers its size and position.** Tauri only does that
+  when the config asks it to, which would also pin the size across monitors with
+  different scaling, so the geometry is stored locally, restored on start and
+  written back (debounced) whenever the window is moved or resized.
+- **Tap targets that work on a phone.** The status chip, the locale buttons and
+  the join-code field were 24–28px, and the primary actions 28px — all below
+  what a thumb needs. They are 36–48px now, and the header wraps instead of
+  scrolling sideways at 320px.
+
+### Changed
+- **One `AppButton`** for the whole system: 66 buttons across both apps used to
+  carry 24 near-identical copies of `rounded-lg … px-3 py-1.5 text-xs`. The
+  component holds the variants and enforces the height floor. Text links, table
+  sort headers, clickable cards and tab strips are deliberately left as plain
+  buttons — they do not look like buttons, so they should not act like one.
+- **Desktop window title** is `Knowledge Testing`; it no longer carries a
+  person's name.
+- **Dialog focus fix.** `ref` on a component resolves to the instance, not to
+  its element, so the dialogs that pass their close button as the initial focus
+  target never moved focus into the panel.
+
 ### Fixed
 - **`/api/sessions/current`** no longer hands a student a session they only
   opened. It returns participations in status `joined`, so a finished attempt no

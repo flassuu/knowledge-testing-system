@@ -70,6 +70,12 @@ itself as static files.
 - In production the server is spawned as a sidecar **only in the Admin client**;
   teacher/student clients treat it as a remote endpoint.
 - Minimal Rust — logic lives in TypeScript.
+- The webview is the **only** thing that differs from `apps/web-client`: the API
+  base is explicit (`apiUrl()`), plus two desktop-only pieces —
+  `composables/desktop.ts` (app version from `tauri.conf.json`, and the window
+  geometry that Tauri does not persist on its own) and the About dialog.
+- The window needs `core:window:allow-*` permissions for the geometry; the app
+  version comes from `core:app:allow-version`.
 
 ## Access & accounts
 

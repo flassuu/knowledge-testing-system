@@ -81,8 +81,10 @@ These rules apply to every screen of web-client and desktop. No exceptions.
    hard-coded colours.
 
 **Design system & states**
-- [ ] Consistency pass: shared spacing/typography tokens, one set of
-      buttons/cards/badges/inputs (drop ad-hoc Tailwind class soup)
+- [ ] Consistency pass: one set of buttons/cards/badges/inputs. Buttons are
+      done (`AppButton`, 66 call sites); cards, badges and inputs still carry
+      their own classes, and the shared spacing/typography scale is not written
+      down yet
 - [x] Light/dark theming: semantic M3 Expressive token layer in Tailwind v4
       (`@theme inline` + `:root`/`.dark`), class-based dark on `<html>`,
       theme switcher in every header, system preference as first-run default,
@@ -130,9 +132,14 @@ These rules apply to every screen of web-client and desktop. No exceptions.
 - [x] i18n hygiene: last hardcoded strings (server-status tooltip) moved into
       the locales, `<html lang>` synced to the active locale, locale choice
       persisted
-- [ ] Desktop: About dialog with version, remember window size/position,
-      cleaner window title; verify admin/teacher screens at 1080×720
-- [ ] Web/mobile QA of admin & teacher screens served over LAN on narrow widths
+- [x] Desktop: About dialog with the app version and the server it talks to,
+      window size/position remembered across restarts, a plain window title
+      instead of one with a name in it, and the window permissions it needs
+- [x] Web/mobile QA of admin, teacher and student screens at 320, 390, 768px
+      (and the desktop at 800×560 and 1080×720), measured in a real browser:
+      no horizontal scroll, no touch target under 30px, no unnamed control.
+      This found and fixed the 24px header chips, the 28px primary actions and
+      a header that scrolled sideways at 320px
 
 ## Phase 2 — Teacher workbench (v0.2.0, done)
 
