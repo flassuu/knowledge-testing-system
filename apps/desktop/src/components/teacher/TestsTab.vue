@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { BarChart3, Copy, Download, Eye, FileQuestion, Plus, Upload } from '@lucide/vue'
+import { BarChart3, CloudUpload, Copy, Download, Eye, FileQuestion, Plus, Trash2, Upload } from '@lucide/vue'
 import { ApiError } from '../../api/client'
 import EmptyState from '../common/EmptyState.vue'
 import SkeletonList from '../common/SkeletonList.vue'
@@ -29,6 +29,14 @@ import QuestionEditor from './QuestionEditor.vue'
 import TestPreviewDialog from './TestPreviewDialog.vue'
 import TestResultsView from './TestResultsView.vue'
 import { useConfirm } from '../../composables/confirm'
+import { getHealthState } from '../../composables/health'
+import {
+  deleteDraft,
+  listDrafts,
+  saveDraft,
+  syncDrafts,
+  type TestDraft,
+} from '../../drafts/testDrafts'
 import { useToast } from '../../composables/toast'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
@@ -39,6 +47,10 @@ const confirm = useConfirm()
 const toast = useToast()
 
 const tests = ref<TestSummary[]>([])
+/** Несохранённая работа: сервер был недоступен в момент сохранения. */
+const drafts = ref<TestDraft[]>([])
+const syncingDrafts = ref(false)
+const health = getHealthState()
 const loading = ref(false)
 const errorKey = ref('')
 
@@ -177,15 +189,15 @@ async function save() {
     return
   }
   formErrorKey.value = ''
+  const payload = {
+    title: title.value.trim(),
+    description: description.value.trim(),
+    timeLimitSec: timeLimitMin.value ? Number(timeLimitMin.value) * 60 : null,
+    passingPercent: passingPercent.value ? Number(passingPercent.value) : null,
+    questions: built,
+  }
   saving.value = true
   try {
-    const payload = {
-      title: title.value.trim(),
-      description: description.value.trim(),
-      timeLimitSec: timeLimitMin.value ? Number(timeLimitMin.value) * 60 : null,
-      passingPercent: passingPercent.value ? Number(passingPercent.value) : null,
-      questions: built,
-    }
     if (editingId.value) await updateTest(editingId.value, payload)
     else await createTest(payload)
     toast.success(editingId.value ? t('teacher.tests.updated') : t('teacher.tests.created'))
@@ -193,10 +205,62 @@ async function save() {
     isEditing.value = false
     showPreview.value = false
   } catch (error) {
+    // Сервер недоступен — работа не должна пропасть: она ждёт в черновиках.
+    if (error instanceof ApiError && error.isNetwork && !editingId.value) {
+      saveDraft(payload)
+      drafts.value = listDrafts()
+      toast.success(t('teacher.tests.savedLocally'))
+      isEditing.value = false
+      showPreview.value = false
+      return
+    }
     formErrorKey.value = apiErrorKey(error)
   } finally {
     saving.value = false
   }
+}
+
+/** Черновики уходят на сервер, как только он снова отвечает. */
+async function uploadDrafts(): Promise<void> {
+  if (syncingDrafts.value || drafts.value.length === 0) return
+  syncingDrafts.value = true
+  try {
+    const result = await syncDrafts(async (payload) => {
+      await createTest(payload)
+    })
+    drafts.value = listDrafts()
+    if (result.uploaded.length > 0) {
+      toast.success(t('teacher.tests.draftsUploaded', { count: result.uploaded.length }))
+    }
+    if (result.failed.length > 0) {
+      toast.error(t('teacher.tests.draftsFailed', { count: result.failed.length }))
+    }
+    await load()
+  } finally {
+    syncingDrafts.value = false
+  }
+}
+
+function discardDraft(draft: TestDraft): void {
+  deleteDraft(draft.id)
+  drafts.value = listDrafts()
+}
+
+/** Открыть черновик в редакторе — как если бы он был только что открыт. */
+function openDraft(draft: TestDraft): void {
+  startCreate()
+  title.value = draft.payload.title
+  description.value = draft.payload.description
+  timeLimitMin.value = draft.payload.timeLimitSec
+    ? String(Math.round(draft.payload.timeLimitSec / 60))
+    : ''
+  passingPercent.value =
+    draft.payload.passingPercent != null ? String(draft.payload.passingPercent) : ''
+  // У черновика нет id вопросов — редактору они и не нужны, форма строится из payload.
+  questionForms.value = formsFromQuestions(
+    draft.payload.questions.map((question) => ({ ...question, id: '' })),
+  )
+  isEditing.value = true
 }
 
 async function duplicate(test: TestSummary): Promise<void> {
@@ -262,7 +326,19 @@ async function remove(test: TestSummary) {
   }
 }
 
-onMounted(load)
+watch(
+  () => health.status,
+  (status, previous) => {
+    if (status === 'online' && previous === 'offline' && drafts.value.length > 0) {
+      void uploadDrafts()
+    }
+  },
+)
+
+onMounted(async () => {
+  drafts.value = listDrafts()
+  await load()
+})
 </script>
 
 <template>
@@ -302,6 +378,61 @@ onMounted(load)
     >
       {{ importError }}
     </p>
+
+    <!-- Черновики: работа, которую сервер не принял, потому что его не было рядом -->
+    <section
+      v-if="!isEditing && drafts.length > 0"
+      class="mt-4 rounded-2xl border border-outline-variant bg-warning-container p-4"
+    >
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <h3 class="text-sm font-semibold text-on-warning-container">
+            {{ t('teacher.tests.draftsHeading', { count: drafts.length }) }}
+          </h3>
+          <p class="mt-0.5 text-xs text-on-warning-container">
+            {{ t('teacher.tests.draftsHint') }}
+          </p>
+        </div>
+        <AppButton
+          variant="primary"
+          size="sm"
+          class="shrink-0"
+          :disabled="syncingDrafts || health.status !== 'online'"
+          @click="uploadDrafts"
+        >
+          <CloudUpload class="size-3.5" aria-hidden="true" />
+          {{ syncingDrafts ? t('teacher.tests.draftsUploading') : t('teacher.tests.draftsUpload') }}
+        </AppButton>
+      </div>
+
+      <ul class="mt-3 space-y-1.5">
+        <li
+          v-for="draft in drafts"
+          :key="draft.id"
+          class="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface px-3 py-2 text-sm"
+        >
+          <span class="min-w-0 flex-1">
+            <span class="block truncate font-semibold text-on-surface">{{ draft.payload.title }}</span>
+            <span class="block text-xs text-on-surface-variant">
+              {{ t('teacher.tests.draftQuestions', { count: draft.payload.questions.length }) }}
+            </span>
+          </span>
+          <span class="flex shrink-0 items-center gap-2">
+            <AppButton variant="secondaryMuted" size="sm" @click="openDraft(draft)">
+              {{ t('teacher.tests.draftOpen') }}
+            </AppButton>
+            <AppButton
+              variant="ghostDanger"
+              size="icon"
+              :aria-label="t('teacher.tests.draftDiscard')"
+              @click="discardDraft(draft)"
+            >
+              <Trash2 class="size-4" aria-hidden="true" />
+            </AppButton>
+          </span>
+        </li>
+      </ul>
+    </section>
 
     <!-- editor (also renders while creating: editingId === null is handled by `isEditing`) -->
     <form v-if="isEditing" class="mt-4 space-y-4" @submit.prevent="save">
