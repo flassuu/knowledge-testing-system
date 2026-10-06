@@ -53,17 +53,18 @@ export interface ErrorEnvelope {
 }
 
 /**
- * Thin fetch wrapper: attaches the bearer token, parses the server's uniform
- * error envelope, and maps transport failures to a `NETWORK` ApiError so the
- * UI can distinguish "server is offline" from real API errors.
+ * One authenticated round trip: attaches the bearer token and turns a failure
+ * into an ApiError, so callers only deal with a parsed body or an exception.
  */
-export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function request(path: string, init: RequestInit): Promise<Response> {
   const headers = new Headers(init.headers)
   if (init.method && init.method !== 'GET' && !headers.has('content-type')) {
     headers.set('content-type', 'application/json')
   }
   const token = getToken()
-  if (token) headers.set('authorization', `Bearer ${token}`)
+  if (token && !headers.has('authorization')) {
+    headers.set('authorization', `Bearer ${token}`)
+  }
 
   let res: Response
   try {
@@ -84,7 +85,32 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     }
     throw new ApiError(res.status, code, message)
   }
+  return res
+}
 
+/**
+ * Thin fetch wrapper: parses the server's uniform error envelope into a typed
+ * body. Failures arrive as an ApiError so the UI can tell "server is offline"
+ * from a real API error.
+ */
+export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await request(path, init)
   if (res.status === 204) return undefined as T
   return (await res.json()) as T
+}
+
+/**
+ * Fetches a file with the bearer token and offers it to the browser as a
+ * download. A plain link cannot work here: the API authenticates with an
+ * Authorization header rather than a cookie, so an <a href> would be rejected.
+ */
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const res = await request(path, {})
+  const objectUrl = URL.createObjectURL(await res.blob())
+  const link = document.createElement('a')
+  link.href = objectUrl
+  link.download = filename
+  link.click()
+  // Revoking right after the click can cancel the download in some browsers.
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
 }

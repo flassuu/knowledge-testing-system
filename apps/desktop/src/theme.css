@@ -138,6 +138,39 @@
   }
 
   /*
+   * Printing a report: drop the app chrome and let the page use ink. The dark
+   * theme paints light text on tonal surfaces, which is unreadable on paper, so
+   * the theme colours are collapsed to black on white. Elements that carry
+   * meaning through their fill opt back in with data-print-keep.
+   */
+  @media print {
+    header,
+    nav,
+    button,
+    a {
+      display: none !important;
+    }
+
+    body,
+    body * {
+      background: transparent !important;
+      color: #000000 !important;
+      box-shadow: none !important;
+      border-color: #999999 !important;
+    }
+
+    [data-print-keep] {
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    main {
+      max-width: none;
+      padding: 0;
+    }
+  }
+
+  /*
    * Theme switch. Browsers with the View Transition API get a cross-fade of the
    * whole page; everywhere else the theme composable sets .theme-switching for a
    * single frame so per-element colour transitions do not all fire at once and

@@ -7,6 +7,7 @@ import {
   Copy,
   Link2,
   QrCode,
+  Download,
   Pause,
   Play,
   Radio,
@@ -14,7 +15,7 @@ import {
   Square,
   Users,
 } from '@lucide/vue'
-import { ApiError } from '../../api/client'
+import { ApiError, downloadFile } from '../../api/client'
 import {
   listSessions,
   setSessionStatus,
@@ -30,6 +31,29 @@ import TestPicker from './TestPicker.vue'
 import { useConfirm } from '../../composables/confirm'
 import { useSessionChannel } from '../../composables/sessionChannel'
 import { useToast } from '../../composables/toast'
+
+/** True while the spreadsheet download is in flight. */
+const exporting = ref(false)
+
+async function exportCsv(): Promise<void> {
+  const session = selected.value
+  if (!session || exporting.value) return
+  exporting.value = true
+  try {
+    await downloadFile(
+      `/api/sessions/${session.id}/results.csv`,
+      `session-${session.joinCode}.csv`,
+    )
+  } catch (error) {
+    toast.error(
+      error instanceof ApiError && error.status === 403
+        ? t('teacher.errors.generic')
+        : t('teacher.errors.network'),
+    )
+  } finally {
+    exporting.value = false
+  }
+}
 
 const props = defineProps<{
   tests: TestSummary[]
@@ -352,6 +376,15 @@ onMounted(load)
           >
             <Square class="size-3.5" aria-hidden="true" />
             {{ t('teacher.live.finish') }}
+          </button>
+          <button
+            type="button"
+            :disabled="exporting"
+            @click="exportCsv"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container-high disabled:opacity-60"
+          >
+            <Download class="size-3.5" aria-hidden="true" />
+            {{ t('teacher.live.exportCsv') }}
           </button>
           <span class="inline-flex items-center gap-1.5 text-xs text-on-surface-variant">
             <RotateCw

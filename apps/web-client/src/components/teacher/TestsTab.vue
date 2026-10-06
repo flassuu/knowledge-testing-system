@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Eye, FileQuestion, Plus } from '@lucide/vue'
+import { BarChart3, Eye, FileQuestion, Plus } from '@lucide/vue'
 import { ApiError } from '../../api/client'
 import EmptyState from '../common/EmptyState.vue'
 import SkeletonList from '../common/SkeletonList.vue'
-import { createTest, deleteTest, getTest, listTests, updateTest } from '../../api/tests'
+import { createTest, deleteTest, getTest, getTestResults, listTests, updateTest } from '../../api/tests'
 import type { TestSummary } from '../../api/types'
+import type { TestResults } from '../../api/tests'
 import {
   buildQuestions,
   duplicateQuestionForm,
@@ -16,6 +17,7 @@ import {
 } from './questionForm'
 import QuestionEditor from './QuestionEditor.vue'
 import TestPreviewDialog from './TestPreviewDialog.vue'
+import TestResultsView from './TestResultsView.vue'
 import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
 
@@ -38,6 +40,10 @@ const timeLimitMin = ref('')
 const passingPercent = ref('')
 const questionForms = ref<QuestionForm[]>([])
 const busyId = ref('')
+/** Which test's journal is open instead of the list. */
+const resultsFor = ref<TestSummary | null>(null)
+const results = ref<TestResults | null>(null)
+const resultsLoading = ref(false)
 const showPreview = ref(false)
 
 function apiErrorKey(error: unknown): string {
@@ -98,6 +104,29 @@ async function startEdit(test: TestSummary) {
 
 function addQuestion() {
   questionForms.value.push(newQuestionForm())
+}
+
+async function openResults(test: TestSummary): Promise<void> {
+  resultsFor.value = test
+  results.value = null
+  resultsLoading.value = true
+  try {
+    results.value = await getTestResults(test.id)
+  } catch (error) {
+    toast.error(
+      error instanceof ApiError && error.code === 'FORBIDDEN'
+        ? t('teacher.errors.generic')
+        : t('teacher.errors.network'),
+    )
+    resultsFor.value = null
+  } finally {
+    resultsLoading.value = false
+  }
+}
+
+function closeResults(): void {
+  resultsFor.value = null
+  results.value = null
 }
 
 function removeQuestion(index: number) {
@@ -291,6 +320,20 @@ onMounted(load)
       </div>
     </form>
 
+    <!-- grade journal for one test, opened from the list -->
+    <SkeletonList v-else-if="resultsFor && resultsLoading" class="mt-4" :rows="3" />
+
+    <TestResultsView
+      v-else-if="resultsFor && results"
+      :test="{
+        id: resultsFor.id,
+        title: results.test.title,
+        passingPercent: results.test.passingPercent,
+      }"
+      :results="results"
+      @back="closeResults"
+    />
+
     <!-- list -->
     <template v-else>
       <p v-if="errorKey" role="alert" class="mt-4 rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
@@ -323,6 +366,15 @@ onMounted(load)
             </p>
           </div>
           <div class="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              :disabled="busyId === test.id"
+              @click="openResults(test)"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high disabled:opacity-60"
+            >
+              <BarChart3 class="size-3.5" aria-hidden="true" />
+              {{ t('teacher.tests.results') }}
+            </button>
             <button
               type="button"
               :disabled="busyId === test.id"
