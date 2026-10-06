@@ -13,7 +13,8 @@ verified, not when it is planned.
 | Phase 2 — Teacher workbench | **0.2.0** (done) | Test/course authoring and sharing |
 | Phase 3 — Session runtime | **0.3.0** (done) | Live testing: join, answer, score, WS board |
 | Phase 4 — Reporting | 0.4.0 (done) | Statistics, journals, printable + CSV export |
-| Phase 5 — MVP polish | 1.0.0 | Packaging, e2e, README polish |
+| Phase 5 — Deployment | **0.5.0** (next) | The three ways it has to run: desktop host, school server, classroom without an admin |
+| Phase 6 — MVP polish | 1.0.0 | Packaging polish, e2e, screenshots, offline PWA |
 
 The UI/UX polish pass (originally planned as its own 0.1.1) shipped together
 with Phase 2 as **0.2.0** — separating them would have meant a release that
@@ -202,22 +203,124 @@ These rules apply to every screen of web-client and desktop. No exceptions.
       white (no PDF library needed)
 - [x] Tag `v0.4.0` and publish the release
 
-## Phase 5 — MVP polish (v1.0.0, next)
+## Phase 5 — Deployment (v0.5.0, next)
+
+The three ways the system is actually used, made to work end to end. Today the
+middle one works if the teacher happens to open the web client on the LAN
+address, and the other two do not work at all — see
+[docs/scenarios.md](./docs/scenarios.md) for the runbook of each.
+
+### 5.1 Reachability — the address students can actually open
+
+The join link is built from `window.location.href`, which is `tauri://localhost`
+in the desktop app and `http://localhost:3300` in a browser on the teacher's
+machine. A phone cannot open either, so the QR code is decorative today.
+
+- [ ] `publicBaseUrl` server setting, kept in `app_meta` (key/value exists, so
+      no schema migration). `GET /api/settings` (auth) and `PATCH /api/settings`
+      (admin) with validation: absolute http(s), no path, no trailing slash
+- [ ] Server reports the LAN addresses it sees (`os.networkInterfaces`) as
+      suggestions; the admin can accept one or type their own
+- [ ] `joinLink()` moved out of the component into a pure function that prefers
+      `publicBaseUrl` and falls back to the current origin — unit tested both ways
+- [ ] Teacher's Live tab shows which address is in the QR, and says so plainly
+      when it is `localhost` or `0.0.0.0` ("students cannot reach this")
+- [ ] Students keep working when the address is wrong: the code can always be
+      typed by hand, and the copy-link button copies the LAN address, not the
+      origin of the window
+
+### 5.2 Classroom with a key — a teacher who is not an admin
+
+A self-registered student is `pending`, cannot log in (403), and only an admin
+can approve. In a classroom the teacher is alone, so nobody gets in. The fix is
+not more power for teachers: it is a scoped key.
+
+- [ ] Table `classrooms` (migration v5): owner, name, `key` (6 chars, the same
+      unambiguous alphabet as join codes, unique), status `active | revoked`,
+      optional `course_id` for auto-enrolment, timestamps
+- [ ] Teacher API: create, list own, rename, revoke, regenerate the key, delete
+- [ ] `GET /api/classrooms/preview?key=` — public, validates a key without
+      creating anything, so the register screen can say "Class 9A · Olena M."
+- [ ] `POST /api/auth/register` accepts an optional `classKey`: a valid key
+      creates the account **approved** and records the classroom; an invalid one
+      is a clear 400 and the account stays `pending` as before
+- [ ] Teacher UI: "My classes" with the key as text and as a QR of the
+      registration link (`?class=KEY`), the students who came in through it, and
+      revoke/regenerate/delete
+- [ ] Register screen gets an optional class-code field; students who already
+      have an account are unaffected
+- [ ] Tests: key generation and uniqueness, approve-on-valid, reject-on-invalid
+      and on revoked, a teacher cannot see or revoke another's class, auto-
+      enrolment into the linked course, and that a key never grants teacher rights
+
+### 5.3 The server console — one implementation, three surfaces
+
+The headless server writes pino JSON and has no interactive control; the desktop
+app has no log view at all. A teacher running the server in a school computer
+room needs to see what it is doing and be able to act without a second machine.
+
+- [ ] Human-readable log lines (level colour, aligned, relative time) when
+      stdout is a TTY, unchanged JSON when piped — so `systemd` and CI still work
+- [ ] Interactive commands on stdin when a TTY, acting through the same
+      functions the HTTP API uses: `help`, `status`, `sessions`, `users`,
+      `students [pending]`, `approve`, `block`, `password`, `level`, `clear`,
+      `stop`. Disabled by `--no-console`, skipped automatically when piped
+- [ ] In-memory ring buffer of recent lines + `WS /ws/server` (admin only) and
+      `GET /api/logs?since=` so the desktop and the web admin can follow the
+      same stream live
+- [ ] Admin "Server" tab in the web client: live console, server status, and the
+      same actions as API calls (approve a student, stop the server)
+- [ ] Restart is deliberately *not* an API call: only the desktop, which owns the
+      process, can bring it back
+- [ ] Tests: the formatter (TTY vs piped), the command parser and its
+      permissions, the ring buffer's ordering and trimming
+
+### 5.4 The desktop app as a host
+
+`src-tauri/src/lib.rs` is six lines with one plugin: there is no sidecar, no
+spawn, no console, no settings. The scenario the whole project was imagined for
+does not exist yet.
+
+- [ ] Bundle the server binary as a sidecar (`bundle.externalBin`) and spawn it
+      from a small Rust module (`std::process::Command` + piped stdout → Tauri
+      events — no new dependency), with stop/restart and an exit code surfaced
+- [ ] Console view in the desktop app: colourised, auto-scrolling, filterable by
+      level, copy and clear, start/stop/restart, "open in browser" with the LAN
+      address
+- [ ] Settings view: data dir, port, admin password, public address — persisted
+      locally, applied on restart
+- [ ] The desktop API base stops being a build-time constant (`VITE_API_TARGET`)
+      and follows the settings, so changing the port does not need a rebuild
+- [ ] First run: defaults + "Start", and a clear message when the bundled binary
+      is missing (a dev build) with the path that was looked for
+- [ ] Packaging: the sidecar is renamed per platform in CI, and a dev build can
+      point at a locally built binary
+
+### 5.5 Making it verifiable
+
+- [x] `docs/scenarios.md`: the runbook for all three scenarios, including what
+      each needs, how to try it by hand, and how to tell it worked
+- [ ] The browser harness (headless Firefox over WebDriver BiDi, already used
+      during development) kept as a dev script with the checks it runs: overflow,
+      tap targets, and one happy path per role
+- [ ] A CI smoke step for the console: start the binary, send one command on
+      stdin, assert the output, and that `--no-console` starts clean
+
+## Phase 6 — MVP polish (v1.0.0)
 
 - [x] Server unit and integration tests: scoring over all five question types,
       the grade journal and CSV export, the session runtime, auth and the role
       boundaries (104 tests)
 - [x] Client tests for the logic worth testing: the session clock and answer
-      payloads, the QR generator, the download helper, and an i18n catalogue
-      check that compiles both locales (34 tests)
+      payloads, the QR generator, the download helper, the offline drafts, and an
+      i18n catalogue check that compiles both locales (45 tests)
 - [x] GitHub-ready README: what the project is, the three roles, the topology,
       headless install with the CLI flags, badges
 - [ ] Seed demo data, so a fresh install can be shown without typing anything in
 - [ ] Screenshots in the README (teacher workbench, live board, journal, student)
 - [ ] Browser e2e for the student flow: join → answer → submit → result
-- [ ] Sidecar packaging: bundle the server binary into the installers properly
-      and keep "server not reachable" graceful on first launch
-- [ ] Offline PWA caching polish, so a room without Wi-Fi still shows what it has
+- [ ] Offline PWA caching polish: a manifest and a service worker, so a phone can
+      install the client and a room without Wi-Fi still shows what it has
 
 ## Out of scope (v1)
 

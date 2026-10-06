@@ -128,6 +128,7 @@ so a newer binary always opens an older database.
 
 ## Documentation
 
+- [Deployment scenarios and how to run them](./docs/scenarios.md)
 - [Architecture](./docs/architecture.md)
 - [Database schema](./docs/schema.md)
 - [API reference](./docs/api.md)

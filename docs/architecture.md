@@ -155,6 +155,14 @@ true/false, short answer, matching) · `live_sessions` · `participations` ·
 | Server → Student (pause, finish, time) | same WebSocket, status only |
 | Fallback when a socket cannot be opened | REST polling (cheap, LAN scale) |
 
+## Deployment scenarios
+
+Three ways the system is meant to be used — a server on a school machine, the
+teacher desktop app hosting its own server, and a classroom with no admin in the
+room. What each one needs, what works today, and the runbook for each:
+[scenarios.md](./scenarios.md). The plan that closes the gaps is Phase 5 of the
+roadmap.
+
 ## Security model (LAN trust)
 
 - Offline classroom: role-scoped bearer tokens for all three roles; an
