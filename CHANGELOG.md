@@ -4,6 +4,43 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
+## [0.4.1] — unreleased
+
+The tails of the earlier phases: share and duplicate tests, keep authoring when
+the server is not there, and one component each for the card and the text field.
+
+### Added
+- **Duplicate a test** (`POST /api/tests/:id/duplicate`). The copy belongs to the
+  caller and its questions get new ids, so editing it cannot reach the original
+  — which is the point at the start of a term.
+- **Share a test as a file** (`GET /api/tests/:id/export`, `POST
+  /api/tests/import`). The export carries no ids, no owner and no timestamps,
+  and does carry the answer keys: a colleague has to be able to run it.
+  Positions are renumbered on the way in, so a hand-edited file still imports,
+  and every question is validated with the editor's own rules.
+- **Authoring that survives an absent server.** A save that cannot reach the
+  server becomes a local draft, listed above the tests with Open / Upload /
+  Discard. Drafts upload themselves the moment the server answers again; one
+  that is rejected keeps its place for the next attempt, a second draft of the
+  same test replaces the first, and an abandoned empty form is not kept.
+- **One `AppCard` and one `AppInput`** (44 and 15 call sites), after `AppButton`
+  in 0.4.0. Text links, table sort headers, clickable rows and tab strips stay
+  raw elements on purpose: they do not look like buttons, so they should not
+  behave like one.
+- **A test that every `t()` in the sources has a message.** A missing key does
+  not fail a build — vue-i18n prints the key — so the i18n test now walks the
+  sources. It caught one: the pass-mark field in the editor asked for
+  `teacher.tests.passingPercent`, which exists in neither locale, so the UI
+  showed the raw key where a label should be.
+
+### Fixed
+- **A request with no body no longer claims it carries JSON.** The client set
+  `content-type: application/json` on every non-GET call, and Fastify answers
+  those with "body cannot be empty". Every mutation without a payload was
+  failing: delete a test, pause / resume / finish a session, approve or block a
+  user. Found by clicking the buttons in a real browser rather than by reading
+  the code; the rule now has two tests of its own.
+
 ## [0.4.0] — 2026-10-06
 
 Reporting: the numbers a teacher acts on, and the ways to get them out of the
@@ -451,6 +488,7 @@ teacher UIs in the web client and the desktop app. 35 integration tests green.
   preloads the system `libwayland-client.so` (bundled one is ABI-incompatible
   with Mesa 26).
 
+[0.4.1]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.4.1
 [0.4.0]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.4.0
 [0.3.0]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.3.0
 [0.2.0]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.2.0

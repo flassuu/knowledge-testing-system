@@ -51,7 +51,7 @@ only restyled the same screens.
 - [x] Test/question CRUD with per-type payload validation (5 question types)
 - [x] Course CRUD + material upload (static files, no multipart deps)
 - [x] Admin insights: DB health (+ table counts) and participants list
-- [ ] Import/export share format (JSON) — Phase 2 authoring
+- [x] Import/export share format (JSON) — Phase 2 authoring
 
 ## Phase 1.1 — UI/UX polish (shipped in v0.2.0)
 
@@ -81,10 +81,13 @@ These rules apply to every screen of web-client and desktop. No exceptions.
    hard-coded colours.
 
 **Design system & states**
-- [ ] Consistency pass: one set of buttons/cards/badges/inputs. Buttons are
-      done (`AppButton`, 66 call sites); cards, badges and inputs still carry
-      their own classes, and the shared spacing/typography scale is not written
-      down yet
+- [x] Consistency pass: one set of buttons, cards and text fields —
+      `AppButton` (66 call sites), `AppCard` (44) and `AppInput` (15). What is
+      deliberately *not* a component stays a raw element: text links, table
+      sort headers, clickable rows and tab strips do not look like buttons, so
+      they should not act like one. Badges were left as they are - they are
+      already one component (`MaterialBadge`) plus a handful of chips whose
+      tones differ per screen
 - [x] Light/dark theming: semantic M3 Expressive token layer in Tailwind v4
       (`@theme inline` + `:root`/`.dark`), class-based dark on `<html>`,
       theme switcher in every header, system preference as first-run default,
@@ -147,8 +150,13 @@ These rules apply to every screen of web-client and desktop. No exceptions.
       teacher dashboard (web-client & desktop)
 - [x] Course builder: create courses, attach/detach tests, enroll students,
       upload and download materials
-- [ ] Test duplication & sharing (JSON import/export)
-- [ ] Offline authoring: local drafts that sync when the server is reachable
+- [x] Test duplication & sharing: `Duplicate` per test (fresh question ids, so
+      editing the copy cannot touch the original), `GET /api/tests/:id/export`
+      writes a file with no ids and no owner but with the answer keys, and
+      `POST /api/tests/import` reads it back
+- [x] Offline authoring: a save that cannot reach the server becomes a local
+      draft, listed with the tests; drafts upload themselves when the server
+      answers again, and a rejected draft keeps its place for the next attempt
 
 ## Phase 3 — Session runtime (v0.3.0, done)
 

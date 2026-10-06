@@ -155,6 +155,42 @@ sequential). Same body and errors as `POST`.
 
 Removes the test; questions cascade. → `204`.
 
+### `GET /api/tests/:id/export`
+
+The test as a shareable file: `application/json` with a
+`content-disposition` filename. No ids, no owner, no timestamps — and the
+answer keys, because a colleague has to be able to run it.
+
+```json
+{
+  "format": "knowledge-testing.test",
+  "version": 1,
+  "title": "Photosynthesis",
+  "description": "Grade 9",
+  "timeLimitSec": 600,
+  "passingPercent": 60,
+  "questions": [{ "type": "true_false", "body": "…", "points": 1, "position": 0, "payload": { "correct": true } }]
+}
+```
+
+### `POST /api/tests/:id/duplicate`
+
+`201` with the copy: owned by the caller, titled `<original> (copy)`, with fresh
+question ids so the two tests are independent. → `403` for another teacher's
+test · `404`.
+
+### `POST /api/tests/import`
+
+Reads a file written by the export and creates the test for the caller. The
+body is the export document; `format` and `version` must match, positions are
+renumbered from the array order, and every question goes through the editor's
+own validation.
+
+- `201` → the created test with its questions
+- `400 VALIDATION` — not a test file, an unsupported version, no title, no
+  questions, or a question that fails validation (the message says which and
+  why: `question 2: …`)
+
 ### `GET /api/tests/:id/results`
 
 Grade journal for one test, aggregated over **every** session it was run in.

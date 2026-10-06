@@ -93,8 +93,13 @@ Almost everything requires the running server. When the server is unreachable:
 
 - Anyone can **read previously cached content**: course materials, descriptions,
   statistics (PWA cache + local storage).
-- **Teachers may author and edit tests offline** (local drafts) and sync them
-  to the server once it is reachable again.
+- **Teachers keep authoring.** A save that cannot reach the server becomes a
+  **local draft** (`src/drafts/testDrafts.ts`, localStorage) rather than an
+  error, listed above the tests with open / upload / discard. Drafts upload
+  themselves the moment the app's shared health poll reports the server is back,
+  and a draft the server rejects keeps its place for the next attempt. The rules
+  are pure functions over a small storage interface, so they are unit-tested
+  without a browser.
 
 ## Courses & materials
 
