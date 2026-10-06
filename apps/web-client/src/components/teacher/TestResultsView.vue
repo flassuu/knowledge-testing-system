@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, BarChart3, Printer, TrendingDown, TrendingUp } from '@lucide/vue'
 import type { TestResults } from '../../api/tests'
+import AppButton from '../../components/common/AppButton.vue'
 
 const props = defineProps<{
   test: { id: string; title: string; passingPercent: number | null }
@@ -43,23 +44,15 @@ function printReport(): void {
 <template>
   <div class="space-y-4">
     <div class="flex items-center justify-between gap-2">
-      <button
-        type="button"
-        class="inline-flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-surface"
-        @click="emit('back')"
-      >
+      <AppButton variant="ghost" @click="emit('back')">
         <ArrowLeft class="size-4" aria-hidden="true" />
         {{ t('teacher.results.back') }}
-      </button>
+      </AppButton>
       <div class="flex items-center gap-2">
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container-high"
-          @click="printReport"
-        >
+        <AppButton variant="secondary" @click="printReport">
           <Printer class="size-3.5" aria-hidden="true" />
           {{ t('teacher.results.print') }}
-        </button>
+        </AppButton>
       </div>
     </div>
 

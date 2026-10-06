@@ -20,6 +20,7 @@ import type { CourseDetails, Material, TestSummary } from '../../api/types'
 import TestPicker from './TestPicker.vue'
 import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
+import AppButton from '../../components/common/AppButton.vue'
 
 const props = defineProps<{
   courseId: string
@@ -151,14 +152,14 @@ onMounted(load)
         <h4 class="text-base font-semibold text-on-surface">{{ course.title }}</h4>
         <p v-if="course.description" class="mt-0.5 text-sm text-on-surface-variant">{{ course.description }}</p>
       </div>
-      <button
+      <AppButton
         type="button"
         @click="emit('close')"
-        class="shrink-0 rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
+        variant="secondaryPlain" size="sm" class="shrink-0"
       >
         <ArrowLeft class="size-3.5" aria-hidden="true" />
         {{ t('teacher.courses.back') }}
-      </button>
+      </AppButton>
     </div>
 
     <p v-if="actionError" role="alert" class="rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
@@ -179,13 +180,13 @@ onMounted(load)
           <span class="min-w-0 truncate text-on-surface">
             {{ student.fullName }} <span class="text-on-surface-variant">@{{ student.username }}</span>
           </span>
-          <button
+          <AppButton
             type="button"
             @click="unenroll(student)"
-            class="shrink-0 rounded border border-outline-variant px-2 py-0.5 text-xs font-semibold text-on-error-container hover:bg-error-container"
+            variant="dangerSecondary" size="sm" class="shrink-0"
           >
             {{ t('teacher.courses.unenroll') }}
-          </button>
+          </AppButton>
         </li>
       </ul>
       <p v-else class="mt-3 flex items-center gap-1.5 text-xs text-on-surface-variant">
@@ -200,12 +201,9 @@ onMounted(load)
           :placeholder="t('teacher.courses.enrollPlaceholder')"
           class="w-full max-w-52 rounded-lg border border-outline bg-surface px-3 py-1.5 text-sm focus:border-primary"
         />
-        <button
-          type="submit"
-          class="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:opacity-90"
-        >
+        <AppButton variant="primary" class="shrink-0" type="submit">
           {{ t('teacher.courses.enroll') }}
-        </button>
+        </AppButton>
       </form>
     </section>
 
@@ -221,13 +219,13 @@ onMounted(load)
           class="flex items-center justify-between gap-2 text-sm"
         >
           <span class="min-w-0 truncate text-on-surface">{{ test.title }}</span>
-          <button
+          <AppButton
             type="button"
             @click="detach(test.id, test.title)"
-            class="shrink-0 rounded border border-outline-variant px-2 py-0.5 text-xs font-semibold text-on-error-container hover:bg-error-container"
+            variant="dangerSecondary" size="sm" class="shrink-0"
           >
             {{ t('teacher.courses.detach') }}
-          </button>
+          </AppButton>
         </li>
       </ul>
       <p v-else class="mt-3 flex items-center gap-1.5 text-xs text-on-surface-variant">
@@ -249,13 +247,13 @@ onMounted(load)
             {{ material.title }}
           </span>
           <span class="shrink-0 text-xs text-on-surface-variant">{{ formatBytes(material.sizeBytes) }}</span>
-          <button
+          <AppButton
             type="button"
             @click="download(material)"
-            class="shrink-0 rounded border border-outline px-2 py-0.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
+            variant="secondaryPlain" size="sm" class="shrink-0"
           >
             {{ t('teacher.courses.download') }}
-          </button>
+          </AppButton>
         </li>
       </ul>
       <p v-else class="mt-3 flex items-center gap-1.5 text-xs text-on-surface-variant">
@@ -271,13 +269,13 @@ onMounted(load)
       </label>
     </section>
 
-    <button
+    <AppButton
       type="button"
       @click="removeCourse"
-      class="rounded-lg border border-outline-variant px-4 py-2 text-sm font-semibold text-on-error-container hover:bg-error-container"
+      variant="dangerSecondary" size="md"
     >
       {{ t('teacher.courses.deleteCourse') }}
-    </button>
+    </AppButton>
   </div>
 
   <p v-else-if="errorKey" role="alert" class="mt-4 rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">

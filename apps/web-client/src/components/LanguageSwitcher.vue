@@ -21,7 +21,7 @@ function setLocale(next: Locale) {
       :key="code"
       type="button"
       @click="setLocale(code)"
-      class="rounded-md px-2 py-1 text-xs font-semibold uppercase transition-colors disabled:cursor-default disabled:opacity-100"
+      class="min-h-9 rounded-md px-3 text-xs font-semibold uppercase transition-colors disabled:cursor-default disabled:opacity-100"
       :disabled="locale === code"
       :aria-pressed="locale === code"
       :class="

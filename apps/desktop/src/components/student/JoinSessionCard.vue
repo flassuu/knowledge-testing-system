@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { LogIn } from '@lucide/vue'
 import JoinCodeInput from './JoinCodeInput.vue'
+import AppButton from '../../components/common/AppButton.vue'
 
 const emit = defineEmits<{ joined: [] }>()
 
@@ -31,14 +32,10 @@ function submit(): void {
 
     <form class="mt-4 flex flex-col gap-2 sm:flex-row" @submit.prevent="submit">
       <JoinCodeInput v-model="code" :disabled="busy" />
-      <button
-        type="submit"
-        :disabled="!canSubmit"
-        class="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-60"
-      >
+      <AppButton variant="primary" class="shrink-0 rounded-xl" type="submit" :disabled="!canSubmit">
         <LogIn class="size-4" aria-hidden="true" />
         {{ busy ? t('common.loading') : t('student.join.action') }}
-      </button>
+      </AppButton>
     </form>
 
     <p

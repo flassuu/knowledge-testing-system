@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { X } from '@lucide/vue'
 import { dismissToast, getToastState, type ToastKind } from '../../composables/toast'
+import AppButton from '../../components/common/AppButton.vue'
 
 const { t } = useI18n()
 const state = getToastState()
@@ -32,14 +33,14 @@ const kindClass: Record<ToastKind, string> = {
           :class="kindClass[item.kind]"
         >
           <p class="min-w-0 flex-1 text-sm text-on-surface">{{ item.message }}</p>
-          <button
-            type="button"
-            :aria-label="t('common.dismiss')"
-            @click="dismissToast(item.id)"
-            class="shrink-0 text-on-surface-variant transition-colors hover:text-on-surface"
-          >
+          <AppButton
+  variant="ghost"
+  class="shrink-0"
+  :aria-label="t('common.dismiss')"
+  @click="dismissToast(item.id)"
+>
             <X class="size-3.5" aria-hidden="true" />
-          </button>
+          </AppButton>
         </div>
       </TransitionGroup>
     </div>

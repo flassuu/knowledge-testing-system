@@ -14,7 +14,7 @@ function onInput(event: Event): void {
 
 <template>
   <label
-    class="flex w-full items-center gap-3 rounded-xl border border-outline bg-surface px-3 py-2.5 focus-within:border-primary sm:max-w-56"
+    class="flex w-full items-center gap-3 rounded-xl border border-outline bg-surface px-3 focus-within:border-primary sm:max-w-56"
   >
     <span class="sr-only">{{ t('student.join.codeLabel') }}</span>
     <input
@@ -26,7 +26,7 @@ function onInput(event: Event): void {
       spellcheck="false"
       :disabled="disabled"
       :placeholder="t('student.join.codePlaceholder')"
-      class="w-full bg-transparent font-mono text-lg font-bold tracking-[0.35em] text-on-surface placeholder:tracking-[0.2em] placeholder:font-sans placeholder:text-sm placeholder:font-normal placeholder:text-on-surface-variant focus:outline-none"
+      class="h-12 w-full bg-transparent font-mono text-lg font-bold tracking-[0.35em] text-on-surface placeholder:tracking-[0.2em] placeholder:font-sans placeholder:text-sm placeholder:font-normal placeholder:text-on-surface-variant focus:outline-none"
       @input="onInput"
     />
   </label>

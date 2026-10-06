@@ -4,6 +4,7 @@ import { ArrowDown, ArrowLeftRight, ArrowUp, Copy, Plus, X } from '@lucide/vue'
 import { QUESTION_TYPES } from '../../api/types'
 import type { QuestionType } from '../../api/types'
 import type { QuestionForm } from './questionForm'
+import AppButton from '../../components/common/AppButton.vue'
 
 const props = defineProps<{
   question: QuestionForm
@@ -70,40 +71,37 @@ function removePair(index: number): void {
         </span>
       </div>
       <div class="flex shrink-0 items-center gap-1">
-        <button
-          type="button"
-          :disabled="index === 0"
-          @click="emit('move', index, -1)"
-          class="rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface disabled:opacity-30"
-          :aria-label="t('teacher.editor.moveUp')"
-        >
+        <AppButton
+  variant="ghost"
+  :disabled="index === 0"
+  @click="emit('move', index, -1)"
+  :aria-label="t('teacher.editor.moveUp')"
+>
           <ArrowUp class="size-4" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          :disabled="index === total - 1"
-          @click="emit('move', index, 1)"
-          class="rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface disabled:opacity-30"
-          :aria-label="t('teacher.editor.moveDown')"
-        >
+        </AppButton>
+        <AppButton
+  variant="ghost"
+  :disabled="index === total - 1"
+  @click="emit('move', index, 1)"
+  :aria-label="t('teacher.editor.moveDown')"
+>
           <ArrowDown class="size-4" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          @click="emit('duplicate', index)"
-          class="rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-          :aria-label="t('teacher.editor.duplicateQuestion')"
-        >
+        </AppButton>
+        <AppButton
+  variant="ghost"
+  @click="emit('duplicate', index)"
+  :aria-label="t('teacher.editor.duplicateQuestion')"
+>
           <Copy class="size-4" aria-hidden="true" />
-        </button>
-        <button
+        </AppButton>
+        <AppButton
           type="button"
           @click="emit('remove', index)"
-          class="rounded-lg p-1.5 text-on-surface-variant hover:bg-error-container hover:text-on-error-container"
+          variant="dangerSecondary" size="icon"
           :aria-label="t('teacher.editor.removeQuestion')"
         >
           <X class="size-4" aria-hidden="true" />
-        </button>
+        </AppButton>
       </div>
     </div>
 
@@ -169,24 +167,24 @@ function removePair(index: number): void {
           :aria-label="t('teacher.editor.optionLabel')"
           class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
         />
-        <button
+        <AppButton
           type="button"
           :disabled="question.options.length <= 2"
           @click="removeOption(index)"
           :aria-label="t('teacher.editor.removeOption')"
-          class="shrink-0 rounded p-1.5 text-on-surface-variant hover:text-error disabled:opacity-30"
+          variant="ghostDanger" size="icon" class="shrink-0"
         >
           <X class="size-4" aria-hidden="true" />
-        </button>
+        </AppButton>
       </div>
-      <button
+      <AppButton
         type="button"
         @click="addOption"
-        class="inline-flex items-center gap-1.5 rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
+        variant="secondaryMuted" size="sm"
       >
         <Plus class="size-3.5" aria-hidden="true" />
         {{ t('teacher.editor.addOption') }}
-      </button>
+      </AppButton>
     </div>
 
     <!-- true / false -->
@@ -235,24 +233,24 @@ function removePair(index: number): void {
           :placeholder="t('teacher.editor.right')"
           class="w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
         />
-        <button
+        <AppButton
           type="button"
           :disabled="question.pairs.length <= 2"
           @click="removePair(index)"
           :aria-label="t('teacher.editor.removePair')"
-          class="shrink-0 rounded p-1.5 text-on-surface-variant hover:text-error disabled:opacity-30"
+          variant="ghostDanger" size="icon" class="shrink-0"
         >
           <X class="size-4" aria-hidden="true" />
-        </button>
+        </AppButton>
       </div>
-      <button
+      <AppButton
         type="button"
         @click="addPair"
-        class="inline-flex items-center gap-1.5 rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
+        variant="secondaryMuted" size="sm"
       >
         <Plus class="size-3.5" aria-hidden="true" />
         {{ t('teacher.editor.addPair') }}
-      </button>
+      </AppButton>
     </div>
   </fieldset>
 </template>

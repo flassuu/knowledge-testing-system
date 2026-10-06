@@ -9,6 +9,7 @@ import EmptyState from '../common/EmptyState.vue'
 import SkeletonList from '../common/SkeletonList.vue'
 import MaterialBadge from '../common/MaterialBadge.vue'
 import { useToast } from '../../composables/toast'
+import AppButton from '../../components/common/AppButton.vue'
 
 const { t } = useI18n()
 const toast = useToast()
@@ -168,14 +169,14 @@ onMounted(load)
                   <span class="shrink-0 text-xs text-on-surface-variant">
                     {{ formatBytes(material.sizeBytes) }}
                   </span>
-                  <button
-                    type="button"
-                    class="shrink-0 rounded-lg border border-outline bg-surface p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface"
-                    :aria-label="t('student.courses.download', { title: material.title })"
-                    @click="download(material)"
-                  >
+                  <AppButton
+  variant="secondaryMuted"
+  class="shrink-0"
+  :aria-label="t('student.courses.download', { title: material.title })"
+  @click="download(material)"
+>
                     <Download class="size-4" aria-hidden="true" />
-                  </button>
+                  </AppButton>
                 </li>
               </ul>
             </div>

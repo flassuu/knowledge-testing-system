@@ -8,6 +8,7 @@ import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 import { useAuth } from '../stores/auth'
 import { ApiError } from '../api/client'
 import type { UserRole } from '../api/types'
+import AppButton from '../components/common/AppButton.vue'
 
 const emit = defineEmits<{ register: [] }>()
 
@@ -153,16 +154,16 @@ async function submit() {
               placeholder="••••••••"
               class="w-full rounded-lg border border-outline px-3 py-2 pr-11 text-sm focus:border-primary"
             />
-            <button
-              type="button"
-              :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
-              :title="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
-              @click="showPassword = !showPassword"
-              class="absolute inset-y-0 right-0 flex items-center px-3 text-on-surface-variant transition-colors hover:text-on-surface-variant"
-            >
+            <AppButton
+  variant="ghost"
+  class="absolute inset-y-0 right-0"
+  :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+  :title="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+  @click="showPassword = !showPassword"
+>
               <EyeOff v-if="showPassword" class="size-4" aria-hidden="true" />
               <Eye v-else class="size-4" aria-hidden="true" />
-            </button>
+            </AppButton>
           </div>
         </label>
 
@@ -174,13 +175,9 @@ async function submit() {
           {{ errorMessage(errorKey) }}
         </p>
 
-        <button
-          type="submit"
-          :disabled="submitting"
-          class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition-opacity disabled:opacity-60"
-        >
+        <AppButton variant="primary" type="submit" :disabled="submitting">
           {{ submitting ? t('common.loading') : t('auth.signIn') }}
-        </button>
+        </AppButton>
       </form>
 
       <div

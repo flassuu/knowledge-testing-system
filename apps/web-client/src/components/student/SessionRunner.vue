@@ -17,6 +17,7 @@ import {
 import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
 import QuestionAnswerInput from './QuestionAnswerInput.vue'
+import AppButton from '../../components/common/AppButton.vue'
 
 const props = defineProps<{
   state: SessionState
@@ -188,16 +189,11 @@ onBeforeUnmount(() => {
       <p class="text-xs text-on-surface-variant">
         {{ t('student.runner.hint') }}
       </p>
-      <button
-        type="button"
-        :disabled="submitting"
-        @click="send"
-        class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-success px-4 py-2.5 text-sm font-semibold text-on-success transition-opacity hover:opacity-90 disabled:opacity-60"
-      >
+      <AppButton variant="success" class="rounded-xl" :disabled="submitting" @click="send">
         <Check v-if="expired" class="size-4" aria-hidden="true" />
         <Send v-else class="size-4" aria-hidden="true" />
         {{ submitting ? t('common.loading') : t('student.runner.submit') }}
-      </button>
+      </AppButton>
     </div>
   </section>
 </template>

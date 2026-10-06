@@ -5,6 +5,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 import { register } from '../api/auth'
 import { ApiError } from '../api/client'
+import AppButton from '../components/common/AppButton.vue'
 
 const emit = defineEmits<{ back: [] }>()
 
@@ -81,13 +82,13 @@ function back() {
       <div class="flex items-center gap-2">
         <ThemeSwitcher />
         <LanguageSwitcher />
-        <button
+        <AppButton
           type="button"
           @click="back"
-          class="rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface"
+          variant="secondaryMuted" size="sm"
         >
           {{ t('auth.backToLogin') }}
-        </button>
+        </AppButton>
       </div>
     </header>
 
@@ -99,13 +100,9 @@ function back() {
         {{ t('auth.pendingTitle') }}
       </p>
       <p class="mt-2 text-sm text-success">{{ t('auth.pendingNote') }}</p>
-      <button
-        type="button"
-        @click="back"
-        class="mt-5 rounded-lg bg-success px-4 py-2 text-sm font-semibold text-on-success"
-      >
+      <AppButton variant="success" class="mt-5" @click="back">
         {{ t('auth.backToLogin') }}
-      </button>
+      </AppButton>
     </section>
 
     <section
@@ -176,13 +173,9 @@ function back() {
           {{ errorMessage(errorKey) }}
         </p>
 
-        <button
-          type="submit"
-          :disabled="submitting"
-          class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition-opacity disabled:opacity-60"
-        >
+        <AppButton variant="primary" type="submit" :disabled="submitting">
           {{ submitting ? t('common.loading') : t('auth.register') }}
-        </button>
+        </AppButton>
       </form>
     </section>
   </main>

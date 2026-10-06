@@ -31,6 +31,7 @@ import TestPicker from './TestPicker.vue'
 import { useConfirm } from '../../composables/confirm'
 import { useSessionChannel } from '../../composables/sessionChannel'
 import { useToast } from '../../composables/toast'
+import AppButton from '../../components/common/AppButton.vue'
 
 /** True while the spreadsheet download is in flight. */
 const exporting = ref(false)
@@ -205,15 +206,10 @@ onMounted(load)
   <div class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h3 class="text-base font-semibold text-on-surface">{{ t('teacher.live.heading') }}</h3>
-      <button
-        v-if="!showStart"
-        type="button"
-        @click="showStart = !showStart"
-        class="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary transition-opacity hover:opacity-90"
-      >
+      <AppButton variant="primary" v-if="!showStart" @click="showStart = !showStart">
         <Radio class="size-3.5" aria-hidden="true" />
         {{ t('teacher.live.start') }}
-      </button>
+      </AppButton>
     </div>
 
     <p
@@ -236,22 +232,13 @@ onMounted(load)
         @select="startingTestId = $event"
       />
       <div class="mt-3 flex flex-wrap gap-2">
-        <button
-          type="button"
-          :disabled="!startingTestId || starting"
-          @click="start(startingTestId)"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
+        <AppButton variant="success" :disabled="!startingTestId || starting" @click="start(startingTestId)">
           <Play class="size-3.5" aria-hidden="true" />
           {{ starting ? t('common.loading') : t('teacher.live.startRun') }}
-        </button>
-        <button
-          type="button"
-          @click="showStart = false; startingTestId = ''"
-          class="rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
-        >
+        </AppButton>
+        <AppButton variant="secondaryMuted" @click="showStart = false; startingTestId = ''">
           {{ t('common.cancel') }}
-        </button>
+        </AppButton>
       </div>
     </section>
 
@@ -313,32 +300,19 @@ onMounted(load)
             <p class="font-mono text-4xl font-bold tracking-[0.2em] text-on-surface">
               {{ selected.joinCode }}
             </p>
-            <button
-              type="button"
-              @click="copyCode"
-              class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-on-surface-variant hover:text-on-surface"
-            >
+            <AppButton variant="ghost" class="mt-1 gap-1" @click="copyCode">
               <CircleCheck v-if="copied" class="size-3.5" aria-hidden="true" />
               <Copy v-else class="size-3.5" aria-hidden="true" />
               {{ copied ? t('teacher.live.copied') : t('teacher.live.copy') }}
-            </button>
-            <button
-              type="button"
-              @click="copyLink"
-              class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-on-surface-variant hover:text-on-surface"
-            >
+            </AppButton>
+            <AppButton variant="ghost" class="mt-1 gap-1" @click="copyLink">
               <Link2 class="size-3.5" aria-hidden="true" />
               {{ linkCopied ? t('teacher.live.copied') : t('teacher.live.copyLink') }}
-            </button>
-            <button
-              type="button"
-              :aria-pressed="showQr"
-              @click="showQr = !showQr"
-              class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-on-surface-variant hover:text-on-surface"
-            >
+            </AppButton>
+            <AppButton variant="ghost" class="mt-1 gap-1" :aria-pressed="showQr" @click="showQr = !showQr">
               <QrCode class="size-3.5" aria-hidden="true" />
               {{ showQr ? t('teacher.live.hideQr') : t('teacher.live.showQr') }}
-            </button>
+            </AppButton>
           </div>
         </div>
 
@@ -350,42 +324,22 @@ onMounted(load)
         </p>
 
         <div class="mt-4 flex flex-wrap items-center gap-2">
-          <button
-            v-if="boardStatus === 'active'"
-            type="button"
-            @click="changeStatus('paused')"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container-high"
-          >
+          <AppButton variant="secondary" v-if="boardStatus === 'active'" @click="changeStatus('paused')">
             <Pause class="size-3.5" aria-hidden="true" />
             {{ t('teacher.live.pause') }}
-          </button>
-          <button
-            v-else-if="boardStatus === 'paused'"
-            type="button"
-            @click="changeStatus('active')"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container-high"
-          >
+          </AppButton>
+          <AppButton variant="secondary" v-else-if="boardStatus === 'paused'" @click="changeStatus('active')">
             <Play class="size-3.5" aria-hidden="true" />
             {{ t('teacher.live.resume') }}
-          </button>
-          <button
-            v-if="boardStatus !== 'finished'"
-            type="button"
-            @click="changeStatus('finished')"
-            class="inline-flex items-center gap-1.5 rounded-lg bg-error px-3 py-1.5 text-xs font-semibold text-on-error transition-opacity hover:opacity-90"
-          >
+          </AppButton>
+          <AppButton variant="danger" v-if="boardStatus !== 'finished'" @click="changeStatus('finished')">
             <Square class="size-3.5" aria-hidden="true" />
             {{ t('teacher.live.finish') }}
-          </button>
-          <button
-            type="button"
-            :disabled="exporting"
-            @click="exportCsv"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container-high disabled:opacity-60"
-          >
+          </AppButton>
+          <AppButton variant="secondary" :disabled="exporting" @click="exportCsv">
             <Download class="size-3.5" aria-hidden="true" />
             {{ t('teacher.live.exportCsv') }}
-          </button>
+          </AppButton>
           <span class="inline-flex items-center gap-1.5 text-xs text-on-surface-variant">
             <RotateCw
               class="size-3.5"

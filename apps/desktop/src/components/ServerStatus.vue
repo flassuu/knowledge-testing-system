@@ -11,7 +11,7 @@ const health = getHealthState()
     type="button"
     @click="void recheckHealth()"
     :title="t('server.recheckHint')"
-    class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-colors"
+    class="inline-flex min-h-9 items-center gap-2 rounded-full px-3 text-xs font-medium transition-colors"
     :class="
       health.status === 'checking'
         ? 'bg-surface-container-high text-on-surface-variant'

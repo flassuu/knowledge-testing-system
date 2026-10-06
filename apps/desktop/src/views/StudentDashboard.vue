@@ -15,6 +15,7 @@ import {
   type SessionResultBody,
   type SessionState,
 } from '../api/sessions'
+import AppButton from '../components/common/AppButton.vue'
 
 const { t } = useI18n()
 
@@ -132,20 +133,12 @@ onMounted(() => {
 
       <template v-else-if="result">
         <SessionResult class="mt-6" :result="result" />
-        <button
-          type="button"
-          @click="result = null"
-          class="mt-4 w-full rounded-xl border border-outline bg-surface px-4 py-2.5 text-sm font-semibold text-on-surface hover:bg-surface-container-high"
-        >
+        <AppButton variant="secondary" class="mt-4 rounded-xl" @click="result = null">
           {{ t('student.result.back') }}
-        </button>
-        <button
-          type="button"
-          @click="resume()"
-          class="mt-2 w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90"
-        >
+        </AppButton>
+        <AppButton variant="primary" class="mt-2 rounded-xl" @click="resume()">
           {{ t('student.result.joinAnother') }}
-        </button>
+        </AppButton>
       </template>
 
       <template v-else-if="state">

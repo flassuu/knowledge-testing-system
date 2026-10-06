@@ -5,6 +5,7 @@ import { getSystemStats } from '../../api/admin'
 import { ApiError } from '../../api/client'
 import SkeletonList from '../common/SkeletonList.vue'
 import type { SystemStats, TableCounts } from '../../api/types'
+import AppButton from '../../components/common/AppButton.vue'
 
 const { t } = useI18n()
 
@@ -57,13 +58,9 @@ onMounted(load)
 <template>
   <section>
     <div class="flex items-center justify-end">
-      <button
-        type="button"
-        @click="load"
-        class="rounded-lg border border-outline bg-surface px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-high"
-      >
+      <AppButton variant="secondary" @click="load">
         {{ t('admin.refresh') }}
-      </button>
+      </AppButton>
     </div>
 
     <p

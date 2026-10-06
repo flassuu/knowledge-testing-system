@@ -8,6 +8,7 @@ import ParticipantsTab from '../components/admin/ParticipantsTab.vue'
 import SystemTab from '../components/admin/SystemTab.vue'
 import { listUsers } from '../api/users'
 import type { UserStatus } from '../api/types'
+import AppButton from '../components/common/AppButton.vue'
 
 const { t } = useI18n()
 
@@ -51,13 +52,9 @@ onMounted(countPending)
           <UserCheck class="size-4 shrink-0" aria-hidden="true" />
           {{ t('admin.pendingBanner', { count: pendingCount }) }}
         </p>
-        <button
-          type="button"
-          @click="reviewPending"
-          class="shrink-0 self-start rounded-lg bg-warning px-3 py-1.5 text-xs font-semibold text-on-warning hover:opacity-90 sm:self-auto"
-        >
+        <AppButton variant="warning" class="shrink-0 self-start sm:self-auto" @click="reviewPending">
           {{ t('admin.pendingReview') }}
-        </button>
+        </AppButton>
       </div>
 
       <div class="mt-5 flex gap-1 rounded-xl border border-outline-variant bg-surface-container p-1 shadow-sm">

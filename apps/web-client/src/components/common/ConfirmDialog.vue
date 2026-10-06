@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getConfirmState, settleConfirm } from '../../composables/confirm'
 import { useDialogFocus } from '../../composables/focusTrap'
+import AppButton from '../../components/common/AppButton.vue'
 
 const { t } = useI18n()
 const state = getConfirmState()
@@ -36,21 +37,12 @@ useDialogFocus(
       >
         <p class="text-sm text-on-surface">{{ state.message }}</p>
         <div class="mt-5 flex justify-end gap-2">
-          <button
-            ref="cancelRef"
-            type="button"
-            @click="settleConfirm(false)"
-            class="rounded-lg border border-outline bg-surface px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-high"
-          >
+          <AppButton variant="secondary" ref="cancelRef" @click="settleConfirm(false)">
             {{ t('common.cancel') }}
-          </button>
-          <button
-            type="button"
-            @click="settleConfirm(true)"
-            class="rounded-lg bg-error px-4 py-2 text-sm font-semibold text-on-error hover:opacity-90"
-          >
+          </AppButton>
+          <AppButton variant="danger" @click="settleConfirm(true)">
             {{ state.confirmLabel || t('common.confirm') }}
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>

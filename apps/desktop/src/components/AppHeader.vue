@@ -5,6 +5,7 @@ import LanguageSwitcher from './LanguageSwitcher.vue'
 import ServerStatus from './ServerStatus.vue'
 import ThemeSwitcher from './ThemeSwitcher.vue'
 import { useAuth } from '../stores/auth'
+import AppButton from '../components/common/AppButton.vue'
 
 const { t } = useI18n()
 const { user, signOut } = useAuth()
@@ -20,7 +21,7 @@ const roleBadgeClass: Record<string, string> = {
 
 <template>
   <header
-    class="flex items-center justify-between gap-3 border-b border-outline-variant bg-surface-container px-4 py-3 sm:px-6"
+    class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-outline-variant bg-surface-container px-4 py-3 sm:px-6"
   >
     <div class="flex min-w-0 items-center gap-2">
       <h1 class="truncate text-base font-bold text-on-surface">
@@ -41,14 +42,14 @@ const roleBadgeClass: Record<string, string> = {
       </span>
       <ThemeSwitcher />
       <LanguageSwitcher />
-      <button
+      <AppButton
         v-if="user"
         type="button"
         @click="signOut"
-        class="rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-on-surface transition-colors hover:bg-surface"
+        variant="secondaryMuted" size="sm"
       >
         {{ t('auth.signOut') }}
-      </button>
+      </AppButton>
     </div>
   </header>
 </template>

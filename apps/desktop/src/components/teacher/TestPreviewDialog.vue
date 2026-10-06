@@ -5,6 +5,7 @@ import { ArrowLeftRight, Check, X } from '@lucide/vue'
 import { buildQuestions, type QuestionForm } from './questionForm'
 import { useDialogFocus } from '../../composables/focusTrap'
 import type { QuestionInput } from '../../api/types'
+import AppButton from '../../components/common/AppButton.vue'
 
 const props = defineProps<{
   open: boolean
@@ -112,15 +113,15 @@ const plainClass = 'bg-surface-container-high text-on-surface'
               {{ description }}
             </p>
           </div>
-          <button
-            ref="closeRef"
-            type="button"
-            :aria-label="t('common.close')"
-            class="shrink-0 rounded-full p-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-            @click="emit('close')"
-          >
+          <AppButton
+  variant="ghost"
+  class="shrink-0"
+  ref="closeRef"
+  :aria-label="t('common.close')"
+  @click="emit('close')"
+>
             <X class="size-4" aria-hidden="true" />
-          </button>
+          </AppButton>
         </header>
 
         <div v-if="!buildError" class="flex flex-wrap gap-2 px-4 pt-3">
@@ -221,13 +222,9 @@ const plainClass = 'bg-surface-container-high text-on-surface'
         </div>
 
         <footer class="border-t border-outline-variant p-4">
-          <button
-            type="button"
-            class="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:opacity-90 sm:w-auto"
-            @click="emit('close')"
-          >
+          <AppButton variant="primary" class="sm:w-auto" @click="emit('close')">
             {{ t('common.close') }}
-          </button>
+          </AppButton>
         </footer>
       </div>
     </div>

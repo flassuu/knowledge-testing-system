@@ -20,6 +20,7 @@ import TestPreviewDialog from './TestPreviewDialog.vue'
 import TestResultsView from './TestResultsView.vue'
 import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
+import AppButton from '../../components/common/AppButton.vue'
 
 const { t } = useI18n()
 const confirm = useConfirm()
@@ -201,15 +202,10 @@ onMounted(load)
   <section>
     <div class="flex items-center justify-between">
       <h3 class="text-base font-semibold text-on-surface">{{ t('teacher.tests.heading') }}</h3>
-      <button
-        v-if="!isEditing"
-        type="button"
-        @click="startCreate"
-        class="inline-flex items-center gap-1.5 rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success hover:opacity-90"
-      >
+      <AppButton variant="success" v-if="!isEditing" @click="startCreate">
         <Plus class="size-3.5" aria-hidden="true" />
         {{ t('teacher.tests.newTest') }}
-      </button>
+      </AppButton>
     </div>
 
     <!-- editor (also renders while creating: editingId === null is handled by `isEditing`) -->
@@ -263,14 +259,10 @@ onMounted(load)
       <div class="space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <p class="text-sm font-semibold text-on-surface">{{ t('teacher.tests.questions') }}</p>
-          <button
-            type="button"
-            @click="showPreview = true"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
-          >
+          <AppButton variant="secondaryMuted" @click="showPreview = true">
             <Eye class="size-3.5" aria-hidden="true" />
             {{ t('teacher.tests.preview') }}
-          </button>
+          </AppButton>
         </div>
         <QuestionEditor
           v-for="(question, index) in questionForms"
@@ -282,14 +274,10 @@ onMounted(load)
           @duplicate="duplicateQuestion"
           @move="moveQuestion"
         />
-        <button
-          type="button"
-          @click="addQuestion"
-          class="inline-flex items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high"
-        >
+        <AppButton variant="secondaryMuted" @click="addQuestion">
           <Plus class="size-4" aria-hidden="true" />
           {{ t('teacher.tests.addQuestion') }}
-        </button>
+        </AppButton>
       </div>
 
       <TestPreviewDialog
@@ -303,20 +291,12 @@ onMounted(load)
       />
 
       <div class="flex gap-2">
-        <button
-          type="submit"
-          :disabled="saving"
-          class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
+        <AppButton variant="primary" type="submit" :disabled="saving">
           {{ t('teacher.tests.save') }}
-        </button>
-        <button
-          type="button"
-          @click="isEditing = false"
-          class="rounded-lg border border-outline bg-surface px-4 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high"
-        >
+        </AppButton>
+        <AppButton variant="secondaryMuted" @click="isEditing = false">
           {{ t('teacher.tests.cancel') }}
-        </button>
+        </AppButton>
       </div>
     </form>
 
@@ -366,31 +346,21 @@ onMounted(load)
             </p>
           </div>
           <div class="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              :disabled="busyId === test.id"
-              @click="openResults(test)"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high disabled:opacity-60"
-            >
+            <AppButton variant="secondaryMuted" :disabled="busyId === test.id" @click="openResults(test)">
               <BarChart3 class="size-3.5" aria-hidden="true" />
               {{ t('teacher.tests.results') }}
-            </button>
-            <button
-              type="button"
-              :disabled="busyId === test.id"
-              @click="startEdit(test)"
-              class="rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high disabled:opacity-60"
-            >
+            </AppButton>
+            <AppButton variant="secondaryMuted" :disabled="busyId === test.id" @click="startEdit(test)">
               {{ t('teacher.tests.edit') }}
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               type="button"
               :disabled="busyId === test.id"
               @click="remove(test)"
-              class="rounded-lg border border-outline-variant px-3 py-1.5 text-xs font-semibold text-on-error-container hover:bg-error-container disabled:opacity-60"
+              variant="dangerSecondary" size="sm"
             >
               {{ t('teacher.tests.delete') }}
-            </button>
+            </AppButton>
           </div>
         </li>
       </ul>

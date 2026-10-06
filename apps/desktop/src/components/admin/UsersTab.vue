@@ -10,6 +10,7 @@ import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
 import { useTableSort } from '../../composables/tableSort'
 import type { PublicUser, UserRole, UserStatus } from '../../api/types'
+import AppButton from '../../components/common/AppButton.vue'
 
 const props = defineProps<{
   focusStatus?: UserStatus | ''
@@ -226,20 +227,12 @@ watch(
         <option value="approved">{{ t('admin.status.approved') }}</option>
         <option value="blocked">{{ t('admin.status.blocked') }}</option>
       </select>
-      <button
-        type="button"
-        @click="load"
-        class="rounded-lg border border-outline bg-surface px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-high"
-      >
+      <AppButton variant="secondary" @click="load">
         {{ t('admin.refresh') }}
-      </button>
-      <button
-        type="button"
-        @click="showCreateForm = !showCreateForm"
-        class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:opacity-90"
-      >
+      </AppButton>
+      <AppButton variant="primary" @click="showCreateForm = !showCreateForm">
         {{ t('admin.newTeacher') }}
-      </button>
+      </AppButton>
     </div>
 
     <form
@@ -282,20 +275,12 @@ watch(
         {{ formError }}
       </p>
       <div class="mt-4 flex justify-end gap-2">
-        <button
-          type="button"
-          @click="showCreateForm = false; formError = ''"
-          class="rounded-lg border border-outline bg-surface px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-high"
-        >
+        <AppButton variant="secondary" @click="showCreateForm = false; formError = ''">
           {{ t('admin.cancel') }}
-        </button>
-        <button
-          type="submit"
-          :disabled="creating"
-          class="rounded-lg bg-success px-4 py-2 text-sm font-semibold text-on-success transition-opacity disabled:opacity-60"
-        >
+        </AppButton>
+        <AppButton variant="success" type="submit" :disabled="creating">
           {{ t('admin.teacherForm.create') }}
-        </button>
+        </AppButton>
       </div>
     </form>
 
@@ -327,22 +312,17 @@ watch(
           {{ t('admin.total', { count: users.length }) }}
         </p>
         <div v-if="pendingUsers.length" class="flex items-center gap-2">
-          <button
-            type="button"
-            @click="toggleAllPending"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container-high"
-          >
+          <AppButton variant="secondary" @click="toggleAllPending">
             <Check class="size-3.5" aria-hidden="true" />
             {{ allPendingSelected ? t('admin.bulk.clearSelection') : t('admin.bulk.selectAll') }}
-          </button>
-          <button
-            type="button"
-            :disabled="selected.length === 0 || busyId === 'bulk'"
-            @click="approveSelected"
-            class="rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success transition-opacity disabled:opacity-60"
-          >
+          </AppButton>
+          <AppButton
+  variant="success"
+  :disabled="selected.length === 0 || busyId === 'bulk'"
+  @click="approveSelected"
+>
             {{ t('admin.bulk.approveSelected', { count: selected.length }) }}
-          </button>
+          </AppButton>
         </div>
       </div>
 
@@ -432,24 +412,23 @@ watch(
               </td>
               <td class="px-3 py-2.5">
                 <div v-if="user.role !== 'admin'" class="flex justify-end gap-2">
-                  <button
-                    v-if="user.status !== 'approved'"
-                    type="button"
-                    :disabled="busyId === user.id"
-                    @click="changeStatus(user, 'approved')"
-                    class="rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success transition-opacity disabled:opacity-60"
-                  >
+                  <AppButton
+  variant="success"
+  v-if="user.status !== 'approved'"
+  :disabled="busyId === user.id"
+  @click="changeStatus(user, 'approved')"
+>
                     {{ t('admin.approve') }}
-                  </button>
-                  <button
+                  </AppButton>
+                  <AppButton
                     v-if="user.status !== 'blocked'"
                     type="button"
                     :disabled="busyId === user.id"
                     @click="changeStatus(user, 'blocked')"
-                    class="rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-error hover:bg-error-container disabled:opacity-60"
+                    variant="dangerSecondary" size="sm"
                   >
                     {{ t('admin.block') }}
-                  </button>
+                  </AppButton>
                 </div>
               </td>
             </tr>
@@ -486,35 +465,34 @@ watch(
           </div>
 
           <div v-if="user.role !== 'admin'" class="flex shrink-0 items-center gap-2">
-            <button
+            <AppButton
               v-if="user.status === 'pending'"
               type="button"
               :checked="isSelected(user.id)"
               :aria-label="t('admin.bulk.selectUser', { username: user.username })"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-on-surface"
+              variant="secondaryMuted" size="sm"
               @click="toggleSelected(user.id)"
             >
               <Check v-if="isSelected(user.id)" class="size-3.5" aria-hidden="true" />
               {{ t('admin.bulk.select') }}
-            </button>
-            <button
-              v-if="user.status !== 'approved'"
-              type="button"
-              :disabled="busyId === user.id"
-              @click="changeStatus(user, 'approved')"
-              class="rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success transition-opacity disabled:opacity-60"
-            >
+            </AppButton>
+            <AppButton
+  variant="success"
+  v-if="user.status !== 'approved'"
+  :disabled="busyId === user.id"
+  @click="changeStatus(user, 'approved')"
+>
               {{ t('admin.approve') }}
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               v-if="user.status !== 'blocked'"
               type="button"
               :disabled="busyId === user.id"
               @click="changeStatus(user, 'blocked')"
-              class="rounded-lg border border-outline px-3 py-1.5 text-xs font-semibold text-error hover:bg-error-container disabled:opacity-60"
+              variant="dangerSecondary" size="sm"
             >
               {{ t('admin.block') }}
-            </button>
+            </AppButton>
           </div>
         </li>
       </ul>

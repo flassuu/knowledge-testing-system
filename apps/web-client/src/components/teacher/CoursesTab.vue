@@ -10,6 +10,7 @@ import type { CourseSummary } from '../../api/types'
 import CourseDetails from './CourseDetails.vue'
 import { useConfirm } from '../../composables/confirm'
 import { useToast } from '../../composables/toast'
+import AppButton from '../../components/common/AppButton.vue'
 
 const { t } = useI18n()
 const confirm = useConfirm()
@@ -85,15 +86,10 @@ onMounted(load)
   <section>
     <div class="flex items-center justify-between">
       <h3 class="text-base font-semibold text-on-surface">{{ t('teacher.courses.heading') }}</h3>
-      <button
-        v-if="!creating && !openCourseId"
-        type="button"
-        @click="creating = true"
-        class="inline-flex items-center gap-1.5 rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-on-success hover:opacity-90"
-      >
+      <AppButton variant="success" v-if="!creating && !openCourseId" @click="creating = true">
         <Plus class="size-3.5" aria-hidden="true" />
         {{ t('teacher.courses.newCourse') }}
-      </button>
+      </AppButton>
     </div>
 
     <CourseDetails
@@ -123,16 +119,12 @@ onMounted(load)
         {{ createError === 'titleRequired' ? t('teacher.form.err.titleRequired') : showError(createError) }}
       </p>
       <div class="flex gap-2">
-        <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:opacity-90">
+        <AppButton variant="primary" type="submit">
           {{ t('teacher.courses.save') }}
-        </button>
-        <button
-          type="button"
-          @click="creating = false; createError = ''"
-          class="rounded-lg border border-outline bg-surface px-4 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high"
-        >
+        </AppButton>
+        <AppButton variant="secondaryMuted" @click="creating = false; createError = ''">
           {{ t('teacher.tests.cancel') }}
-        </button>
+        </AppButton>
       </div>
     </form>
 
@@ -168,13 +160,13 @@ onMounted(load)
               {{ t('teacher.courses.materialsCount', { count: course.materialsCount }) }}
             </p>
           </button>
-          <button
+          <AppButton
             type="button"
             @click="remove(course)"
-            class="shrink-0 rounded-lg border border-outline-variant px-3 py-1.5 text-xs font-semibold text-on-error-container hover:bg-error-container"
+            variant="dangerSecondary" size="sm" class="shrink-0"
           >
             {{ t('teacher.tests.delete') }}
-          </button>
+          </AppButton>
         </li>
       </ul>
     </template>
