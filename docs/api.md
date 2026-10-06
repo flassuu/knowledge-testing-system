@@ -411,6 +411,19 @@ with the token and saves it as a blob.
 
 → `403` for another teacher's session · `404`
 
+## Reporting
+
+Two endpoints cover what a teacher needs after a run, and they answer different
+questions:
+
+| Question | Endpoint |
+|----------|----------|
+| How did the class do, and which question needs reteaching? | `GET /api/tests/:id/results` — the journal plus per-question difficulty, across every session of that test |
+| Give me the sheet for this session | `GET /api/sessions/:id/results.csv` — one row per participant |
+
+Both are teacher-or-admin, scoped to what the caller owns. The journal is what
+the app's report screen renders; the CSV is meant to leave the app.
+
 ## Realtime (`/ws`)
 
 ### `GET /ws/sessions/:id`
@@ -438,21 +451,8 @@ teacher who does not own it), `4404` unknown session.
 | `POST /api/auth/logout`, `GET /api/auth/me` | + | + | + |
 | `GET/POST /api/users`, `PATCH/DELETE /api/users/:id` | + | – | – |
 | `/api/tests`, `/api/tests/:id`, `/api/courses*` | + | + (own) | – |
-| `GET/POST /api/sessions`, `PATCH /api/sessions/:id`, `/participants`, `/review`, `/:id/results.csv` | + | + (own) | – |
 | `GET /api/tests/:id/results` | + | + (own) | – |
+| `GET/POST /api/sessions`, `PATCH /api/sessions/:id`, `…/participants`, `…/review`, `…/results.csv` | + | + (own) | – |
 | `POST /api/sessions/join`, `GET /api/sessions/current`, `/:id/submit`, `/:id/result`, `/api/student/results` | – | – | + |
 | `GET /ws/sessions/:id` | + (board) | + (board) | + (status only) |
 | `/api/admin/stats`, `/api/admin/participants` | + | – | – |
-
-## Reporting
-
-Two endpoints cover what a teacher needs after a run, and they answer different
-questions:
-
-| Question | Endpoint |
-|----------|----------|
-| How did the class do, and which question needs reteaching? | `GET /api/tests/:id/results` — the journal plus per-question difficulty, across every session of that test |
-| Give me the sheet for this session | `GET /api/sessions/:id/results.csv` — one row per participant |
-
-Both are teacher-or-admin, scoped to what the caller owns. The journal is what
-the app's report screen renders; the CSV is meant to leave the app.

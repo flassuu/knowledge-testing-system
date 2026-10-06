@@ -17,7 +17,8 @@ schema is enforced by idempotent, versioned migrations run at server startup;
 
 - `id` — `TEXT` UUID (server-side generated).
 - `created_at` / `updated_at` — `TEXT` ISO-8601 UTC.
-- FK deletions are `RESTRICT` unless noted; uniqueness enforced where listed.
+- Every foreign key is `ON DELETE CASCADE`, so removing a test takes its
+  questions and sessions with it; uniqueness is enforced where it matters.
 - Enums are stored as `TEXT` with a `CHECK` constraint (survives binary
   recompilation without codegen).
 
@@ -34,8 +35,8 @@ Accounts for all three roles. The built-in **admin is seeded** on first run
 | role | TEXT | `admin \| teacher \| student` |
 | status | TEXT | `pending \| approved \| blocked` |
 | username | TEXT UNIQUE | login |
-| password_hash | TEXT | salted hash (argon2id) |
-| full_name | TEXT | display name (ПІБ for teachers) |
+| password_hash | TEXT | salted scrypt hash (`node:crypto`, no dependency) |
+| full_name | TEXT | display name (the teacher's full name) |
 | created_at / updated_at | TEXT | ISO-8601 UTC |
 
 - **Admin** is seeded by the system at first startup; cannot be deleted.
