@@ -139,9 +139,18 @@ jobs:
           tar -czf "web-client_${{ steps.version.outputs.version }}.tar.gz" -C apps/web-client dist
 
       - name: Upload the artifacts
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          files: |
-            testing-server_${{ steps.version.outputs.version }}_linux-x64
-            web-client_${{ steps.version.outputs.version }}.tar.gz
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # This job usually finishes before the desktop build creates the
+          # release, so create it when it is missing. `gh release upload` only
+          # needs permission to add assets.
+          if ! gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
+            gh release create "${{ github.ref_name }}" \
+              --title "${{ github.ref_name }}" \
+              --notes "See the assets to download this version and install."
+          fi
+          gh release upload "${{ github.ref_name }}" \
+            "testing-server_${{ steps.version.outputs.version }}_linux-x64" \
+            "web-client_${{ steps.version.outputs.version }}.tar.gz" \
+            --clobber
