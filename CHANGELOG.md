@@ -141,6 +141,32 @@ running and nothing installed but the app.
 **Also on the server**: the startup banner and the seed warning now carry a level
 (`warn`), so they are warnings everywhere rather than untyped text.
 
+### 5.5 — making it verifiable
+
+Two checks that run without a human looking at a screen, and one that already
+paid for itself.
+
+- **`scripts/browser-checks.mjs`** (`pnpm check:browser`) drives a real Firefox
+  over WebDriver BiDi **with no dependencies of its own** — a WebSocket and some
+  JSON, because a check that needs a package install will not be run by the
+  person who needs it. It creates the accounts, test, session and class it needs,
+  deletes them afterwards, and reports per screen and width: horizontal scroll,
+  elements past the right edge, touch targets under 30px, unnamed controls and
+  untranslated keys — across three roles × two languages × three widths, then one
+  happy path per role (the QR address and its warning, the class key, the admin
+  console, a student who signed in with a class key). Screenshots of a failure
+  come out of the same run.
+- **`scripts/console-smoke.sh`** (`pnpm smoke:console`) runs the binary under a
+  pty, sends `status` and `approve nobody`, and checks the output is
+  human-formatted — then runs it again with the output piped and checks every
+  line is still JSON. Wired into the release workflow's server job.
+
+**Fixed by the smoke test, on the day it was written:** Fastify 5 prints a
+deprecation notice for the top-level `disableRequestLogging` option, as plain
+text, into stdout — which broke the promise that a piped run is machine-readable
+for `systemd`, `journalctl` and CI. It now uses `logController`, which is the
+supported form.
+
 9 Rust tests, including one that starts the real server binary and one that
 captures the exit code of a failing one; 7 server tests for the password endpoint;
 220 server and 62 client tests, typecheck 3/3, both builds and `cargo test` green.

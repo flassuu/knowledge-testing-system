@@ -17,7 +17,9 @@
     "build:desktop": "pnpm --filter @testing-system/desktop build",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
-    "desktop:sidecar": "bash scripts/desktop-sidecar.sh"
+    "desktop:sidecar": "bash scripts/desktop-sidecar.sh",
+    "smoke:console": "bash scripts/console-smoke.sh",
+    "check:browser": "node scripts/browser-checks.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

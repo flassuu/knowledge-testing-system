@@ -269,19 +269,32 @@ How it works:
 | 5.4 Desktop host | the server inside the app | build the bundle, start it, open it from a phone |
 | 5.5 Verifiability | the runbooks above | re-run this document top to bottom |
 
-**Automated checks** (no browser needed):
+**Automated checks**:
 
 ```bash
 pnpm typecheck                 # all three packages
 cd apps/server && bun test     # server unit + integration
 pnpm --filter @testing-system/web-client test
+cd apps/desktop/src-tauri && cargo test   # the host: spawns the real server
+pnpm smoke:console             # the console on a pty, and a piped run staying JSON
+pnpm check:browser             # a real Firefox, layout and happy paths
 ```
 
-**Browser checks**: drive the built client with headless Firefox over WebDriver
-BiDi (the harness used while building this). It reports, per screen and width:
-horizontal scroll, touch targets under 30px, unnamed controls, untranslated
-keys — plus one happy path per role. Screenshots come out of the same run, so a
-visual pass is two minutes rather than a manual click-through.
+`pnpm check:browser` drives headless Firefox over WebDriver BiDi with no
+dependencies of its own — a WebSocket and some JSON. Per screen and width it
+reports horizontal scroll, elements past the right edge, touch targets under
+30px, unnamed controls and untranslated keys, across three roles × two languages
+× three widths; then it walks one happy path per role (the QR address and its
+warning, the class key, the admin console, a student who signed in with a class
+key). It creates the accounts, test, session and class it needs and deletes them
+afterwards. Screenshots of a failure come out of the same run, so a visual pass
+is a minute rather than a manual click-through.
+
+`pnpm smoke:console` exists because the console only appears on a terminal: the
+script runs the binary under a pty, sends `status` and `approve nobody`, checks
+the output is human-formatted, then runs it again with the output piped and
+checks every line is still JSON — the contract `systemd`, `journalctl` and CI
+depend on.
 
 **Manual pass before calling a package done** — run the relevant scenario above
 end to end on a real phone, not on the same machine.

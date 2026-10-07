@@ -316,15 +316,18 @@ real server.
 - [x] Packaging: the sidecar is renamed per platform in CI, and a dev build can
       point at a locally built binary
 
-### 5.5 Making it verifiable
+### 5.5 Making it verifiable (done)
 
 - [x] `docs/scenarios.md`: the runbook for all three scenarios, including what
       each needs, how to try it by hand, and how to tell it worked
-- [ ] The browser harness (headless Firefox over WebDriver BiDi, already used
+- [x] The browser harness (headless Firefox over WebDriver BiDi, already used
       during development) kept as a dev script with the checks it runs: overflow,
-      tap targets, and one happy path per role
-- [ ] A CI smoke step for the console: start the binary, send one command on
-      stdin, assert the output, and that `--no-console` starts clean
+      tap targets, and one happy path per role. `scripts/browser-checks.mjs`,
+      `pnpm check:browser`, no dependencies of its own
+- [x] A CI smoke step for the console: start the binary, send one command on
+      stdin, assert the output, and that `--no-console` starts clean.
+      `scripts/console-smoke.sh`, `pnpm smoke:console`, wired into the release
+      workflow's server job
 
 ## Phase 6 — MVP polish (v1.0.0)
 

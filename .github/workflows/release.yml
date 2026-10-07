@@ -118,6 +118,12 @@ jobs:
       - name: Build the standalone server binary
         run: pnpm build:server
 
+      # The console only appears on a terminal, so this runs it on a pty and then
+      # checks the opposite case: a piped run must stay machine-readable, or
+      # systemd, journalctl and this workflow stop working.
+      - name: Smoke-test the console
+        run: bash scripts/console-smoke.sh --no-build
+
       - name: Smoke-test the artifacts
         run: |
           set -euo pipefail

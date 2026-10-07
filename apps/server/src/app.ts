@@ -1,4 +1,5 @@
 import Fastify, {
+  LogController,
   type FastifyError,
   type FastifyInstance,
 } from 'fastify'
@@ -63,7 +64,11 @@ export function buildApp(options: AppOptions): TestingApp {
     // pino logs every request twice — "incoming request" and "request completed" —
     // which is half a console of noise for a teacher and no duration anywhere.
     // One line per request, with the time it took, is written below instead.
-    disableRequestLogging: true,
+    //
+    // Fastify 5 wants this through `logController`; the top-level option still
+    // works but prints a deprecation notice as plain text into the log, which is
+    // exactly the kind of line this project's piped output must never contain.
+    logController: new LogController({ disableRequestLogging: true }),
   }) as unknown as FastifyInstance
 
   void app.register(cors, { origin: true })
