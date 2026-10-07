@@ -79,6 +79,29 @@ Request body:
 - `401 INVALID_CREDENTIALS` — bad username/password
 - `403 PENDING_APPROVAL` / `403 BLOCKED` — account not usable
 
+### `POST /api/auth/password`
+
+Changes the signed-in account's own password. Any role.
+
+```json
+{ "currentPassword": "old-pass-1", "newPassword": "new-pass-1" }
+```
+
+The current password is required, so a borrowed session cannot lock the owner
+out. On success **every** session of that account is ended and a new token is
+returned — including the one that made the change, so the client must store it:
+
+```json
+{ "token": "…", "user": { … } }
+```
+
+- `401 INVALID_CREDENTIALS` — the current password is wrong
+- `400 VALIDATION` — missing fields, or a new password under 8 characters
+
+This is what makes the desktop app's "admin password" setting work on a database
+that already exists: `ADMIN_PASSWORD` is read once, when the data folder has no
+admin yet.
+
 ### `POST /api/auth/logout`
 
 Revokes the current session. Requires a valid token. → `204`.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Info } from '@lucide/vue'
 import LanguageSwitcher from './LanguageSwitcher.vue'
@@ -10,10 +10,31 @@ import AppButton from '../components/common/AppButton.vue'
 import AboutDialog from '../components/common/AboutDialog.vue'
 import BrandMark from '../components/BrandMark.vue'
 // Desktop-only, like the API base: the web client has no version to show.
-import { isDesktop } from '../composables/desktop'
+// Aliased: ServerStatus is also a component above.
+import {
+  isDesktop,
+  getServerStatus,
+  onServerExit,
+  type ServerStatus as HostedServer,
+} from '../composables/desktop'
+
+const emit = defineEmits<{ server: [] }>()
 
 const { t } = useI18n()
 const { user, signOut } = useAuth()
+
+/** Whether the hosted server is up, so the teacher is not left guessing. */
+const serverStatus = ref<HostedServer | null>(null)
+
+onMounted(async () => {
+  if (!isDesktop()) return
+  serverStatus.value = await getServerStatus()
+  await onServerExit(() => {
+    void getServerStatus().then((next) => {
+      serverStatus.value = next
+    })
+  })
+})
 
 const roleLabel = computed(() => t(`role.${user.value?.role ?? 'student'}`))
 
@@ -55,6 +76,19 @@ const roleBadgeClass: Record<string, string> = {
       </span>
       <ThemeSwitcher />
       <LanguageSwitcher />
+      <AppButton
+        v-if="desktop"
+        variant="ghost"
+        icon
+        :aria-label="t('desktop.server.title')"
+        :title="t('desktop.server.title')"
+        @click="emit('server')"
+      >
+        <span
+          class="size-2 rounded-full"
+          :class="serverStatus?.running ? 'bg-success' : 'bg-outline'"
+        />
+      </AppButton>
       <AppButton
         v-if="desktop"
         variant="ghost"

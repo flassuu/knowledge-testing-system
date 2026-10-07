@@ -294,23 +294,26 @@ console that acts through the same library functions the API calls.
 
 ### 5.4 The desktop app as a host
 
-`src-tauri/src/lib.rs` is six lines with one plugin: there is no sidecar, no
-spawn, no console, no settings. The scenario the whole project was imagined for
-does not exist yet.
+**Done.** `src-tauri/src/lib.rs` used to be six lines with one plugin: no sidecar,
+no spawn, no console, no settings — the scenario the whole project was imagined
+for did not exist. The app now carries the server as a sidecar, starts it, shows
+its output, and keeps its settings; `src-tauri/src/host.rs` spawns it with
+`std::process` and knows nothing about Tauri, which is what lets its tests start a
+real server.
 
-- [ ] Bundle the server binary as a sidecar (`bundle.externalBin`) and spawn it
+- [x] Bundle the server binary as a sidecar (`bundle.externalBin`) and spawn it
       from a small Rust module (`std::process::Command` + piped stdout → Tauri
       events — no new dependency), with stop/restart and an exit code surfaced
-- [ ] Console view in the desktop app: colourised, auto-scrolling, filterable by
+- [x] Console view in the desktop app: colourised, auto-scrolling, filterable by
       level, copy and clear, start/stop/restart, "open in browser" with the LAN
       address
-- [ ] Settings view: data dir, port, admin password, public address — persisted
+- [x] Settings view: data dir, port, admin password, public address — persisted
       locally, applied on restart
-- [ ] The desktop API base stops being a build-time constant (`VITE_API_TARGET`)
+- [x] The desktop API base stops being a build-time constant (`VITE_API_TARGET`)
       and follows the settings, so changing the port does not need a rebuild
-- [ ] First run: defaults + "Start", and a clear message when the bundled binary
+- [x] First run: defaults + "Start", and a clear message when the bundled binary
       is missing (a dev build) with the path that was looked for
-- [ ] Packaging: the sidecar is renamed per platform in CI, and a dev build can
+- [x] Packaging: the sidecar is renamed per platform in CI, and a dev build can
       point at a locally built binary
 
 ### 5.5 Making it verifiable

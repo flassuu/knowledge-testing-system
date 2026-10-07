@@ -11,6 +11,10 @@ import LiveSessionsTab from '../components/teacher/LiveSessionsTab.vue'
 import { listTests } from '../api/tests'
 import type { TestSummary } from '../api/types'
 
+// The desktop app hosts the server, so the workbench can hand over to the screen
+// that starts it. The web client has no such screen and never emits.
+const emit = defineEmits<{ server: [] }>()
+
 const { t } = useI18n()
 
 const activeTab = ref<'live' | 'tests' | 'courses' | 'classes'>('live')
@@ -28,7 +32,7 @@ onMounted(async () => {
 
 <template>
   <div class="min-h-dvh bg-surface">
-    <AppHeader />
+    <AppHeader @server="emit('server')" />
 
     <main class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
       <h2 class="text-xl font-semibold text-on-surface">

@@ -61,8 +61,20 @@ jobs:
         with:
           version: 12
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Build the server binary for the sidecar
+        run: |
+          # The desktop app hosts the server, so the bundle has to contain it.
+          # Tauri looks for binaries/testing-server-<rust triple>, which is what
+          # scripts/desktop-sidecar.sh produces; without it `tauri build` fails.
+          pnpm desktop:sidecar
+        shell: bash
 
       - uses: tauri-apps/tauri-action@v1
         env:

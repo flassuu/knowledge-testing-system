@@ -3,8 +3,9 @@ import { DatabaseSync } from 'node:sqlite'
 import { hashPassword } from './passwords'
 
 export interface Database {
+  /** Set when an empty database was seeded with the default admin account. */
+  seededAdminWarning: string | null
   raw: DatabaseSync
-  /** Returns true when freshly created. */
   close(): void
 }
 
@@ -228,11 +229,18 @@ function migrate(db: DatabaseSync): void {
  * overridden via ADMIN_USERNAME / ADMIN_PASSWORD; the defaults are meant for
  * LAN demos only and warn loudly when left as-is.
  */
-function seedAdmin(db: DatabaseSync): void {
+/**
+ * Seeds the built-in admin on an empty database.
+ *
+ * Returns what it did instead of printing it: a line written with `console` never
+ * reaches the log stream, so on the desktop it would arrive as plain text with no
+ * level and be shown as an error. The caller logs it properly.
+ */
+export function seedAdmin(db: DatabaseSync): string | null {
   const existing = db
     .prepare('SELECT id FROM users WHERE role = ? LIMIT 1')
     .get('admin')
-  if (existing) return
+  if (existing) return null
 
   const username = process.env.ADMIN_USERNAME ?? 'admin'
   const password = process.env.ADMIN_PASSWORD ?? 'admin'
@@ -251,10 +259,9 @@ function seedAdmin(db: DatabaseSync): void {
     now,
   )
   if (!process.env.ADMIN_PASSWORD) {
-    console.warn(
-      `[server] seeded default admin account '${username}'/'${password}' — set ADMIN_PASSWORD to override`,
-    )
+    return `seeded default admin account '${username}'/'${password}' — set ADMIN_PASSWORD to override`
   }
+  return null
 }
 
 export function openDatabase(dbPath: string): Database {
@@ -262,9 +269,11 @@ export function openDatabase(dbPath: string): Database {
   raw.exec('PRAGMA journal_mode = WAL;')
   raw.exec('PRAGMA foreign_keys = ON;')
   migrate(raw)
-  seedAdmin(raw)
+  const seeded = seedAdmin(raw)
   return {
     raw,
+    /** A warning the caller should log; null when there is nothing to say. */
+    seededAdminWarning: seeded,
     close() {
       raw.close()
     },

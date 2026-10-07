@@ -16,7 +16,8 @@
     "build:web": "pnpm --filter @testing-system/web-client build",
     "build:desktop": "pnpm --filter @testing-system/desktop build",
     "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm -r --if-present test",
+    "desktop:sidecar": "bash scripts/desktop-sidecar.sh"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

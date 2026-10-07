@@ -145,49 +145,94 @@ and no address was set in step 3, the join link is not usable on a phone yet.
 
 ## Scenario B — the teacher desktop app
 
-### Today
+The desktop app **hosts** the server. The bundle carries it as a sidecar, and the
+app starts it, shows its output, and keeps its settings — so a teacher needs
+nothing else running and nothing installed on the machine but the app.
 
-The desktop app is a **client**. It talks to a server at
-`http://localhost:3300` (`VITE_API_TARGET` at build time) and never starts one:
-`src-tauri/src/lib.rs` has no sidecar, no process management, no log view and no
-settings. Scenario A's server can be running on the same machine, and then the
-desktop app works against it — that is the honest current state.
+### 1. Build both
 
-### What Phase 5.4 adds
+```bash
+pnpm install
+pnpm build:server
+pnpm desktop:sidecar        # places the binary where Tauri looks for a sidecar
+pnpm --filter @testing-system/desktop build
+```
 
-- the server binary bundled as a Tauri sidecar and started by the app;
-- a console view over the same log stream the terminal prints (the API and the
-  live tail exist as of Phase 5.3), plus start/stop/restart;
-- settings for data dir, port, admin password and public address;
-- the API base following those settings, so the port can change without a rebuild;
-- "open in browser" with the LAN address, for showing the QR on a projector.
+`pnpm desktop:sidecar` is the step that is easy to miss: Tauri looks for
+`apps/desktop/src-tauri/binaries/testing-server-<rust triple>` and refuses to
+build without it. `scripts/desktop-sidecar.sh` also builds the server unless you
+pass `--no-build`.
 
-### How to test it once it exists
+### 2. First run
 
-1. `pnpm build:server`, then `NO_STRIP=true pnpm --filter @testing-system/desktop tauri build`.
-2. Run the bundle with a **fresh** data dir: the first launch must show the
-   defaults and a Start button, and log the exact path it looked for the binary.
-3. Start → the console fills with `listening on http://0.0.0.0:<port>`.
-4. Open the browser link → the same server, from a phone on the LAN.
-5. Stop → the process is gone (check `ss -ltnp | grep <port>`).
-6. Change the port, restart, and confirm the app still talks to the server.
-7. A dev build without a bundled binary must show a readable message, not a
-   crash.
+1. Open the app. The sign-in screen has a **Server** button next to the language
+   menu — the one thing a teacher may need before signing in.
+2. The screen says **Stopped** and offers **Start**. Nothing is started silently.
+3. If the binary is missing, the Start button is disabled and the screen lists
+   every path it looked in, plus the command that produces it. A development
+   build without a bundled binary is a normal state, not a crash.
+4. **Start** → the console fills with the server's output, the status turns to
+   **Running** with a pid, and the sign-in screen can reach the server.
+
+### 3. Settings
+
+| Setting | What it does |
+|---------|--------------|
+| Port | the API base follows it, so a port change needs no rebuild |
+| Data folder | where the database and uploads live; defaults inside the app's data dir |
+| Student client folder | `--webroot` — unpack `web-client_<version>.tar.gz` and point at its `dist`, so phones have something to open |
+| Server binary | empty means the bundled one; a path is for a development build |
+| Admin password | `ADMIN_PASSWORD` at start — used **only** when the data folder has no admin yet |
+
+**Changing the admin password** is a separate pair of fields, and deliberately
+so: it calls `POST /api/auth/password`, which ends every session including the
+one that made the change. The seed variable is read once, so a second launch
+needs the endpoint to move the password at all.
+
+### 4. Stop, restart, close
+
+1. **Stop** → the process is gone; check `ss -ltnp | grep <port>`.
+2. **Restart** → the port is free again and a new pid appears.
+3. Closing the window stops the server with it. A server left behind would hold
+   the port, and the next launch would fail with no clue why.
+4. A server that dies on its own — a taken port, a crash — turns the status to
+   **Stopped** and reports the exit code.
+
+### 5. Verifying a built bundle
+
+```bash
+pnpm desktop:sidecar
+NO_STRIP=true pnpm --filter @testing-system/desktop tauri build
+```
+
+1. Run the bundle with a **fresh** data folder: first launch shows the defaults
+   and a Start button, and Start works.
+2. Start → the console fills with `listening on http://0.0.0.0:<port>`.
+3. **Open in browser** → the same server; from a phone on the LAN, if the student
+   client folder is set.
+4. Stop → the process is gone (`ss -ltnp | grep <port>`).
+5. Change the port, Restart, and confirm the app still talks to the server — this
+   is the check that the API base really follows the setting.
+6. A development build without a bundled binary shows the paths it looked in, and
+   a readable message instead of a crash.
+
+Rust tests cover the parts that do not need a window:
+
+```bash
+cd apps/desktop/src-tauri && cargo test      # HOST=<triple> for the real-server test
+```
 
 ---
 
 ## Scenario C — a classroom with no admin
 
-### Today, the workaround
+### Closed in Phase 5.2
 
-The teacher signs in as the admin account, approves the students once, and signs
-back in as a teacher. It works, but it means the teacher holds admin rights and
-has to approve by hand — which is the exact thing that breaks when a student
+A **classroom with a key**. Before it, the teacher had to sign in as the admin to
+approve students by hand — which is the exact thing that breaks when a student
 registers five minutes before the lesson.
 
-### What Phase 5.2 adds
-
-A **classroom with a key**:
+How it works:
 
 1. The teacher creates a class in their workbench; the app shows a six-character
    key and a QR of the registration link (`?class=KEY`).
@@ -197,7 +242,7 @@ A **classroom with a key**:
    through the key is enrolled in it.
 4. The teacher sees who came in through the key, and can revoke or regenerate it.
 
-### How to test it
+### How to verify it
 
 - Register with a valid key → the account is usable right away, no admin involved.
 - Register with a wrong or revoked key → a clear error, and the account is still

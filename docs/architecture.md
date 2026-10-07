@@ -75,13 +75,24 @@ itself as static files.
 
 - Provides the same frontend in a native window for admin & teacher workflows
   (and for students who prefer a desktop app).
-- In production the server is spawned as a sidecar **only in the Admin client**;
-  teacher/student clients treat it as a remote endpoint.
-- Minimal Rust — logic lives in TypeScript.
+- **It hosts the server.** The bundle carries it as a Tauri sidecar
+  (`bundle.externalBin`), and `src-tauri/src/host.rs` spawns it with
+  `std::process`: settings, `--port`/`--data`/`--webroot`, the piped stdout read
+  into Tauri events, and a watcher that reports an exit nobody asked for. No new
+  Rust dependency, and the module knows nothing about Tauri — it is handed two
+  closures, which is what lets the tests spawn a real server.
+- The sidecar file is produced by `scripts/desktop-sidecar.sh` (`pnpm
+  desktop:sidecar`), because Tauri looks for `binaries/testing-server-<rust
+  triple>` and nothing else can produce it. CI runs that step before every
+  `tauri build`.
+- The API base is a **variable, not a build-time constant**: the port is a host
+  setting, and changing it must not need a rebuild (`setApiBase()` in
+  `api/client.ts`).
+- Minimal Rust — everything above the process is in TypeScript.
 - The webview is the **only** thing that differs from `apps/web-client`: the API
-  base is explicit (`apiUrl()`), plus two desktop-only pieces —
-  `composables/desktop.ts` (app version from `tauri.conf.json`, and the window
-  geometry that Tauri does not persist on its own) and the About dialog.
+  base is explicit (`apiUrl()`), plus desktop-only pieces —
+  `composables/desktop.ts` (app version, window geometry, and the host commands
+  and events), the Server screen, and the About dialog.
 - The window needs `core:window:allow-*` permissions for the geometry; the app
   version comes from `core:app:allow-version`.
 

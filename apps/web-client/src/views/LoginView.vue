@@ -13,7 +13,7 @@ import AppCard from '../components/common/AppCard.vue'
 import AppInput from '../components/common/AppInput.vue'
 import BrandMark from '../components/BrandMark.vue'
 
-const emit = defineEmits<{ register: [] }>()
+const emit = defineEmits<{ register: []; server: [] }>()
 
 const { t } = useI18n()
 const { signIn } = useAuth()

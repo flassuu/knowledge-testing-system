@@ -4,13 +4,28 @@ const NETWORK_ERROR_CODE = 'NETWORK'
 
 /**
  * API base for the desktop app. The built webview runs on the Tauri origin
- * (`tauri://localhost`), so API calls must target the local Node server
- * explicitly; in dev Vite would otherwise proxy `/api` for us.
+ * (`tauri://localhost`), so API calls must target the local server explicitly; in
+ * dev Vite would otherwise proxy `/api` for us.
+ *
+ * It is a variable, not a constant: the app hosts that server itself and the port
+ * is a setting, so a build-time constant would mean moving to another port needs
+ * a rebuild - exactly what a teacher in a computer room cannot do.
  */
-const API_BASE = import.meta.env.VITE_API_TARGET ?? 'http://localhost:3300'
+const BUILD_TIME_API_BASE = import.meta.env.VITE_API_TARGET ?? 'http://localhost:3300'
+let apiBase = BUILD_TIME_API_BASE
+
+/** Points the app at another port, e.g. after the host settings changed. */
+export function setApiBase(base: string): void {
+  const trimmed = base.trim().replace(/\/+$/, '')
+  apiBase = trimmed === '' ? BUILD_TIME_API_BASE : trimmed
+}
+
+export function getApiBase(): string {
+  return apiBase
+}
 
 export function apiUrl(path: string): string {
-  return `${API_BASE}${path}`
+  return `${apiBase}${path}`
 }
 
 export class ApiError extends Error {

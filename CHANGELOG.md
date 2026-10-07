@@ -100,6 +100,51 @@ acts through the same functions the API calls.
   Fastify's logger *is* pino — but the app now constructs the instance itself to
   own the stream; no new package was downloaded.
 
+### 5.4 — the desktop app as a host
+
+The bundle now carries the server and starts it, so a teacher needs nothing else
+running and nothing installed but the app.
+
+- **The server is a Tauri sidecar.** `src-tauri/src/host.rs` spawns it with
+  `std::process`, pipes its output into Tauri events, and reports an exit nobody
+  asked for with its code. No new Rust dependency. The module knows nothing about
+  Tauri — it is handed two closures and a resource directory, which is what lets
+  its tests spawn a real server and check the banner arrives through the pipe.
+- **A Server screen** reachable without signing in, because starting the server is
+  the one thing a teacher may need *before* they can: stopped or running with a
+  pid, start / stop / restart, open in browser, the live output with level filters,
+  copy and clear.
+- **Host settings** — port, data folder, student client folder (`--webroot`),
+  server binary path, seed admin password — saved next to the app and applied on
+  the next start. The first run shows defaults and a Start button; nothing starts
+  silently.
+- **A missing binary is a message, not a crash**: the Start button is disabled and
+  the screen lists every path it looked in, with the command that produces one. A
+  development build without a bundled server is a normal state.
+- **The API base is a variable now.** `VITE_API_TARGET` was a build-time constant,
+  which meant moving to another port needed a rebuild — impossible for a teacher
+  in a computer room. It follows the setting.
+- **`POST /api/auth/password`** (any role, requires the current password): the
+  seed variable is read once, when a data folder has no admin yet, so changing an
+  existing admin password had no API at all. Every session ends, including the one
+  that made the change, and a new token comes back.
+- **The public address is visible and editable here too** — the address a phone
+  opens is the server's setting, so the desktop screen shows it, offers the
+  addresses the server answers on, and lets an admin change it.
+- **Open in browser uses the LAN address**, not `localhost`: showing a student
+  their own teacher's loopback is how a lesson fails to start.
+- **The seed warning goes through the log.** It was written with `console`, which
+  bypassed the log stream, so the desktop showed it as an untyped error line.
+- `scripts/desktop-sidecar.sh` (`pnpm desktop:sidecar`) places the binary where
+  Tauri looks for it; CI runs it before every `tauri build`, on Linux and Windows.
+
+**Also on the server**: the startup banner and the seed warning now carry a level
+(`warn`), so they are warnings everywhere rather than untyped text.
+
+9 Rust tests, including one that starts the real server binary and one that
+captures the exit code of a failing one; 7 server tests for the password endpoint;
+220 server and 62 client tests, typecheck 3/3, both builds and `cargo test` green.
+
 ## [0.4.2] — 2026-10-07
 
 The interface pass. Sizes that do not depend on the language, motion that comes

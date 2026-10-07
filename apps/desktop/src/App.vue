@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from './stores/auth'
 import LoginView from './views/LoginView.vue'
+import ServerView from './views/ServerView.vue'
 import RegisterView from './views/RegisterView.vue'
 import AdminDashboard from './views/AdminDashboard.vue'
 import TeacherDashboard from './views/TeacherDashboard.vue'
@@ -18,7 +19,7 @@ const { status, user, initialize } = useAuth()
 const { info } = useToast()
 const health = getHealthState()
 
-const mode = ref<'login' | 'register'>('login')
+const mode = ref<'login' | 'register' | 'server'>('login')
 
 // A class QR carries `?class=KEY`: the student came here to register, so open
 // the sign-up form rather than making them find "Create account" themselves.
@@ -42,9 +43,12 @@ onMounted(() => {
 })
 onBeforeUnmount(stopHealthPolling)
 
-type Screen = 'loading' | 'login' | 'register' | 'admin' | 'teacher' | 'student'
+type Screen = 'loading' | 'login' | 'register' | 'server' | 'admin' | 'teacher' | 'student'
 
 const screen = computed<Screen>(() => {
+  // The server screen is reachable without signing in: the first thing a teacher
+  // may need is to start the server the sign-in talks to.
+  if (mode.value === 'server') return 'server'
   if (status.value !== 'authenticated' || !user.value) {
     if (status.value === 'initializing') return 'loading'
     return mode.value === 'register' ? 'register' : 'login'
@@ -64,10 +68,15 @@ const screen = computed<Screen>(() => {
     </div>
   </div>
 
-  <LoginView v-else-if="screen === 'login'" @register="mode = 'register'" />
+  <LoginView
+    v-else-if="screen === 'login'"
+    @register="mode = 'register'"
+    @server="mode = 'server'"
+  />
   <RegisterView v-else-if="screen === 'register'" @back="mode = 'login'" />
+  <ServerView v-else-if="screen === 'server'" @back="mode = 'login'" />
   <AdminDashboard v-else-if="screen === 'admin'" />
-  <TeacherDashboard v-else-if="screen === 'teacher'" />
+  <TeacherDashboard v-else-if="screen === 'teacher'" @server="mode = 'server'" />
   <StudentDashboard v-else-if="screen === 'student'" />
   <ConfirmDialog />
   <ToastHost />

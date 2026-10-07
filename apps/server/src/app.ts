@@ -103,6 +103,15 @@ export function buildApp(options: AppOptions): TestingApp {
     else logs.logger.info(line, 'request completed')
   })
 
+  // Written through the log stream, so the seed warning has a level and reaches
+  // the desktop console as a warning instead of arriving as untyped text.
+  if (database.seededAdminWarning) {
+    logs.logger.warn(
+      { hint: 'ADMIN_PASSWORD' },
+      database.seededAdminWarning,
+    )
+  }
+
   void app.register(healthRoutes, {
     version: APP_VERSION,
     checkDatabase: () => checkDatabase(database),

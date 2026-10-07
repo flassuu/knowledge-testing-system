@@ -12,7 +12,7 @@ import {
 import { normalizeCode } from '../lib/codes'
 import { enrollStudent, findCourseRow, isEnrolled } from '../lib/courses'
 import { hashPassword, verifyPassword } from '../lib/passwords'
-import { createSession, deleteSession } from '../lib/tokens'
+import { createSession, deleteSession, deleteSessionByHash } from '../lib/tokens'
 import {
   findUserByUsername,
   findUserById,
@@ -36,6 +36,16 @@ const registerSchema = {
     // Optional: a key a teacher handed out. It approves the account, and it
     // never grants anything but a student role.
     classKey: { type: 'string', maxLength: 16 },
+  },
+} as const
+
+const passwordSchema = {
+  type: 'object',
+  required: ['currentPassword', 'newPassword'],
+  additionalProperties: false,
+  properties: {
+    currentPassword: { type: 'string', minLength: 1, maxLength: 128 },
+    newPassword: { type: 'string', minLength: 8, maxLength: 128 },
   },
 } as const
 
@@ -154,6 +164,52 @@ export const authRoutes: FastifyPluginAsync<AuthDeps> = async (
       const session = request.session
       if (session) deleteSession(db, session.token)
       return reply.code(204).send()
+    },
+  )
+
+  /**
+   * A signed-in user changes their own password.
+   *
+   * This is what makes the desktop app's "admin password" setting real: the seed
+   * variable only ever applies to a data directory that has no admin yet, so
+   * without this endpoint the setting would silently stop working after the
+   * first launch.
+   *
+   * The current password is required, so a borrowed session cannot lock the owner
+   * out. Every other session is ended and this one is reissued, which is what
+   * makes a change safe: whoever prompted for it is signed out too.
+   */
+  app.post(
+    '/api/auth/password',
+    { preHandler: requireRoles('admin', 'teacher', 'student'), schema: { body: passwordSchema } },
+    async (request, reply) => {
+      const session = request.session
+      if (!session) {
+        return sendError(reply, 401, 'UNAUTHORIZED', 'authentication required')
+      }
+      const body = request.body as { currentPassword: string; newPassword: string }
+      const user = findUserById(db, session.userId)
+      if (!user) {
+        return sendError(reply, 404, 'NOT_FOUND', 'user not found')
+      }
+      if (!verifyPassword(body.currentPassword, user.password_hash)) {
+        return sendError(reply, 401, 'INVALID_CREDENTIALS', 'current password is wrong')
+      }
+
+      const now = nowIso()
+      db.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?').run(
+        hashPassword(body.newPassword),
+        now,
+        user.id,
+      )
+      const sessions = db
+        .prepare('SELECT token_hash FROM sessions WHERE user_id = ?')
+        .all(user.id) as Array<{ token_hash: string }>
+      for (const stored of sessions) {
+        deleteSessionByHash(db, stored.token_hash)
+      }
+      const token = createSession(db, user.id)
+      return { token, user: toPublicUser(findUserById(db, user.id) as UserRow) }
     },
   )
 

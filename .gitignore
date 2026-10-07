@@ -4,6 +4,9 @@ node_modules/
 
 # Build output
 dist/
+
+# The server sidecar is built by scripts/desktop-sidecar.sh, not committed.
+apps/desktop/src-tauri/binaries/
 target/
 apps/desktop/src-tauri/target/
 

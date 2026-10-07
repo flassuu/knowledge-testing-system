@@ -102,3 +102,94 @@ function writeState(state: WindowState): void {
     // Private mode or a full quota: the window just opens at the default size.
   }
 }
+/**
+ * The server the app hosts.
+ *
+ * Every function here returns `null` in a browser, because the same source tree
+ * is served as a web client where there is no sidecar to start and no settings
+ * file to keep. That is what lets the shared components ask about the server
+ * without branching on which app they are running in.
+ */
+export interface HostSettings {
+  port: number
+  dataDir: string
+  adminPassword: string
+  webRoot: string
+  binaryPath: string
+}
+
+export interface ServerStatus {
+  running: boolean
+  pid: number | null
+  port: number
+  startedAt: number | null
+  uptimeMs: number | null
+  exitCode: number | null
+  binaryPath: string | null
+  /** Every path the app looked for the binary in, when it found none. */
+  searched: string[]
+  error: string | null
+}
+
+export interface ServerLogLine {
+  raw: string
+  /** pino's message; `raw` is the whole line, for a panic or a runtime warning. */
+  msg: string
+  level: 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+  /** Epoch millis; formatted by the view, so no date handling here. */
+  atMs: number
+}
+
+async function call<T>(command: string, args?: Record<string, unknown>): Promise<T | null> {
+  if (!isDesktop()) return null
+  const { invoke } = await import('@tauri-apps/api/core')
+  try {
+    return (await invoke<T>(command, args)) ?? null
+  } catch (error) {
+    // A missing command means an older binary behind a newer webview: reported
+    // as "not available" rather than crashing the screen that asked.
+    throw error instanceof Error ? error : new Error(String(error))
+  }
+}
+
+export function getHostSettings(): Promise<HostSettings | null> {
+  return call<HostSettings>('host_settings')
+}
+
+export function saveHostSettings(settings: HostSettings): Promise<HostSettings | null> {
+  return call<HostSettings>('save_host_settings', { settings })
+}
+
+export function getServerStatus(): Promise<ServerStatus | null> {
+  return call<ServerStatus>('server_status')
+}
+
+export function startServer(): Promise<ServerStatus | null> {
+  return call<ServerStatus>('start_server')
+}
+
+export function stopServer(): Promise<ServerStatus | null> {
+  return call<ServerStatus>('stop_server')
+}
+
+export function restartServer(): Promise<ServerStatus | null> {
+  return call<ServerStatus>('restart_server')
+}
+
+/** One line of the server's output, as it was written. */
+export async function onServerLog(
+  handler: (line: ServerLogLine) => void,
+): Promise<() => void> {
+  if (!isDesktop()) return () => {}
+  const { listen } = await import('@tauri-apps/api/event')
+  const unlisten = await listen<ServerLogLine>('server-log', (event) => handler(event.payload))
+  return unlisten
+}
+
+/** The server exited on its own: a crash, a taken port. The code is the clue. */
+export async function onServerExit(handler: (code: number | null) => void): Promise<() => void> {
+  if (!isDesktop()) return () => {}
+  const { listen } = await import('@tauri-apps/api/event')
+  const unlisten = await listen<number | null>('server-exit', (event) => handler(event.payload))
+  return unlisten
+}

@@ -1,11 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { BookOpen, Eye, EyeOff, GraduationCap, ShieldCheck } from '@lucide/vue'
+import {
+  BookOpen,
+  Eye,
+  EyeOff,
+  GraduationCap,
+  Server,
+  ShieldCheck,
+} from '@lucide/vue'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 import ServerStatus from '../components/ServerStatus.vue'
 import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 import { useAuth } from '../stores/auth'
+import { isDesktop } from '../composables/desktop'
 import { ApiError } from '../api/client'
 import type { UserRole } from '../api/types'
 import AppButton from '../components/common/AppButton.vue'
@@ -13,7 +21,7 @@ import AppCard from '../components/common/AppCard.vue'
 import AppInput from '../components/common/AppInput.vue'
 import BrandMark from '../components/BrandMark.vue'
 
-const emit = defineEmits<{ register: [] }>()
+const emit = defineEmits<{ register: []; server: [] }>()
 
 const { t } = useI18n()
 const { signIn } = useAuth()
@@ -108,6 +116,19 @@ async function submit() {
         <ServerStatus />
         <ThemeSwitcher />
         <LanguageSwitcher />
+        <!-- Desktop only: there the app hosts the server, so starting it is a
+             thing the teacher does here rather than on another machine. -->
+        <AppButton
+          v-if="isDesktop()"
+          variant="ghost"
+          icon
+          size="md"
+          :aria-label="t('desktop.server.title')"
+          :title="t('desktop.server.title')"
+          @click="emit('server')"
+        >
+          <Server class="size-4" aria-hidden="true" />
+        </AppButton>
       </div>
     </header>
 

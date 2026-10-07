@@ -45,6 +45,26 @@ export async function register(payload: RegisterPayload): Promise<RegisterResult
   })
 }
 
+/**
+ * Changes the signed-in account's own password.
+ *
+ * The server ends every session and hands back a new token, so the caller stores
+ * it — this is the only way the desktop app's "admin password" setting can mean
+ * anything for a database that already exists: the seed variable is read once,
+ * when there is no admin yet.
+ */
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<LoginResult> {
+  const result = await apiFetch<LoginResult>('/api/auth/password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
+  setToken(result.token)
+  return result
+}
+
 export async function fetchMe(): Promise<PublicUser> {
   const result = await apiFetch<{ user: PublicUser }>('/api/auth/me')
   return result.user
