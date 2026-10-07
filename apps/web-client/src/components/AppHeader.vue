@@ -6,6 +6,7 @@ import ServerStatus from './ServerStatus.vue'
 import ThemeSwitcher from './ThemeSwitcher.vue'
 import { useAuth } from '../stores/auth'
 import AppButton from '../components/common/AppButton.vue'
+import BrandMark from '../components/BrandMark.vue'
 
 const { t } = useI18n()
 const { user, signOut } = useAuth()
@@ -21,10 +22,11 @@ const roleBadgeClass: Record<string, string> = {
 
 <template>
   <header
-    class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-outline-variant bg-surface-container px-4 py-3 sm:px-6"
+    class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-outline-variant bg-surface-container px-4 py-2.5 sm:px-6"
   >
     <div class="flex min-w-0 items-center gap-2">
-      <h1 class="truncate text-base font-bold text-on-surface">
+      <BrandMark :size="26" class="shrink-0" />
+      <h1 class="truncate text-base font-bold tracking-tight text-on-surface">
         {{ t('app.name') }}
       </h1>
       <span
@@ -35,19 +37,17 @@ const roleBadgeClass: Record<string, string> = {
         {{ roleLabel }}
       </span>
     </div>
-    <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+
+    <!-- Controls keep their size whatever the labels say, so the header never
+         reflows between locales. -->
+    <div class="flex shrink-0 items-center gap-1">
       <ServerStatus />
-      <span class="hidden max-w-40 truncate text-sm text-on-surface-variant md:inline">
+      <span class="hidden max-w-40 truncate text-sm text-on-surface-variant lg:inline">
         {{ user?.fullName }}
       </span>
       <ThemeSwitcher />
       <LanguageSwitcher />
-      <AppButton
-        v-if="user"
-        type="button"
-        @click="signOut"
-        variant="secondaryMuted" size="sm"
-      >
+      <AppButton v-if="user" variant="secondaryMuted" size="sm" @click="signOut">
         {{ t('auth.signOut') }}
       </AppButton>
     </div>

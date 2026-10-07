@@ -9,13 +9,14 @@ const theme = getThemeState()
 </script>
 
 <template>
+  <!-- Fixed square, like every other header control: 40px whatever the mode. -->
   <AppButton
-  variant="ghost"
-  class="size-8"
-  :aria-label="theme.mode === 'dark' ? t('theme.switchToLight') : t('theme.switchToDark')"
-  :title="theme.mode === 'dark' ? t('theme.switchToLight') : t('theme.switchToDark')"
-  @click="toggleTheme"
->
+    variant="ghost"
+    icon
+    :aria-label="theme.mode === 'dark' ? t('theme.switchToLight') : t('theme.switchToDark')"
+    :title="theme.mode === 'dark' ? t('theme.switchToLight') : t('theme.switchToDark')"
+    @click="toggleTheme"
+  >
     <Sun v-if="theme.mode === 'dark'" class="size-4" aria-hidden="true" />
     <Moon v-else class="size-4" aria-hidden="true" />
   </AppButton>

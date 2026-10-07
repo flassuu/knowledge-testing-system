@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { UserCheck } from '@lucide/vue'
+import { Activity, HardDrive, UserCheck, Users } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
 import UsersTab from '../components/admin/UsersTab.vue'
 import ParticipantsTab from '../components/admin/ParticipantsTab.vue'
@@ -9,6 +9,7 @@ import SystemTab from '../components/admin/SystemTab.vue'
 import { listUsers } from '../api/users'
 import type { UserStatus } from '../api/types'
 import AppButton from '../components/common/AppButton.vue'
+import TabStrip from '../components/common/TabStrip.vue'
 
 const { t } = useI18n()
 
@@ -57,25 +58,16 @@ onMounted(countPending)
         </AppButton>
       </div>
 
-      <div class="mt-5 flex gap-1 rounded-xl border border-outline-variant bg-surface-container p-1 shadow-sm">
-        <button
-          v-for="tab in ['users', 'participants', 'system'] as AdminTab[]"
-          :key="tab"
-          type="button"
-          class="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors"
-          :class="activeTab === tab ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-high'"
-          @click="activeTab = tab"
-        >
-          {{ t(`admin.tabs.${tab}`) }}
-          <span
-            v-if="tab === 'users' && pendingCount > 0"
-            class="rounded-full px-1.5 py-0.5 text-[11px] font-bold"
-            :class="activeTab === tab ? 'bg-on-primary text-primary' : 'bg-warning-container text-on-warning-container'"
-          >
-            {{ pendingCount }}
-          </span>
-        </button>
-      </div>
+      <TabStrip
+        v-model="activeTab"
+        class="mt-5"
+        :aria-label="t('admin.heading')"
+        :items="[
+          { value: 'users', label: t('admin.tabs.users'), icon: Users, badge: pendingCount || null },
+          { value: 'participants', label: t('admin.tabs.participants'), icon: Activity },
+          { value: 'system', label: t('admin.tabs.system'), icon: HardDrive },
+        ]"
+      />
 
       <div class="mt-5">
         <UsersTab

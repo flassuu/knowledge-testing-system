@@ -2,20 +2,27 @@
 import { computed } from 'vue'
 
 /**
- * The one button in the system. Every screen used to carry its own copy of
- * `rounded-lg … px-3 py-1.5 text-xs font-semibold`, which is how the height
- * drifted down to 28px on the primary actions — too small for a thumb. The
- * variants live here now, and the height floor is part of the component.
+ * The one button in the system.
+ *
+ * Two rules from the Material 3 button guidelines drive the shape of this
+ * component: a label is short, never wraps, never truncates - and the control
+ * keeps its height whatever the language says. Widths may follow the label;
+ * heights and icon squares may not, because a layout that moves when you switch
+ * language reads as broken.
  */
 const props = withDefaults(
   defineProps<{
     variant?: Variant
+    /** sm: in a dense row · md: default · lg: the one action on a card or a form. */
     size?: Size
     type?: 'button' | 'submit'
     disabled?: boolean
     block?: boolean
+    /** Square, for an icon with no label next to it. */
+    icon?: boolean
+    class?: string
   }>(),
-  { variant: 'secondary', size: 'md', type: 'button', disabled: false, block: false },
+  { variant: 'secondary', size: 'md', type: 'button', disabled: false, block: false, icon: false },
 )
 
 type Variant =
@@ -30,7 +37,9 @@ type Variant =
   | 'ghost'
   | 'ghostDanger'
 
-type Size = 'sm' | 'md' | 'icon'
+type Size = 'sm' | 'md' | 'lg'
+
+const ICON_SIZES: Record<Size, string> = { sm: 'size-4', md: 'size-4', lg: 'size-5' }
 
 /** Tonal surfaces and label colours, all semantic theme tokens. */
 const VARIANTS: Record<Variant, string> = {
@@ -47,7 +56,7 @@ const VARIANTS: Record<Variant, string> = {
   ghostDanger: 'text-error',
 }
 
-/** Hover is expressed as a variant modifier class, since the tone differs. */
+/** Hover is a variant modifier, because the tone differs per variant. */
 const HOVERS: Record<Variant, string> = {
   primary: 'hover:opacity-90',
   success: 'hover:opacity-90',
@@ -62,28 +71,47 @@ const HOVERS: Record<Variant, string> = {
 }
 
 const SIZES: Record<Size, string> = {
-  sm: 'min-h-9 px-3 text-xs',
-  md: 'min-h-10 px-3.5 text-sm',
-  // Square, for an icon with no label next to it.
-  icon: 'size-9',
+  sm: 'h-[var(--control-sm)] px-3 text-xs',
+  md: 'h-[var(--control-md)] px-3.5 text-sm',
+  lg: 'h-[var(--control-lg)] px-5 text-base',
+}
+
+const ICON_BOX: Record<Size, string> = {
+  sm: 'size-[var(--control-sm)]',
+  md: 'size-[var(--control-md)]',
+  lg: 'size-[var(--control-lg)]',
+}
+
+/** An icon-only button is a square: its box comes from the size, not padding. */
+function sizeClasses(): string {
+  if (props.icon) return ICON_BOX[props.size]
+  return SIZES[props.size]
 }
 
 const classes = computed(() =>
   [
-    'inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold',
-    'transition-colors disabled:pointer-events-none disabled:opacity-60',
+    'inline-flex shrink-0 items-center justify-center gap-2',
+    'whitespace-nowrap rounded-[var(--radius-control)] font-semibold',
+    'transition-[opacity,background-color,color,transform] duration-[var(--motion-short)] ease-[var(--ease-standard)]',
+    // M3 press state: the button gives a little, then springs back.
+    'active:scale-[0.97] motion-reduce:active:scale-100',
+    'disabled:pointer-events-none disabled:opacity-60',
     HOVERS[props.variant],
     VARIANTS[props.variant],
-    SIZES[props.size],
+    sizeClasses(),
     props.block ? 'w-full' : '',
+    props.class ?? '',
   ]
     .filter(Boolean)
     .join(' '),
 )
+
+/** Icons inherit the button's box, so a size change cannot move the label. */
+const iconClass = computed(() => ICON_SIZES[props.size])
 </script>
 
 <template>
   <button :type="type" :disabled="disabled" :class="classes">
-    <slot />
+    <slot :icon-class="iconClass" />
   </button>
 </template>

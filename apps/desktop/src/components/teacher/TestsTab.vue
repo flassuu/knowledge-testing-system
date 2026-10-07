@@ -423,7 +423,7 @@ onMounted(async () => {
             </AppButton>
             <AppButton
               variant="ghostDanger"
-              size="icon"
+              icon
               :aria-label="t('teacher.tests.draftDiscard')"
               @click="discardDraft(draft)"
             >
@@ -560,7 +560,7 @@ onMounted(async () => {
           <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
             <AppButton
               variant="ghost"
-              size="icon"
+              icon
               :disabled="busyId === test.id"
               :aria-label="t('teacher.tests.exportJson')"
               @click="exportFile(test)"

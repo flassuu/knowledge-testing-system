@@ -11,6 +11,7 @@ import type { UserRole } from '../api/types'
 import AppButton from '../components/common/AppButton.vue'
 import AppCard from '../components/common/AppCard.vue'
 import AppInput from '../components/common/AppInput.vue'
+import BrandMark from '../components/BrandMark.vue'
 
 const emit = defineEmits<{ register: [] }>()
 
@@ -93,12 +94,17 @@ async function submit() {
 
 <template>
   <main class="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-10 pt-6 sm:pt-10">
-    <header class="flex shrink-0 items-center justify-between pb-6">
-      <div>
-        <h1 class="text-lg font-bold text-on-surface">{{ t('app.name') }}</h1>
-        <p class="text-xs text-on-surface-variant">{{ t('app.tagline') }}</p>
+    <header class="flex shrink-0 items-center justify-between gap-3 pb-6">
+      <div class="flex min-w-0 items-center gap-2.5">
+        <BrandMark :size="30" class="shrink-0" />
+        <div class="min-w-0">
+          <h1 class="truncate text-lg font-bold tracking-tight text-on-surface">
+            {{ t('app.name') }}
+          </h1>
+          <p class="hidden truncate text-xs text-on-surface-variant sm:block">{{ t('app.tagline') }}</p>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex shrink-0 items-center gap-1">
         <ServerStatus />
         <ThemeSwitcher />
         <LanguageSwitcher />
@@ -107,26 +113,33 @@ async function submit() {
 
     <div class="flex flex-1 flex-col justify-center py-4">
     <AppCard as="section" padding="lg" class="shadow-sm">
-      <h2 class="text-lg font-semibold text-on-surface">
+      <h2 class="text-lg font-semibold text-balance text-on-surface">
         {{ t('auth.chooseRole') }}
       </h2>
-      <p class="mt-1 text-sm text-on-surface-variant">{{ t('auth.chooseRoleHint') }}</p>
+      <p class="mt-1 text-sm text-balance text-on-surface-variant">
+        {{ t('auth.chooseRoleHint') }}
+      </p>
 
-      <div class="mt-4 grid grid-cols-3 gap-2">
+      <!-- min-w-0 on the grid cells: without it a long label ("Адміністратор")
+           becomes the column's minimum width and pushes the card wider than the
+           screen. M3 says a label never wraps - so the labels stay short and the
+           layout stays still. -->
+      <div class="mt-5 grid grid-cols-3 gap-2">
         <button
           v-for="{ role, icon } in roles"
           :key="role"
           type="button"
+          :aria-pressed="selectedRole === role"
           @click="selectRole(role)"
-          class="flex flex-col items-center gap-1 rounded-xl border px-2 py-3 text-xs font-semibold transition-colors"
+          class="flex min-w-0 flex-col items-center gap-1.5 rounded-[var(--radius-control)] border px-1 py-3 text-xs font-semibold transition-[background-color,border-color,color,transform] duration-[var(--motion-short)] ease-[var(--ease-standard)] active:scale-[0.97] motion-reduce:active:scale-100"
           :class="
             selectedRole === role
-              ? 'border-primary bg-primary text-on-primary'
-              : 'border-outline-variant text-on-surface-variant hover:border-outline'
+              ? 'border-transparent bg-primary text-on-primary'
+              : 'border-outline-variant text-on-surface-variant hover:border-outline hover:bg-surface-container-high'
           "
         >
-          <component :is="icon" class="size-6" aria-hidden="true" />
-          {{ t(`role.${role}`) }}
+          <component :is="icon" class="size-5 shrink-0" aria-hidden="true" />
+          <span class="max-w-full truncate">{{ t(`role.${role}`) }}</span>
         </button>
       </div>
 
@@ -148,21 +161,22 @@ async function submit() {
           <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.password') }}
           </span>
-          <div class="relative mt-1">
-            <input
+          <div class="relative mt-1.5">
+            <AppInput
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
               autocomplete="current-password"
               placeholder="••••••••"
-              class="w-full rounded-lg border border-outline px-3 py-2 pr-11 text-sm focus:border-primary"
+              class="pr-12"
             />
             <AppButton
-  variant="ghost"
-  class="absolute inset-y-0 right-0"
-  :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
-  :title="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
-  @click="showPassword = !showPassword"
->
+              variant="ghost"
+              icon
+              class="absolute inset-y-0 right-0 my-0.5 mr-0.5"
+              :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+              :title="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+              @click="showPassword = !showPassword"
+            >
               <EyeOff v-if="showPassword" class="size-4" aria-hidden="true" />
               <Eye v-else class="size-4" aria-hidden="true" />
             </AppButton>
@@ -177,7 +191,7 @@ async function submit() {
           {{ errorMessage(errorKey) }}
         </p>
 
-        <AppButton variant="primary" type="submit" :disabled="submitting">
+        <AppButton variant="primary" size="lg" type="submit" class="mt-1 w-full" :disabled="submitting">
           {{ submitting ? t('common.loading') : t('auth.signIn') }}
         </AppButton>
       </form>

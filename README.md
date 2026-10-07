@@ -1,11 +1,11 @@
-# Knowledge Testing System
+# LANtern
 
 [![Release](https://img.shields.io/github/release/flassuu/knowledge-testing-system.svg?display_name=tag)](https://github.com/flassuu/knowledge-testing-system/releases/latest)
 [![Build desktop app](https://github.com/flassuu/knowledge-testing-system/actions/workflows/build-desktop.yml/badge.svg)](https://github.com/flassuu/knowledge-testing-system/actions/workflows/build-desktop.yml)
 [![Release build](https://github.com/flassuu/knowledge-testing-system/actions/workflows/release.yml/badge.svg)](https://github.com/flassuu/knowledge-testing-system/actions/workflows/release.yml)
 
-Offline classroom knowledge-testing suite — a local client-server system for
-running tests in a computer lab with **no internet access**. One role-based
+Classroom testing over a local network, with **no internet access** — a
+client-server system for running tests in a computer lab. One role-based
 application serves an **administrator**, **teachers** and **students**.
 
 > Course project. Works fully on a LAN; nothing leaves the classroom network.

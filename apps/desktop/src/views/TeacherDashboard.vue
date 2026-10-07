@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { BookOpen, FileQuestion, Radio } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
+import TabStrip from '../components/common/TabStrip.vue'
 import TestsTab from '../components/teacher/TestsTab.vue'
 import CoursesTab from '../components/teacher/CoursesTab.vue'
 import LiveSessionsTab from '../components/teacher/LiveSessionsTab.vue'
@@ -33,18 +35,16 @@ onMounted(async () => {
       </h2>
       <p class="mt-1 text-sm text-on-surface-variant">{{ t('teacher.subheading') }}</p>
 
-      <div class="mt-5 flex gap-1 rounded-xl border border-outline-variant bg-surface-container p-1 shadow-sm">
-        <button
-          v-for="tab in ['live', 'tests', 'courses'] as const"
-          :key="tab"
-          type="button"
-          class="flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors"
-          :class="activeTab === tab ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-high'"
-          @click="activeTab = tab"
-        >
-          {{ t(`teacher.tabs.${tab}`) }}
-        </button>
-      </div>
+      <TabStrip
+        v-model="activeTab"
+        class="mt-5"
+        :aria-label="t('teacher.heading')"
+        :items="[
+          { value: 'live', label: t('teacher.tabs.live'), icon: Radio },
+          { value: 'tests', label: t('teacher.tabs.tests'), icon: FileQuestion },
+          { value: 'courses', label: t('teacher.tabs.courses'), icon: BookOpen },
+        ]"
+      />
 
       <div class="mt-5">
         <LiveSessionsTab v-if="activeTab === 'live'" :tests="tests" />

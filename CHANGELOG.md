@@ -4,6 +4,55 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
+## [0.4.2] — unreleased
+
+The interface pass. Sizes that do not depend on the language, motion that comes
+from the Material 3 Expressive tokens instead of ad-hoc transitions, a language
+menu with flags, shorter text — and the name.
+
+### Added
+- **`AppDialog`**: one dialog shell for every dialog, with the scrim fading and
+  the panel arriving on the emphasized spring. Bottom-sheet on a phone, centred
+  card above that.
+- **`TabStrip`**: tabs of equal width with icons and a sliding indicator, so the
+  tab bar is the same size in every language. The admin's pending counter moved
+  into it as a badge.
+- **Language menu with flags**: one fixed-size control that opens a proper menu
+  (arrow keys, Escape, click outside) with a drawn flag per language. The flags
+  are SVG, not emoji — AGENTS.md bans emoji, and emoji flags render differently
+  everywhere anyway.
+- **Motion tokens** (`theme.css`): durations 90–400ms, the M3 standard,
+  decelerate and accelerate easings, and the emphasized spring sampled into
+  `linear()` so it keeps its overshoot. Toasts arrive on it, cards lift on it,
+  buttons press into themselves, and skeletons breathe row by row instead of
+  blinking together. `prefers-reduced-motion` collapses all of it.
+- **`BrandMark`** and a brand folder: the LANtern mark, the app icon, the lockup,
+  and a generated set of assets — favicon (SVG + ICO), Apple touch icon, PWA
+  sizes, a maskable icon, and the five Tauri icon files including a hand-written
+  `.icns`. `docs/brand/README.md` says which format goes where and how to
+  re-export after new artwork.
+
+### Changed
+- **The project is LANtern** — a lantern on a LAN. In the UI, the window title,
+  the desktop product name, the page title, the README and the description
+  packets; the import error now says "not a LANtern test file". The npm scope
+  (`@testing-system/*`) and the repository name stay: they are not user-facing.
+- **Buttons have a fixed box.** M3 keeps a label to one line and never lets it
+  wrap or truncate; the heights (36/40/48px) and the icon squares come from
+  tokens, and the label is `nowrap`. The Ukrainian login screen used to scroll
+  sideways because "Адміністратор" became a grid column's minimum width — the
+  role labels are short now, the grid cells have `min-w-0`, and the document is
+  exactly as wide as the screen.
+- **Header controls keep their size**: the status pill is one short word with no
+  wrap, the tagline hides on narrow screens, and theme, language and sign-out
+  are all fixed boxes.
+
+### Fixed
+- **Escape closes the language menu** even when focus has left it.
+- **`AppButton` no longer forces `position: relative`**, which silently beat the
+  `absolute` a caller passed in — that is why the password eye button had ended
+  up below its field.
+
 ## [0.4.1] — 2026-10-07
 
 The tails of the earlier phases: share and duplicate tests, keep authoring when
@@ -488,6 +537,7 @@ teacher UIs in the web client and the desktop app. 35 integration tests green.
   preloads the system `libwayland-client.so` (bundled one is ABI-incompatible
   with Mesa 26).
 
+[0.4.2]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.4.2
 [0.4.1]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.4.1
 [0.4.0]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.4.0
 [0.3.0]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.3.0

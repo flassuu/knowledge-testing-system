@@ -46,6 +46,14 @@
   --on-warning-container: #2c1600;
 
   --scrim: rgb(0 0 0 / 0.45);
+  /* Brand mark: a lantern over a LAN, one warm accent on a cool field. */
+  --lantern-frame: #2b2a35;
+  --lantern-glass: #e6e2f2;
+  --lantern-glow: #ffd166;
+  --lantern-core: #ef9f27;
+  --lantern-node: #4b4acf;
+  --lantern-wire: #8f8aa8;
+
 }
 
 .dark {
@@ -86,6 +94,13 @@
   --on-warning-container: #ffddb0;
 
   --scrim: rgb(0 0 0 / 0.6);
+  --lantern-frame: #e4e1ea;
+  --lantern-glass: #33313c;
+  --lantern-glow: #ffdf9e;
+  --lantern-core: #ffc65c;
+  --lantern-node: #b9b8ff;
+  --lantern-wire: #6c6880;
+
 }
 
 /* Exposes the tokens as Tailwind utilities (bg-surface, text-on-surface, …). */
@@ -127,9 +142,73 @@
   --color-scrim: var(--scrim);
 }
 
+/*
+ * Control geometry. M3 gives a button 40dp and a tap target of 48dp; the sizes
+ * below are the one place that decides, so a label in any language lands on the
+ * same height and the layout does not move when the locale changes.
+ */
+@theme {
+  --radius-control: 0.75rem;
+  --radius-card: 1rem;
+  --radius-sheet: 1.5rem;
+
+  --control-sm: 2.25rem;
+  --control-md: 2.5rem;
+  --control-lg: 3rem;
+}
+
+/*
+ * Motion. Material 3 Expressive is spring-first; the web gets the same shapes as
+ * CSS easing and duration tokens (a spring's overshoot is approximated by
+ * `linear()`, which every current engine supports). Durations stay in the
+ * 100-400ms band: expressive, not slow.
+ */
+:root {
+  --motion-instant: 90ms;
+  --motion-short: 150ms;
+  --motion-medium: 240ms;
+  --motion-slow: 400ms;
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  /* M3 "emphasized" spring, sampled into linear() so it keeps its overshoot. */
+  --ease-emphasized: linear(
+    0,
+    0.006,
+    0.025 2.843,
+    0.1 0.279,
+    0.437 0.633,
+    0.648 0.72,
+    0.752 0.79,
+    0.8 0.817,
+    0.839 0.868,
+    0.894 0.928,
+    0.939 0.965,
+    0.976 0.986,
+    0.994 0.998,
+    1
+  );
+}
+
 @layer base {
   body {
     @apply bg-surface text-on-surface antialiased;
+  }
+
+  /*
+   * Motion is decoration, never information. Anyone who asked the system to
+   * reduce motion gets instant state changes instead of smaller ones.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   :focus-visible {

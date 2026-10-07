@@ -265,7 +265,7 @@ onMounted(load)
           <button
             type="button"
             @click="selectedId = session.id"
-            class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors"
+            class="inline-flex h-[var(--control-md)] items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-xs font-semibold transition-[background-color,color,transform] duration-[var(--motion-short)] ease-[var(--ease-standard)] active:scale-[0.98] motion-reduce:active:scale-100"
             :class="
               selectedId === session.id
                 ? 'bg-primary text-on-primary'

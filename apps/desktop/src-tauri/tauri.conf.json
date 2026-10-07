@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "testing-system-teacher",
+  "productName": "LANtern",
   "version": "0.4.1",
   "identifier": "com.testingsystem.teacher",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Knowledge Testing",
+        "title": "LANtern",
         "width": 1080,
         "height": 720,
         "minWidth": 800,

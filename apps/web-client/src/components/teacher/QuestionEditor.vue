@@ -98,7 +98,7 @@ function removePair(index: number): void {
         <AppButton
           type="button"
           @click="emit('remove', index)"
-          variant="dangerSecondary" size="icon"
+          variant="dangerSecondary" icon
           :aria-label="t('teacher.editor.removeQuestion')"
         >
           <X class="size-4" aria-hidden="true" />
@@ -172,7 +172,7 @@ function removePair(index: number): void {
           :disabled="question.options.length <= 2"
           @click="removeOption(index)"
           :aria-label="t('teacher.editor.removeOption')"
-          variant="ghostDanger" size="icon" class="shrink-0"
+          variant="ghostDanger" icon class="shrink-0"
         >
           <X class="size-4" aria-hidden="true" />
         </AppButton>
@@ -236,7 +236,7 @@ function removePair(index: number): void {
           :disabled="question.pairs.length <= 2"
           @click="removePair(index)"
           :aria-label="t('teacher.editor.removePair')"
-          variant="ghostDanger" size="icon" class="shrink-0"
+          variant="ghostDanger" icon class="shrink-0"
         >
           <X class="size-4" aria-hidden="true" />
         </AppButton>

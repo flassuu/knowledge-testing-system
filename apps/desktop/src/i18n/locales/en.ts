@@ -1,19 +1,19 @@
 export default {
   app: {
-    name: 'Knowledge Testing',
-    tagline: 'Offline classroom testing suite',
+    name: 'LANtern',
+    tagline: 'Classroom testing on your LAN',
   },
   role: {
     student: 'Student',
     teacher: 'Teacher',
-    admin: 'Administrator',
+    admin: 'Admin',
   },
   server: {
     checking: 'Checking…',
     online: 'Online',
     offline: 'Offline',
-    offlineBanner: 'Server is unreachable — changes are not saved until it reconnects.',
-    backOnline: 'Server is back online.',
+    offlineBanner: 'Server unreachable — changes are not saved until it returns.',
+    backOnline: 'Server is back.',
     recheckHint: 'Server status — click to re-check',
   },
   theme: {
@@ -21,8 +21,8 @@ export default {
     switchToDark: 'Switch to dark theme',
   },
   auth: {
-    chooseRole: 'Sign in to your workspace',
-    chooseRoleHint: 'Choose how you are signing in — the UI adapts to your role.',
+    chooseRole: 'Sign in',
+    chooseRoleHint: 'Pick your role.',
     username: 'Username',
     password: 'Password',
     showPassword: 'Show password',
@@ -32,8 +32,8 @@ export default {
     signIn: 'Sign in',
     signOut: 'Sign out',
     register: 'Create account',
-    needAccount: 'Student?',
-    accountHint: 'Teacher and administrator accounts are created by an administrator.',
+    needAccount: 'No account yet?',
+    accountHint: 'Created by an administrator.',
     registerHeading: 'Create a student account',
     registerHint:
       'An administrator has to approve your account before you can sign in.',
@@ -59,7 +59,7 @@ export default {
   },
   admin: {
     heading: 'Administration',
-    subheading: 'Manage accounts: create teachers, approve students, control access.',
+    subheading: 'Accounts, approvals and access.',
     searchPlaceholder: 'Search by name…',
     anyRole: 'Any role',
     anyStatus: 'Any status',
@@ -119,7 +119,7 @@ export default {
       courseFilter: 'Filter by course',
       students: '{count} students',
       emptyTitle: 'No enrollments yet',
-      emptyHint: 'Enrol a student from the course page in the teacher dashboard.',
+      emptyHint: 'Enrol students from the course page.',
       enrolledAt: 'Enrolled {date}',
     },
     system: {
@@ -147,7 +147,7 @@ export default {
   },
   teacher: {
     heading: 'Teacher workbench',
-    subheading: 'Create tests and courses, run sessions, and review reports.',
+    subheading: 'Run a test, watch the room, review results.',
     tabs: {
       live: 'Live',
       tests: 'Tests',
@@ -185,7 +185,7 @@ export default {
       passed: 'Passed',
       failed: 'Not passed',
       emptyTitle: 'No sessions yet',
-      emptyHint: 'Start a session to let students join with a code.',
+      emptyHint: 'Start a session and students join with a code.',
       status: {
         active: 'Running',
         paused: 'Paused',
@@ -351,7 +351,7 @@ export default {
   },
   student: {
     heading: 'Student home',
-    subheading: 'Join tests, read course materials, and track your results.',
+    subheading: 'Join tests, read materials, see your results.',
     history: {
       heading: 'My results',
       passed: 'Passed',
@@ -440,6 +440,14 @@ export default {
     confirm: 'Confirm',
     close: 'Close',
     dismiss: 'Dismiss',
+    about: {
+      title: 'About',
+      tagline: 'Classroom testing over a local network, with no internet.',
+      version: 'Version',
+      versionUnknown: 'unknown',
+      server: 'Server',
+      offline: 'Works entirely on the local network. Nothing leaves the room.',
+    },
   },
   footer: {
     message: 'Runs entirely on the local network — no internet required.',

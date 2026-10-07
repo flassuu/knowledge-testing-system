@@ -47,16 +47,28 @@ const kindClass: Record<ToastKind, string> = {
   </Teleport>
 </template>
 
-<style>
-.toast-enter-active,
+<style scoped>
+/* The toast arrives with the emphasized spring and leaves quickly: it reports,
+   it does not perform. */
+.toast-enter-active {
+  transition:
+    opacity var(--motion-medium) var(--ease-decelerate),
+    transform var(--motion-slow) var(--ease-emphasized);
+}
 .toast-leave-active {
   transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
+    opacity var(--motion-short) var(--ease-accelerate),
+    transform var(--motion-short) var(--ease-accelerate);
 }
-.toast-enter-from,
+.toast-enter-from {
+  opacity: 0;
+  transform: translateY(-0.75rem) scale(0.96);
+}
 .toast-leave-to {
   opacity: 0;
-  transform: translateY(-6px);
+  transform: scale(0.98);
+}
+.toast-move {
+  transition: transform var(--motion-medium) var(--ease-standard);
 }
 </style>
