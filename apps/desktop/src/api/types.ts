@@ -183,3 +183,14 @@ export interface CreateClassroom {
   name: string
   courseId?: string | null
 }
+
+/** One line of the server log, as the console and the web admin both read it. */
+export interface LogEntry {
+  /** Monotonic per server process; `?since=` and the live tail both use it. */
+  seq: number
+  at: string
+  level: 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+  msg: string
+  /** Whatever else the record carried: a request, an error, a class key. */
+  fields: Record<string, unknown>
+}

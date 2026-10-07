@@ -267,24 +267,29 @@ touch a user, another teacher's class, or anything an admin holds.
 
 ### 5.3 The server console — one implementation, three surfaces
 
-The headless server writes pino JSON and has no interactive control; the desktop
-app has no log view at all. A teacher running the server in a school computer
-room needs to see what it is doing and be able to act without a second machine.
+**Done, except the desktop view (5.4).** The headless server used to write pino
+JSON with no interactive control, and the desktop app had no log view at all. A
+teacher running the server in a school computer room needs to see what it is
+doing and be able to act without a second machine, so there is now one log stream
+with three readers — the terminal, the ring buffer and the live tail — and a
+console that acts through the same library functions the API calls.
 
-- [ ] Human-readable log lines (level colour, aligned, relative time) when
+- [x] Human-readable log lines (level colour, aligned, relative time) when
       stdout is a TTY, unchanged JSON when piped — so `systemd` and CI still work
-- [ ] Interactive commands on stdin when a TTY, acting through the same
+- [x] Interactive commands on stdin when a TTY, acting through the same
       functions the HTTP API uses: `help`, `status`, `sessions`, `users`,
       `students [pending]`, `approve`, `block`, `password`, `level`, `clear`,
       `stop`. Disabled by `--no-console`, skipped automatically when piped
-- [ ] In-memory ring buffer of recent lines + `WS /ws/server` (admin only) and
+- [x] In-memory ring buffer of recent lines + `WS /ws/server` (admin only) and
       `GET /api/logs?since=` so the desktop and the web admin can follow the
       same stream live
-- [ ] Admin "Server" tab in the web client: live console, server status, and the
+- [x] Admin "Server" tab in the web client: live console, server status, and the
       same actions as API calls (approve a student, stop the server)
 - [ ] Restart is deliberately *not* an API call: only the desktop, which owns the
-      process, can bring it back
-- [ ] Tests: the formatter (TTY vs piped), the command parser and its
+      process, can bring it back. *(The decision is implemented — there is no such
+      endpoint, and the Server tab says restart happens at the machine; the
+      desktop side of it is 5.4.)*
+- [x] Tests: the formatter (TTY vs piped), the command parser and its
       permissions, the ring buffer's ordering and trimming
 
 ### 5.4 The desktop app as a host

@@ -616,7 +616,58 @@ questions:
 Both are teacher-or-admin, scoped to what the caller owns. The journal is what
 the app's report screen renders; the CSV is meant to leave the app.
 
+## Logs (`/api/logs`, `/ws/server`)
+
+The same log lines the terminal console prints, for a client that has no
+terminal: the desktop console and the admin **Server** tab. Admin only — a log
+names who signed in, which accounts exist and what failed.
+
+### `GET /api/logs?since=<seq>`
+
+```json
+{
+  "entries": [
+    {
+      "seq": 412,
+      "at": "2026-10-07T10:14:22.104Z",
+      "level": "info",
+      "msg": "request completed",
+      "fields": {
+        "req": { "method": "GET", "url": "/api/tests", "statusCode": 200 },
+        "responseTimeMs": 3
+      }
+    }
+  ],
+  "lastSeq": 412
+}
+```
+
+- `since` returns only lines newer than that sequence number, so a reconnecting
+  client asks for exactly what it missed. Omit it for the whole buffer (the last
+  500 lines).
+- `fields.req` is trimmed to method, url and status; an error keeps its message
+  but not its stack; nothing else on the record is dropped.
+- **`token=` never appears in a line.** Browsers cannot set headers on a
+  WebSocket handshake, so the token travels in the query string and Fastify logs
+  the whole URL; the value is replaced with `…` before anything is written.
+- Reading the log is itself logged, so the buffer grows between two calls: `since`
+  is about sequence numbers, not about how many lines come back.
+
+### `GET /ws/server?token=<token>&since=<seq>`
+
+The live tail over the same buffer. One socket carries both halves: the backlog
+the client missed, then each new line as it happens.
+
+| Message | Meaning |
+|---------|---------|
+| `{ "type": "backlog", "entries": [ … ], "lastSeq": 412 }` | the lines newer than `since` |
+| `{ "type": "entry", "entry": { … } }` | one new line |
+| `{ "type": "error", "code": "…", "message": "…" }` | then the socket closes |
+
+Rejections close with a code: `4401` unauthenticated, `4403` not an admin.
+
 ## Realtime (`/ws`)
+
 
 ### `GET /ws/sessions/:id`
 
@@ -649,5 +700,6 @@ teacher who does not own it), `4404` unknown session.
 | `GET /ws/sessions/:id` | + (board) | + (board) | + (status only) |
 | `/api/admin/stats`, `/api/admin/participants` | + | – | – |
 | `/api/classrooms*` | + | + (own) | – (preview is public) |
+| `GET /api/logs`, `/ws/server` | + | – | – |
 | `GET /api/settings` | + | + | + |
 | `PATCH /api/settings` | + | – | – |

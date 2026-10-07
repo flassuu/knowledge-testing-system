@@ -49,6 +49,12 @@ Expected on screen:
 taken the process exits — pick another one, and remember to use it everywhere
 below.
 
+
+When the terminal shows the LANtern banner, the interactive console is attached:
+`help` lists the commands, and `approve olena` lets a student in without leaving
+the keyboard. `--no-console` turns it off; a pipe turns it off by itself, which
+is what happens when the desktop app starts the server.
+
 ### 3. Set the address students can open
 
 Sign in as **admin** → **System & DB** → **Public address**. The server lists the
@@ -150,7 +156,8 @@ desktop app works against it — that is the honest current state.
 ### What Phase 5.4 adds
 
 - the server binary bundled as a Tauri sidecar and started by the app;
-- a console view with the server's output, filterable, plus start/stop/restart;
+- a console view over the same log stream the terminal prints (the API and the
+  live tail exist as of Phase 5.3), plus start/stop/restart;
 - settings for data dir, port, admin password and public address;
 - the API base following those settings, so the port can change without a rebuild;
 - "open in browser" with the LAN address, for showing the QR on a projector.
@@ -160,7 +167,7 @@ desktop app works against it — that is the honest current state.
 1. `pnpm build:server`, then `NO_STRIP=true pnpm --filter @testing-system/desktop tauri build`.
 2. Run the bundle with a **fresh** data dir: the first launch must show the
    defaults and a Start button, and log the exact path it looked for the binary.
-3. Start → the console fills with `[server] listening on http://0.0.0.0:<port>`.
+3. Start → the console fills with `listening on http://0.0.0.0:<port>`.
 4. Open the browser link → the same server, from a phone on the LAN.
 5. Stop → the process is gone (check `ss -ltnp | grep <port>`).
 6. Change the port, restart, and confirm the app still talks to the server.

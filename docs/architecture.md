@@ -51,8 +51,16 @@ itself as static files.
   deps, so it compiles to a single standalone binary with `bun build --compile`.
   DB file: `<data-dir>/app.db`.
 - **Migrations:** idempotent, versioned, run at startup.
-- **CLI:** `--host`, `--port`, `--data <dir>`, `--webroot <dir>` — the admin
-  can run it headless (pure console) or from the admin client.
+- **CLI:** `--host`, `--port`, `--data <dir>`, `--webroot <dir>`, `--no-console`
+  — the admin can run it headless (pure console) or from the admin client.
+- **Logging:** one pino stream (`lib/log.ts`) with three readers: a human line on
+  a terminal, the original JSON in a pipe, and an in-memory ring buffer that
+  `GET /api/logs` and `/ws/server` serve. `token=` values are redacted before any
+  of them sees a line.
+- **Console:** interactive commands on stdin when there is a terminal
+  (`lib/console.ts`) — `help`, `status`, `sessions`, `users`, `students`,
+  `approve`, `block`, `password`, `level`, `clear`, `stop`. The commands call the
+  same library functions the HTTP routes call.
 - **Packaging:** one binary (`testing-server(.exe)`); no Node.js on targets.
 
 ### `apps/web-client` — the shared frontend (all roles)
@@ -153,6 +161,7 @@ true/false, short answer, matching) · `live_sessions` · `participations` ·
 | Teacher → Server (report export) | REST `/api/sessions/:id/results.csv`, fetched with the token and saved as a blob — a plain link would arrive unauthenticated |
 | Server → Teacher (live board: joins, submissions, status) | WebSocket `/ws/sessions/:id` |
 | Server → Student (pause, finish, time) | same WebSocket, status only |
+| Admin → Server (live log tail, same lines the terminal prints) | WebSocket `/ws/server`, backlog via `GET /api/logs?since=` |
 | Fallback when a socket cannot be opened | REST polling (cheap, LAN scale) |
 
 ## Deployment scenarios

@@ -7,7 +7,9 @@ import websocket from '@fastify/websocket'
 import fastifyStatic from '@fastify/static'
 import { dirname, join } from 'node:path'
 import { openDatabase, checkDatabase, type Database } from './lib/db'
+import { createLogHub, type LogHub } from './lib/log'
 import { healthRoutes } from './routes/health'
+import { logRoutes } from './routes/logs'
 import { authRoutes } from './routes/auth'
 import { userRoutes } from './routes/users'
 import { testRoutes } from './routes/tests'
@@ -31,6 +33,8 @@ export interface AppOptions {
 export interface TestingApp {
   server: FastifyInstance
   database: Database
+  /** The one log stream: stdout, the ring buffer and the live tail. */
+  logs: LogHub
 }
 
 /**
@@ -42,9 +46,25 @@ export function buildApp(options: AppOptions): TestingApp {
   const dataDir = options.dataDir ?? dirname(options.dbPath)
   const uploadsDir = join(dataDir, 'uploads')
 
-  const app = Fastify({
-    logger: { level: process.env.LOG_LEVEL ?? 'info' },
+  // One logger for the whole process: a terminal gets human lines, a pipe gets
+  // the JSON pino wrote, and both fill the buffer that /api/logs serves. Wiring
+  // Fastify to a plain `logger` option would give the terminal and the API two
+  // different stories about the same run.
+  const logs = createLogHub({
+    level: process.env.LOG_LEVEL ?? 'info',
+    tty: process.stdout.isTTY === true,
   })
+
+  // The cast is only about generics: passing a loggerInstance makes Fastify
+  // infer pino's own Logger type, while every plugin in this app is typed
+  // against the base logger. Nothing is widened to `any`.
+  const app = Fastify({
+    loggerInstance: logs.logger,
+    // pino logs every request twice — "incoming request" and "request completed" —
+    // which is half a console of noise for a teacher and no duration anywhere.
+    // One line per request, with the time it took, is written below instead.
+    disableRequestLogging: true,
+  }) as unknown as FastifyInstance
 
   void app.register(cors, { origin: true })
 
@@ -61,6 +81,27 @@ export function buildApp(options: AppOptions): TestingApp {
   // Resolves `request.session` from the bearer token on every request.
   // Attached at root level so the hook reaches every route context.
   attachAuth(app, database)
+
+  /**
+   * One log line per request, once it is finished and the status is known.
+   *
+   * The level follows the outcome, so the console's "Errors" filter means
+   * something: a 500 is an error, a 404 is a warning, the rest is information.
+   */
+  app.addHook('onResponse', async (request, reply) => {
+    const status = reply.statusCode
+    const line = {
+      req: {
+        method: request.method,
+        url: request.url,
+        statusCode: status,
+      },
+      responseTimeMs: Math.round(reply.elapsedTime),
+    }
+    if (status >= 500) logs.logger.error(line, 'request failed')
+    else if (status >= 400) logs.logger.warn(line, 'request rejected')
+    else logs.logger.info(line, 'request completed')
+  })
 
   void app.register(healthRoutes, {
     version: APP_VERSION,
@@ -87,6 +128,9 @@ export function buildApp(options: AppOptions): TestingApp {
   // Phase 5.2: class keys, so a teacher can seat a class without an admin.
   void app.register(classroomRoutes, { database })
 
+  // Phase 5.3: the same log stream the console prints, over HTTP and WebSocket.
+  void app.register(logRoutes, { database, logs })
+
   // Uniform error envelope; validation failures map to 400 VALIDATION.
   app.setErrorHandler((error: FastifyError, request, reply) => {
     if (error.validation) {
@@ -100,11 +144,24 @@ export function buildApp(options: AppOptions): TestingApp {
     return reply.code(status).send({ error: { code: status === 500 ? 'INTERNAL' : 'ERROR', message } })
   })
 
-  return { server: app, database }
+  return { server: app, database, logs }
 }
 
 export async function startServer(options: AppOptions): Promise<TestingApp> {
-  const { server, database } = buildApp(options)
-  await server.listen({ host: options.host, port: options.port })
-  return { server, database }
+  const app = buildApp(options)
+  await app.server.listen({ host: options.host, port: options.port })
+  return app
+}
+
+/**
+ * Closes the listener and the database in the right order.
+ *
+ * Exported rather than wired to a signal inside the app, because the console's
+ * `stop` command, `SIGINT` and the desktop shutting the server down all want
+ * exactly this sequence, and three copies of "close, then close the database"
+ * is three chances to leak a handle.
+ */
+export async function shutdown(app: TestingApp): Promise<void> {
+  await app.server.close()
+  app.database.close()
 }

@@ -62,6 +62,44 @@ answer is a scoped key, not more power.
   link. Both builders refuse a scheme with no origin — `new URL('tauri://localhost').origin`
   is the string `"null"`, which would have put `null/?join=…` into a QR code.
 
+### 5.3 — the server console
+
+The server wrote pino JSON and could not be talked to; the desktop had no log
+view at all. Now there is one log stream with three readers, and a console that
+acts through the same functions the API calls.
+
+- **Human lines on a terminal, JSON in a pipe** — wall clock, relative age,
+  colour-coded level, aligned columns, and a request as `→ GET /api/tests 200`.
+  A pipe gets the JSON pino wrote, byte for byte, so `systemd`, `journalctl` and
+  CI keep parsing what they parsed before.
+- **One line per request, with the duration.** pino logged every request twice
+  ("incoming request", "request completed") and never said how long it took; the
+  pair is replaced by one line whose level follows the outcome — `error` for 5xx,
+  `warn` for 4xx, `info` otherwise.
+- **`token=` never reaches a log line.** Browsers cannot set headers on a
+  WebSocket handshake, so the token travels in the query string and Fastify logs
+  the whole URL. That was already true on stdout, but now the same line is
+  rendered in a browser tab, where it would be read, copied into a bug report or
+  photographed — and it is valid for twelve hours.
+- **A ring buffer of the last 500 lines**, with `GET /api/logs?since=` and
+  `WS /ws/server` serving it. Both admin-only: a log names who signed in, which
+  accounts exist and what failed. One socket carries both halves — the backlog
+  the client missed, then each new line — so a reconnect is exact.
+- **Interactive console** when there is a terminal: `help`, `status`, `sessions`,
+  `users`, `students [pending]`, `approve`, `block`, `password`, `level`, `clear`,
+  `stop`. Off with `--no-console`, and off by itself when stdin is a pipe — which
+  is what the desktop app and every CI run are. `approve` and `block` call the
+  same `setUserStatus` the HTTP route calls, so blocking revokes live sessions in
+  both places or in neither.
+- **Admin → Server tab**: the live tail with level filters and counts, pause and
+  clear, the server status, and the students waiting for approval — the same
+  calls the Users tab makes, next to the log where the question "why is nobody
+  getting in?" gets answered. Restarting is not offered on purpose: an HTTP
+  request that killed the process serving it would be a strange thing to send.
+- `pino` is now a declared dependency of the server. It already was one —
+  Fastify's logger *is* pino — but the app now constructs the instance itself to
+  own the stream; no new package was downloaded.
+
 ## [0.4.2] — 2026-10-07
 
 The interface pass. Sizes that do not depend on the language, motion that comes

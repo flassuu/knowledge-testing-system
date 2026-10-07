@@ -3,8 +3,8 @@ import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 import type { Database } from '../lib/db'
 import { nowIso } from '../lib/db'
 import { sendError } from '../lib/http'
+import { setUserStatus } from '../lib/accountActions'
 import { hashPassword } from '../lib/passwords'
-import { deleteSessionByHash } from '../lib/tokens'
 import {
   findUserByUsername,
   findUserById,
@@ -131,30 +131,15 @@ export const userRoutes: FastifyPluginAsync<UsersDeps> = async (
     async (request, reply) => {
       const params = request.params as { id: string }
       const body = request.body as { status: UserStatus }
-      const target = findUserById(db, params.id)
-      if (!target) {
-        return sendError(reply, 404, 'NOT_FOUND', 'user not found')
+      // The rule - including "blocking revokes live sessions" - lives in the
+      // library, so the server console cannot get it subtly different.
+      const result = setUserStatus(db, params.id, body.status)
+      if (!result.ok) {
+        return result.reason === 'not_found'
+          ? sendError(reply, 404, 'NOT_FOUND', 'user not found')
+          : sendError(reply, 400, 'INVALID_OPERATION', 'admin accounts cannot be modified')
       }
-      if (target.role === 'admin') {
-        return sendError(reply, 400, 'INVALID_OPERATION', 'admin accounts cannot be modified')
-      }
-      const now = nowIso()
-      db.prepare('UPDATE users SET status = ?, updated_at = ? WHERE id = ?').run(
-        body.status,
-        now,
-        target.id,
-      )
-      // Blocking revokes all active sessions immediately.
-      if (body.status === 'blocked') {
-        const sessions = db
-          .prepare('SELECT token_hash FROM sessions WHERE user_id = ?')
-          .all(target.id) as Array<{ token_hash: string }>
-        for (const session of sessions) {
-          deleteSessionByHash(db, session.token_hash)
-        }
-      }
-      const updated = findUserById(db, target.id) as UserRow
-      return { user: toPublicUser(updated) }
+      return { user: toPublicUser(result.user) }
     },
   )
 

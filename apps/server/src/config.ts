@@ -7,6 +7,9 @@ export interface ServerConfig {
   dataDir: string
   webRoot: string | null
   dbPath: string
+  /** Interactive commands on stdin. Off for `--no-console`, and off by itself
+   *  when stdin is not a terminal. */
+  console: boolean
 }
 
 function arg(argv: string[], flag: string): string | undefined {
@@ -70,5 +73,8 @@ export function loadConfig(argv: string[]): ServerConfig {
     dataDir,
     webRoot: explicitWebRoot ?? (autoWebRoot || null),
     dbPath: `${dataDir}/app.db`,
+    // A flag with no value: its presence is the whole meaning, which is why it
+    // is checked as a member of argv rather than as `arg(argv, '--no-console')`.
+    console: !argv.includes('--no-console'),
   }
 }

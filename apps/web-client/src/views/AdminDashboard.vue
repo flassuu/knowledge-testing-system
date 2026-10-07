@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Activity, HardDrive, UserCheck, Users } from '@lucide/vue'
+import { Activity, HardDrive, Server, UserCheck, Users } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
 import UsersTab from '../components/admin/UsersTab.vue'
 import ParticipantsTab from '../components/admin/ParticipantsTab.vue'
+import ServerTab from '../components/admin/ServerTab.vue'
 import SystemTab from '../components/admin/SystemTab.vue'
 import { listUsers } from '../api/users'
 import type { UserStatus } from '../api/types'
@@ -13,7 +14,7 @@ import TabStrip from '../components/common/TabStrip.vue'
 
 const { t } = useI18n()
 
-type AdminTab = 'users' | 'participants' | 'system'
+type AdminTab = 'users' | 'participants' | 'system' | 'server'
 const activeTab = ref<AdminTab>('users')
 const focusStatus = ref<UserStatus | ''>('')
 const pendingCount = ref(0)
@@ -66,6 +67,7 @@ onMounted(countPending)
           { value: 'users', label: t('admin.tabs.users'), icon: Users, badge: pendingCount || null },
           { value: 'participants', label: t('admin.tabs.participants'), icon: Activity },
           { value: 'system', label: t('admin.tabs.system'), icon: HardDrive },
+          { value: 'server', label: t('admin.tabs.server'), icon: Server },
         ]"
       />
 
@@ -76,7 +78,8 @@ onMounted(countPending)
           @changed="countPending"
         />
         <ParticipantsTab v-else-if="activeTab === 'participants'" />
-        <SystemTab v-else />
+        <SystemTab v-else-if="activeTab === 'system'" />
+        <ServerTab v-else />
       </div>
 
       <p class="mt-8 text-center text-xs text-on-surface-variant">
