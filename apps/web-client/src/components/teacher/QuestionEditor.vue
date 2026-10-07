@@ -59,7 +59,11 @@ function removePair(index: number): void {
 </script>
 
 <template>
-  <fieldset class="rounded-xl border border-outline-variant bg-surface-container p-4">
+  <!-- min-w-0: the UA stylesheet gives <fieldset> min-inline-size: min-content,
+         which pins it to its widest row and scrolls the whole page sideways. -->
+  <fieldset
+    class="min-w-0 rounded-xl border border-outline-variant bg-surface-container p-3 sm:p-4"
+  >
     <div class="mb-3 flex items-center justify-between gap-2">
       <div class="flex min-w-0 items-center gap-2">
         <span
@@ -107,30 +111,35 @@ function removePair(index: number): void {
     </div>
 
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <input
+      <AppInput
         v-model="question.body"
-        type="text"
         :aria-label="t('teacher.editor.bodyPlaceholder')"
         :placeholder="t('teacher.editor.bodyPlaceholder')"
-        class="w-full flex-1 rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
+        class="flex-1"
       />
+      <!--
+        min-w-0 is what keeps this row on the screen: a select's natural width is
+        its widest option, and "Коротка відповідь" is wider than a 320px phone.
+        Clipping costs nothing here, because the type is already named in the
+        card header above.
+      -->
       <div class="flex items-center gap-2">
         <select
           v-model="question.type"
           :aria-label="t('teacher.editor.typeLabel')"
-          class="rounded-lg border border-outline bg-surface px-2 py-2 text-sm focus:border-primary"
+          class="min-w-0 flex-1 rounded-lg border border-outline bg-surface px-2 py-2 text-sm focus:border-primary sm:flex-none"
         >
           <option v-for="type in QUESTION_TYPES" :key="type" :value="type">
             {{ typeLabel(type) }}
           </option>
         </select>
-        <label class="flex items-center gap-1 text-xs text-on-surface-variant">
+        <label class="flex shrink-0 items-center gap-1 text-xs text-on-surface-variant">
           {{ t('teacher.editor.points') }}
           <input
             v-model.number="question.points"
             type="number"
             min="1"
-            class="w-16 rounded-lg border border-outline bg-surface px-2 py-2 text-sm focus:border-primary"
+            class="h-[var(--control-md)] w-16 shrink-0 rounded-lg border border-outline bg-surface px-2 py-2 text-sm focus:border-primary"
           />
         </label>
       </div>

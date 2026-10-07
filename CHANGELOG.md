@@ -49,6 +49,11 @@ menu with flags, shorter text — and the name.
 
 ### Fixed
 - **Escape closes the language menu** even when focus has left it.
+- **The question editor no longer scrolls sideways on a phone.** A `<select>` is
+  as wide as its widest option, so "Коротка відповідь" pushed the row past a
+  320px screen; the select can shrink now (`min-w-0`), and nothing is lost
+  because the type is already named in the card header.
+- **The admin filter row wraps** instead of overflowing between 640 and 768px.
 - **`AppButton` no longer forces `position: relative`**, which silently beat the
   `absolute` a caller passed in — that is why the password eye button had ended
   up below its field.
