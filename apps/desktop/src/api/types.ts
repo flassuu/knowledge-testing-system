@@ -138,3 +138,10 @@ export interface SystemStats {
   database: 'ok' | 'error'
   counts: TableCounts
 }
+
+export interface ServerSettings {
+  /** The address students are told to open, or null when not configured. */
+  publicBaseUrl: string | null
+  /** Addresses this machine answers on, for the admin to pick from. */
+  suggestions: string[]
+}

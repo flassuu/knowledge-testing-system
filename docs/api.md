@@ -294,7 +294,54 @@ Flat course → student participation list (the admin "Participants" screen).
 
 Ordered by course title, then enrollment date.
 
+## Settings (`/api/settings`)
+
+`publicBaseUrl` is the address students open. It is what the join link and the QR
+code are built from, so it has to be an address the teacher's own machine cannot
+reach on its own: `localhost`, `127.0.0.1` and `tauri://localhost` all work on
+the teacher's desk and none of them work on a phone. When it is unset, clients
+fall back to the origin they are served from, which is exactly the wrong address
+in both of the real setups — so the teacher UI says so out loud.
+
+### `GET /api/settings`
+
+Any signed-in role: the teacher's Live tab needs the address to build a link, and
+the admin's System screen needs the same value plus what to choose from.
+
+```json
+{
+  "publicBaseUrl": "http://192.168.1.65:3300",
+  "suggestions": ["http://192.168.1.65:3300", "http://172.20.0.14:3300"]
+}
+```
+
+`publicBaseUrl` is `null` when unset. `suggestions` are the IPv4 addresses this
+machine answers on, each with the port the server actually bound. Loopback is
+excluded on purpose: offering `127.0.0.1` as a suggestion would be exactly the
+wrong advice. IPv6 is left out — a link-local address needs a scope suffix no
+phone camera will type in.
+
+### `PATCH /api/settings`
+
+Admin only. Returns the same object as the GET.
+
+```json
+{ "publicBaseUrl": "http://192.168.1.65:3300" }
+```
+
+- `null` (or an empty string) clears the setting.
+- The value is normalised on the way in: case, a default port and a trailing slash
+  are dropped, so `http://host:3300/` and `http://host:3300` are the same setting.
+- Rejected with `400 VALIDATION` and a message naming the problem: not absolute,
+  a scheme other than `http`/`https`, a path, a query, a fragment, credentials in
+  the URL, or more than 200 characters. Unknown fields are stripped rather than
+  rejected, which is Fastify's default AJV behaviour.
+
+The value lives in `app_meta` under `public_base_url`; a value that is not
+currently valid is treated as unset rather than trusted.
+
 ## Live sessions (`/api/sessions`)
+
 
 A **session** is one live run of a test. A teacher starts it, students join
 with a six-character code, answer, and the server grades and stores the paper.
@@ -492,3 +539,5 @@ teacher who does not own it), `4404` unknown session.
 | `POST /api/sessions/join`, `GET /api/sessions/current`, `/:id/submit`, `/:id/result`, `/api/student/results` | – | – | + |
 | `GET /ws/sessions/:id` | + (board) | + (board) | + (status only) |
 | `/api/admin/stats`, `/api/admin/participants` | + | – | – |
+| `GET /api/settings` | + | + | + |
+| `PATCH /api/settings` | + | – | – |

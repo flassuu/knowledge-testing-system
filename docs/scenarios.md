@@ -49,15 +49,25 @@ Expected on screen:
 taken the process exits — pick another one, and remember to use it everywhere
 below.
 
-### 3. Find the address students can open
+### 3. Set the address students can open
+
+Sign in as **admin** → **System & DB** → **Public address**. The server lists the
+addresses this machine answers on; pick one (or type your own) and save. The same
+value is available without guessing:
 
 ```bash
 ip -4 route get 1.1.1.1 | rg -o 'src [0-9.]+'     # e.g. src 192.168.1.65
 ```
 
-Write it down. From this point on, **use `http://192.168.1.65:3300`, never
-`localhost`** — anything the teacher's browser builds from its own origin would
-say `localhost`, and a phone cannot open that.
+From this point on, **use `http://192.168.1.65:3300`, never `localhost`** — a
+student's phone cannot open `localhost`, and the teacher's own window
+(`tauri://localhost` in the desktop app) is no better. Until this is set, the
+teacher's Live tab says so in plain words under the QR code, and the code can
+still be typed by hand.
+
+The setting is what goes into the join link, the "Copy join link" button and the
+QR code, so it is worth checking once: scan the QR with a phone, or open the
+copied link on one. If it opens the app, the address is right.
 
 ### 4. Create the accounts
 
@@ -86,9 +96,9 @@ available), then **Live → Start a session → choose the test**. The board sho
 - **Copy join link** — this is the URL to test;
 - **Show QR code** — the QR encodes the same link.
 
-Check the link before going further: it must start with `http://192.168.1.65:3300`.
-If it says `localhost`, the teacher is on the wrong address — see the
-troubleshooting table.
+Check the link before going further: the address is printed under the QR code, and
+the tab says so in plain words if a phone cannot open it. If it says `localhost`
+and no address was set in step 3, the join link is not usable on a phone yet.
 
 ### 7. A student takes the test
 
@@ -217,7 +227,7 @@ end to end on a real phone, not on the same machine.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| QR scans but the page will not open | the link says `localhost` or `tauri://` | open the teacher UI on the LAN address; Phase 5.1 makes this impossible to get wrong |
+| QR scans but the page will not open | no public address is set, so the link says `localhost` or `tauri://` | admin → System & DB → Public address, pick the LAN address, save; the tab warns about this on its own |
 | Phone cannot reach the server at all | firewall, or a different network | allow TCP 3300; both devices on the same Wi-Fi |
 | `403 PENDING_APPROVAL` | the student is not approved yet | admin → Users → Approve, or use a class key (Phase 5.2) |
 | `403 FORBIDDEN` on an action | the signed-in role is not the one the action needs | teachers cannot manage users; only admins can |

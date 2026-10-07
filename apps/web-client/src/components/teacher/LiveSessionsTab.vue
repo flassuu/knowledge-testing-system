@@ -13,6 +13,7 @@ import {
   Radio,
   RotateCw,
   Square,
+  TriangleAlert,
   Users,
 } from '@lucide/vue'
 import { ApiError, downloadFile } from '../../api/client'
@@ -29,10 +30,16 @@ import QrCodeCard from '../common/QrCode.vue'
 import SkeletonList from '../common/SkeletonList.vue'
 import TestPicker from './TestPicker.vue'
 import { useConfirm } from '../../composables/confirm'
+import { effectiveBaseUrl, loadSettings } from '../../composables/settings'
+import { isReachableFromPhone, joinLink as buildJoinLink } from '../../utils/joinLink'
 import { useSessionChannel } from '../../composables/sessionChannel'
 import { useToast } from '../../composables/toast'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+
+/** The address students are being sent to, and whether they can open it. */
+const joinOrigin = computed(() => effectiveBaseUrl())
+const originReachable = computed(() => isReachableFromPhone(joinOrigin.value))
 
 /** True while the spreadsheet download is in flight. */
 const exporting = ref(false)
@@ -181,14 +188,15 @@ function copyCode(): Promise<void> {
   return selected.value ? writeClipboard(selected.value.joinCode, 'code') : Promise.resolve()
 }
 
-/** A link the teacher can paste into a chat; the student lands pre-filled. */
+/**
+ * The link a student opens. It comes from the server's public address when an
+ * admin has set one, and from this window's origin otherwise - which is the
+ * teacher's own machine, and a phone cannot open it. That is why the origin is
+ * shown below the QR and called out when it is unreachable.
+ */
 function joinLink(): string {
   if (!selected.value) return ''
-  const url = new URL(window.location.href)
-  url.search = ''
-  url.hash = ''
-  url.searchParams.set('join', selected.value.joinCode)
-  return url.toString()
+  return buildJoinLink(effectiveBaseUrl(), selected.value.joinCode)
 }
 
 function copyLink(): Promise<void> {
@@ -200,7 +208,10 @@ watch(selectedId, (id) => {
   else channel.disconnect()
 })
 
-onMounted(load)
+onMounted(() => {
+  void load()
+  void loadSettings()
+})
 </script>
 
 <template>
@@ -314,11 +325,29 @@ onMounted(load)
           </div>
         </div>
 
-        <div v-if="showQr" class="mt-4 flex justify-center sm:justify-end">
+        <div v-if="showQr" class="mt-4 flex flex-col items-center gap-2 sm:items-end">
           <QrCodeCard :text="joinLink()" :caption="t('teacher.live.qrCaption')" />
+          <p class="max-w-full truncate text-[11px] text-on-surface-variant">
+            {{ t('teacher.live.qrAddress') }}:
+            <span class="font-mono">{{ joinOrigin }}</span>
+          </p>
         </div>
         <p v-else class="mt-3 text-[11px] text-on-surface-variant">
           {{ t('teacher.live.linkHint') }}
+        </p>
+
+        <!-- A QR that scans and then fails reads as a broken app, so the one case
+             where that happens is stated instead of left to be discovered in the
+             middle of a lesson. -->
+        <p
+          v-if="!originReachable"
+          class="mt-3 flex items-start gap-2 rounded-[var(--radius-control)] bg-warning-container px-3 py-2 text-xs text-on-warning-container"
+        >
+          <TriangleAlert class="mt-px size-4 shrink-0" aria-hidden="true" />
+          <span>
+            {{ t('teacher.live.unreachableHint') }}
+            <span class="font-mono break-all">{{ joinOrigin }}</span>
+          </span>
         </p>
 
         <div class="mt-4 flex flex-wrap items-center gap-2">

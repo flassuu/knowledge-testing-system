@@ -220,20 +220,22 @@ address, and the other two do not work at all — see
 
 ### 5.1 Reachability — the address students can actually open
 
-The join link is built from `window.location.href`, which is `tauri://localhost`
-in the desktop app and `http://localhost:3300` in a browser on the teacher's
-machine. A phone cannot open either, so the QR code is decorative today.
+**Done.** The join link used to be built from `window.location.href`, which is
+`tauri://localhost` in the desktop app and `http://localhost:3300` in a browser
+on the teacher's machine: a phone can open neither, so the QR code used to be
+decorative. The address is now a server setting, the QR carries it, the teacher's
+tab prints it, and it says so when the address is one no phone can reach.
 
-- [ ] `publicBaseUrl` server setting, kept in `app_meta` (key/value exists, so
+- [x] `publicBaseUrl` server setting, kept in `app_meta` (key/value exists, so
       no schema migration). `GET /api/settings` (auth) and `PATCH /api/settings`
       (admin) with validation: absolute http(s), no path, no trailing slash
-- [ ] Server reports the LAN addresses it sees (`os.networkInterfaces`) as
+- [x] Server reports the LAN addresses it sees (`os.networkInterfaces`) as
       suggestions; the admin can accept one or type their own
-- [ ] `joinLink()` moved out of the component into a pure function that prefers
+- [x] `joinLink()` moved out of the component into a pure function that prefers
       `publicBaseUrl` and falls back to the current origin — unit tested both ways
-- [ ] Teacher's Live tab shows which address is in the QR, and says so plainly
+- [x] Teacher's Live tab shows which address is in the QR, and says so plainly
       when it is `localhost` or `0.0.0.0` ("students cannot reach this")
-- [ ] Students keep working when the address is wrong: the code can always be
+- [x] Students keep working when the address is wrong: the code can always be
       typed by hand, and the copy-link button copies the LAN address, not the
       origin of the window
 

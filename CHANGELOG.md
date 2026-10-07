@@ -4,6 +4,32 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
+## [0.5.0] — unreleased
+
+Phase 5 «Deployment». So far 5.1: a student's phone can actually open the link
+the teacher shows them.
+
+### Added
+- **A public address for the school**: `GET /api/settings` for any signed-in
+  role, `PATCH /api/settings` for admins, stored in `app_meta` under
+  `public_base_url` (no migration — the key/value table was already there). The
+  value is validated and normalised: absolute, `http`/`https`, no path, no query,
+  no credentials, no trailing slash.
+- **Address suggestions**: the server reports the IPv4 addresses it answers on,
+  each with the port it actually bound. Loopback is excluded on purpose — offering
+  `127.0.0.1` as a suggestion would be exactly the wrong advice.
+- **Admin → System & DB → Public address**: the current value, the suggestions as
+  one-tap chips, a field for anything else, and a warning while typing an address
+  a phone cannot open.
+- **The teacher's Live tab prints the address that is in the QR code**, and when
+  that address is `localhost`, `127.0.0.1`, `0.0.0.0` or `tauri://localhost` it
+  says plainly that a phone cannot open it and that the code can still be typed.
+
+### Changed
+- **The join link comes from the server's address**, not from the window the
+  teacher happens to be looking at. `joinLink()` moved out of the Live tab into a
+  pure function with the reachability check next to it, both unit tested.
+
 ## [0.4.2] — 2026-10-07
 
 The interface pass. Sizes that do not depend on the language, motion that comes

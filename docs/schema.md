@@ -121,12 +121,19 @@ Payload shapes (draft):
 
 ### app_meta
 
-Key/value bookkeeping for the migrations themselves.
+Key/value settings. Holds the migration bookkeeping and the server's own
+configuration, so adding a setting needs no migration.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| key | TEXT PK | e.g. `schema_version` |
-| value | TEXT | applied version |
+| key | TEXT PK | e.g. `schema_version`, `public_base_url` |
+| value | TEXT | applied version, or the setting value |
+
+Settings stored here:
+
+| Key | Meaning |
+|-----|---------|
+| `public_base_url` | The address students open, or empty for "not configured". See [`GET /api/settings`](./api.md#settings-apisettings). |
 
 ### sessions
 
