@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
-## [0.4.1] — unreleased
+## [0.4.1] — 2026-10-07
 
 The tails of the earlier phases: share and duplicate tests, keep authoring when
 the server is not there, and one component each for the card and the text field.

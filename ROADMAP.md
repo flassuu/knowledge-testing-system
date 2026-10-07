@@ -54,14 +54,13 @@ only restyled the same screens.
 - [x] Admin insights: DB health (+ table counts) and participants list
 - [x] Import/export share format (JSON) — Phase 2 authoring
 
-## Phase 1.1 — UI/UX polish (shipped in v0.2.0)
+## Phase 1.1 — UI/UX polish (done)
 
 Nothing new server-side: make everything 0.1.0 already ships feel finished.
-Planned as its own 0.1.1, released as part of 0.2.0 together with Phase 2.
-
-Batches 1–8 are in. The two items still open below (component consistency
-pass, desktop About dialog) are visual work — they need a real screen and
-window to judge, so they wait for a dedicated pass rather than a blind refactor.
+Planned as its own 0.1.1, released as part of 0.2.0 together with Phase 2; the
+two items that needed a real screen to judge — the component consistency pass and
+the desktop About dialog — landed later, the dialog in 0.4.0 and the pass in
+0.4.1.
 
 ### Design rules (binding)
 
