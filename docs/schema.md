@@ -5,13 +5,17 @@ ids are server-side UUIDs; timestamps are stored as ISO-8601 UTC strings. The
 schema is enforced by idempotent, versioned migrations run at server startup;
 `GET /api/admin/stats` reports the applied version as `schemaVersion`.
 
-> Status: **current**, still at version 4. Phases 1–3 added the tables:
-> roles and auth, the test/course core, and the live-session runtime.
+> Status: **current**, at version 5. Phases 1–3 added the tables: roles and
+> auth, the test/course core, and the live-session runtime.
 > **Reporting (Phase 4) added no tables on purpose** — the grade journal and
 > per-question difficulty are derived from `participations` and
 > `participation_answers`, which already record who answered what and whether
 > it was right. Storing an aggregate would only add a second source of truth
 > that has to be recomputed every time a session is graded.
+> **Phase 5.1 added no tables either** — `app_meta` was already a key/value
+> store, so the public address is one row.
+> **Phase 5.2 (v5)** adds `classrooms` and `classroom_members`: a teacher's class
+> key, and who arrived through it.
 
 ## Conventions
 
@@ -216,6 +220,36 @@ users ─┬─ owns ──▶ courses ──┬─ has ──▶ materials
        └─ runs ────▶ live_sessions ──▶ participations ──▶ participation_answers ──▶ questions
 ```
 
+### classrooms
+
+A teacher's own group, held for its key: a student who registers with it is
+approved without an admin.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | TEXT PK | |
+| owner_id | TEXT FK → users(id) | the teacher; `ON DELETE CASCADE` |
+| name | TEXT | as typed, trimmed |
+| key | TEXT UNIQUE | 6 chars from the join-code alphabet |
+| status | TEXT | `active` or `revoked` |
+| course_id | TEXT FK → courses(id) | optional; `ON DELETE SET NULL` |
+| created_at | TEXT | |
+| revoked_at | TEXT | NULL until revoked |
+
+### classroom_members
+
+Who arrived through which key. A join table rather than a column on `users`: one
+student can pass through several classes over a school year, and a teacher needs
+the list per class.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | TEXT PK | |
+| classroom_id | TEXT FK → classrooms(id) | `ON DELETE CASCADE` |
+| user_id | TEXT FK → users(id) | `ON DELETE CASCADE` |
+| joined_at | TEXT | |
+| | UNIQUE(classroom_id, user_id) | registering twice does not double-count |
+
 ## Migration notes
 
 - v1 creates `app_meta`.
@@ -223,5 +257,6 @@ users ─┬─ owns ──▶ courses ──┬─ has ──▶ materials
 - v3 creates `tests`, `questions`, `courses`, `course_enrollments`,
   `course_tests`, `materials`.
 - v4 creates `live_sessions`, `participations`, `participation_answers`.
+- v5 creates `classrooms`, `classroom_members`.
 - Migrations run idempotently at startup, in order; each is wrapped in a
   transaction and versioned in `schema_migrations`.

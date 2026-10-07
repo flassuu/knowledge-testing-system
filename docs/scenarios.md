@@ -76,11 +76,22 @@ copied link on one. If it opens the app, the address is right.
 2. **Users → New teacher** → create the teacher account (this is the only way:
    teachers cannot be created by anyone else).
 3. Sign out, sign in as the teacher (pick the teacher role).
-4. Sign out again, and on the sign-in screen choose **Create account** → register
-   one student (in the real flow each student registers their own account on
-   their phone).
+4. That is all the admin has to do. Students register themselves in the next
+   step, on their own phones.
 
-### 5. Approve the student
+### 5. Get the student in — with a class key, or an approval
+
+The fastest way, and the one that works when the teacher is alone in the room:
+the teacher creates a class and hands out its key.
+
+1. Sign in as the teacher → **Classes** → **Create class** (e.g. `Class 9A`,
+   optionally linked to a course) → the key appears, e.g. `42FAK2`.
+2. Show the QR code on the projector, or read the key out loud.
+3. Each student opens the app (on the LAN address from step 3), the class code is
+   filled in from the QR, and the account is created **approved** — the student
+   can sign in immediately, and nobody needs to press "Approve".
+
+Without a class key the old path still works:
 
 1. Sign back in as admin → **Users** → the student row shows `pending`.
 2. **Approve** (or select several rows and use the bulk button).
@@ -229,7 +240,7 @@ end to end on a real phone, not on the same machine.
 |---|---|---|
 | QR scans but the page will not open | no public address is set, so the link says `localhost` or `tauri://` | admin → System & DB → Public address, pick the LAN address, save; the tab warns about this on its own |
 | Phone cannot reach the server at all | firewall, or a different network | allow TCP 3300; both devices on the same Wi-Fi |
-| `403 PENDING_APPROVAL` | the student is not approved yet | admin → Users → Approve, or use a class key (Phase 5.2) |
+| `403 PENDING_APPROVAL` | the student registered without a class key and is not approved yet | register with the teacher's class key, or admin → Users → Approve |
 | `403 FORBIDDEN` on an action | the signed-in role is not the one the action needs | teachers cannot manage users; only admins can |
 | The board does not update | the WebSocket could not be opened | it falls back to polling every 4s; check for a proxy in between |
 | The countdown looks wrong on a phone | device clock drift | the deadline is corrected against the server on join |

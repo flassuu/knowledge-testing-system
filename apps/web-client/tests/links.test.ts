@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { isReachableFromPhone, joinLink } from '../src/utils/joinLink.ts'
+import { isReachableFromPhone, joinLink, registrationLink } from '../src/utils/links.ts'
 
 describe('join link', () => {
   it('puts the join code in the query of the configured address', () => {
@@ -39,6 +39,16 @@ describe('join link', () => {
 
   it('returns nothing without a session code', () => {
     assert.equal(joinLink('http://10.0.0.7:3300', ''), '')
+  })
+
+  it('refuses a scheme with no origin, instead of writing the word "null"', () => {
+    // new URL('tauri://localhost').origin is the string 'null'; a link built on
+    // that would put `null/?join=...` into the QR code.
+    assert.equal(joinLink('tauri://localhost', 'ABC123'), '')
+    assert.equal(joinLink('file:///srv/app', 'ABC123'), '')
+    // A legal origin that simply is not reachable still builds: the code can be
+    // typed by hand, and the caller warns instead of refusing.
+    assert.equal(joinLink('http://localhost:3300', 'ABC123'), 'http://localhost:3300/?join=ABC123')
   })
 
   it('returns nothing for an address that cannot be parsed, so the caller can hide the QR', () => {
@@ -87,5 +97,26 @@ describe('whether a phone can reach the address', () => {
     // A school machine may be reachable by name on the local DNS.
     assert.equal(isReachableFromPhone('http://server.local:3300'), true)
     assert.equal(isReachableFromPhone('http://localhost.example.org:3300'), true)
+  })
+})
+describe('registration link', () => {
+  it('carries the class key so the sign-up form is pre-filled', () => {
+    assert.equal(
+      registrationLink('http://192.168.1.65:3300', 'abc234'),
+      'http://192.168.1.65:3300/?class=ABC234',
+    )
+  })
+
+  it('survives a trailing slash on the address', () => {
+    assert.equal(
+      registrationLink('http://10.0.0.7:3300/', 'ABC234'),
+      'http://10.0.0.7:3300/?class=ABC234',
+    )
+  })
+
+  it('returns nothing without a key, or with an unusable address', () => {
+    assert.equal(registrationLink('http://10.0.0.7:3300', ''), '')
+    assert.equal(registrationLink('tauri://localhost', 'ABC234'), '')
+    assert.equal(registrationLink('nonsense', 'ABC234'), '')
   })
 })

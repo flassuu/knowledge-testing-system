@@ -10,6 +10,15 @@ export interface RegisterPayload {
   username: string
   password: string
   fullName: string
+  /** Optional: a key the teacher handed out. It approves the account straight
+   *  away; without it the account waits for an admin, as before. */
+  classKey?: string
+}
+
+/** What a student is told after registering: which class they joined, if any. */
+export interface RegisterResult {
+  user: PublicUser
+  viaClass: { className: string; teacherName: string } | null
 }
 
 export async function login(username: string, password: string): Promise<LoginResult> {
@@ -29,12 +38,11 @@ export async function logout(): Promise<void> {
   }
 }
 
-export async function register(payload: RegisterPayload): Promise<PublicUser> {
-  const result = await apiFetch<{ user: PublicUser }>('/api/auth/register', {
+export async function register(payload: RegisterPayload): Promise<RegisterResult> {
+  return apiFetch<RegisterResult>('/api/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
-  return result.user
 }
 
 export async function fetchMe(): Promise<PublicUser> {

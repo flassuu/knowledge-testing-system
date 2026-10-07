@@ -241,25 +241,27 @@ tab prints it, and it says so when the address is one no phone can reach.
 
 ### 5.2 Classroom with a key — a teacher who is not an admin
 
-A self-registered student is `pending`, cannot log in (403), and only an admin
-can approve. In a classroom the teacher is alone, so nobody gets in. The fix is
-not more power for teachers: it is a scoped key.
+**Done.** A self-registered student was `pending`, could not log in (403), and
+only an admin could approve — so in a classroom, where the teacher is alone,
+nobody got in. The fix was not more power for teachers: it is a scoped key. A
+class key approves a student account and nothing else; a teacher still cannot
+touch a user, another teacher's class, or anything an admin holds.
 
-- [ ] Table `classrooms` (migration v5): owner, name, `key` (6 chars, the same
+- [x] Table `classrooms` (migration v5): owner, name, `key` (6 chars, the same
       unambiguous alphabet as join codes, unique), status `active | revoked`,
       optional `course_id` for auto-enrolment, timestamps
-- [ ] Teacher API: create, list own, rename, revoke, regenerate the key, delete
-- [ ] `GET /api/classrooms/preview?key=` — public, validates a key without
+- [x] Teacher API: create, list own, rename, revoke, regenerate the key, delete
+- [x] `GET /api/classrooms/preview?key=` — public, validates a key without
       creating anything, so the register screen can say "Class 9A · Olena M."
-- [ ] `POST /api/auth/register` accepts an optional `classKey`: a valid key
+- [x] `POST /api/auth/register` accepts an optional `classKey`: a valid key
       creates the account **approved** and records the classroom; an invalid one
       is a clear 400 and the account stays `pending` as before
-- [ ] Teacher UI: "My classes" with the key as text and as a QR of the
+- [x] Teacher UI: "My classes" with the key as text and as a QR of the
       registration link (`?class=KEY`), the students who came in through it, and
       revoke/regenerate/delete
-- [ ] Register screen gets an optional class-code field; students who already
+- [x] Register screen gets an optional class-code field; students who already
       have an account are unaffected
-- [ ] Tests: key generation and uniqueness, approve-on-valid, reject-on-invalid
+- [x] Tests: key generation and uniqueness, approve-on-valid, reject-on-invalid
       and on revoked, a teacher cannot see or revoke another's class, auto-
       enrolment into the linked course, and that a key never grants teacher rights
 

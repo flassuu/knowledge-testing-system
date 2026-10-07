@@ -1,14 +1,11 @@
-import { randomInt, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
+import { randomCode } from './codes'
 import type { DatabaseSync } from 'node:sqlite'
 import { nowIso } from './db'
 import type { QuestionType } from './tests'
 
 export type LiveSessionStatus = 'active' | 'paused' | 'finished'
 export type ParticipationStatus = 'joined' | 'submitted' | 'auto_submitted'
-
-/** Ambiguous glyphs (0/O, 1/I) stay out so codes can be read aloud in class. */
-const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-const CODE_LENGTH = 6
 
 export interface LiveSessionRow {
   id: string
@@ -114,14 +111,6 @@ export function toStudentPayload(type: QuestionType, payload: Record<string, unk
     }
   }
   return {}
-}
-
-function randomCode(): string {
-  let code = ''
-  for (let index = 0; index < CODE_LENGTH; index += 1) {
-    code += CODE_ALPHABET[randomInt(0, CODE_ALPHABET.length)]
-  }
-  return code
 }
 
 export function generateJoinCode(db: DatabaseSync): string {

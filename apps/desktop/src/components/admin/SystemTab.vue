@@ -10,7 +10,7 @@ import type { ServerSettings, SystemStats, TableCounts } from '../../api/types'
 import AppButton from '../common/AppButton.vue'
 import AppCard from '../common/AppCard.vue'
 import AppInput from '../common/AppInput.vue'
-import { isReachableFromPhone } from '../../utils/joinLink'
+import { isReachableFromPhone } from '../../utils/links'
 
 /**
  * The one setting in this app that a stranger in another room depends on: the

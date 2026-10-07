@@ -20,6 +20,10 @@ const health = getHealthState()
 
 const mode = ref<'login' | 'register'>('login')
 
+// A class QR carries `?class=KEY`: the student came here to register, so open
+// the sign-up form rather than making them find "Create account" themselves.
+if (new URLSearchParams(window.location.search).has('class')) mode.value = 'register'
+
 let wasOffline = false
 watch(
   () => health.status,

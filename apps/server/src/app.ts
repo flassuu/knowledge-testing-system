@@ -14,6 +14,7 @@ import { testRoutes } from './routes/tests'
 import { courseRoutes } from './routes/courses'
 import { sessionRoutes } from './routes/sessions'
 import { adminRoutes } from './routes/admin'
+import { classroomRoutes } from './routes/classrooms'
 import { settingsRoutes } from './routes/settings'
 import { attachAuth } from './plugins/auth'
 import { APP_VERSION } from './version'
@@ -82,6 +83,9 @@ export function buildApp(options: AppOptions): TestingApp {
 
   // Phase 5.1: the address students can open, plus what this machine answers on.
   void app.register(settingsRoutes, { database, port: options.port })
+
+  // Phase 5.2: class keys, so a teacher can seat a class without an admin.
+  void app.register(classroomRoutes, { database })
 
   // Uniform error envelope; validation failures map to 400 VALIDATION.
   app.setErrorHandler((error: FastifyError, request, reply) => {

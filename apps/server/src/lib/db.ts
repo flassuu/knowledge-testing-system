@@ -12,7 +12,7 @@ export function nowIso(): string {
   return new Date().toISOString()
 }
 
-export const SCHEMA_VERSION = 4
+export const SCHEMA_VERSION = 5
 
 const MIGRATIONS: Array<{ version: number; up: string }> = [
   {
@@ -162,6 +162,37 @@ const MIGRATIONS: Array<{ version: number; up: string }> = [
         UNIQUE (participation_id, question_id)
       );
       CREATE INDEX IF NOT EXISTS idx_answers_participation ON participation_answers(participation_id);
+    `,
+  },
+  {
+    version: 5,
+    up: `
+      -- A classroom is a teacher's own group: a key a student can register with,
+      -- so a teacher alone can get their class in without an admin in the room.
+      CREATE TABLE IF NOT EXISTS classrooms (
+        id         TEXT PRIMARY KEY,
+        owner_id   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name       TEXT NOT NULL,
+        -- Same alphabet as join codes: read aloud, no 0/O or 1/I.
+        key        TEXT NOT NULL UNIQUE,
+        status     TEXT NOT NULL CHECK (status IN ('active', 'revoked')),
+        -- Optional: everyone who arrives through this class joins the course too.
+        course_id  TEXT REFERENCES courses(id) ON DELETE SET NULL,
+        created_at TEXT NOT NULL,
+        revoked_at TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_classrooms_owner ON classrooms(owner_id);
+
+      -- Who came in through which class. A join table rather than a column on
+      -- users: one student can pass through several classes over a school year.
+      CREATE TABLE IF NOT EXISTS classroom_members (
+        id           TEXT PRIMARY KEY,
+        classroom_id TEXT NOT NULL REFERENCES classrooms(id) ON DELETE CASCADE,
+        user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        joined_at    TEXT NOT NULL,
+        UNIQUE (classroom_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_classroom_members_class ON classroom_members(classroom_id);
     `,
   },
 ]

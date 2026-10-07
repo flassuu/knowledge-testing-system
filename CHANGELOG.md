@@ -30,6 +30,38 @@ the teacher shows them.
   teacher happens to be looking at. `joinLink()` moved out of the Live tab into a
   pure function with the reachability check next to it, both unit tested.
 
+### 5.2 — a classroom with a key
+
+A teacher alone in a room could not get anybody in: a self-registered student is
+`pending`, only an admin can approve, and the teacher cannot manage users. The
+answer is a scoped key, not more power.
+
+- **`classrooms` and `classroom_members`** (migration v5): a teacher's class, its
+  six-character key from the same alphabet as a join code, and who arrived
+  through it. The key approves one thing — a student account — and nothing else:
+  the role is hard-coded in the handler, so no key, however it was obtained,
+  produces anything but a student.
+- **Teacher API**: create, list own, rename, revoke, issue a new key, delete.
+  Another teacher's class answers `403` for every one of them; a student is
+  refused. A wrong key and a revoked key both answer `404` with the same message,
+  so a key cannot be used to discover which classes existed.
+- **`GET /api/classrooms/preview?key=`** is public: the sign-up form says
+  "Class 9A · Olena M." before a student types a password, and nothing is created.
+- **`POST /api/auth/register` takes an optional `classKey`.** Valid → approved
+  immediately, the classroom records the student, and a class linked to a course
+  enrols them there too. Wrong → `400` and *nothing is created*, so the name
+  stays free and the student can fix the code. No key → unchanged (`pending`).
+- **Teacher → Classes**: the key large enough to read from a desk, a QR that
+  opens the sign-up form with the key filled in, the students who came in, and
+  rename / new key / revoke / delete. A class with students can be revoked by
+  deleting it — deliberately, since revoking must not look like removing people.
+- **Sign-up screen**: an optional class-code field, with the class named as you
+  type, and two different success messages: "you can sign in now" through a key,
+  "waiting for approval" without one.
+- `utils/joinLink.ts` is now `utils/links.ts` and also builds the registration
+  link. Both builders refuse a scheme with no origin — `new URL('tauri://localhost').origin`
+  is the string `"null"`, which would have put `null/?join=…` into a QR code.
+
 ## [0.4.2] — 2026-10-07
 
 The interface pass. Sizes that do not depend on the language, motion that comes

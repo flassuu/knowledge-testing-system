@@ -145,3 +145,41 @@ export interface ServerSettings {
   /** Addresses this machine answers on, for the admin to pick from. */
   suggestions: string[]
 }
+
+export interface Classroom {
+  id: string
+  ownerId: string
+  name: string
+  /** Six characters from the join-code alphabet, read aloud without 0/O or 1/I. */
+  key: string
+  status: 'active' | 'revoked'
+  /** Optional: everyone who arrives through this class joins the course too. */
+  courseId: string | null
+  createdAt: string
+  revokedAt: string | null
+  membersCount: number
+}
+
+export interface ClassroomMember {
+  userId: string
+  username: string
+  fullName: string
+  status: 'pending' | 'approved' | 'blocked'
+  joinedAt: string
+}
+
+export interface ClassroomDetail {
+  classroom: Classroom
+  members: ClassroomMember[]
+}
+
+/** What a class key leads to, shown on the sign-up form before an account exists. */
+export interface ClassPreview {
+  className: string
+  teacherName: string
+}
+
+export interface CreateClassroom {
+  name: string
+  courseId?: string | null
+}

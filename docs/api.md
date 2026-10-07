@@ -32,17 +32,37 @@ Probe used by clients to confirm the local server is up. Public.
 
 ### `POST /api/auth/register`
 
-Student self-registration. The account is created with status `pending` until
-a teacher or admin approves it. Public.
+Student self-registration. Public.
 
 Request body:
 
 ```json
-{ "username": "student1", "password": "secret-pass-1", "fullName": "Student One" }
+{
+  "username": "student1", "password": "secret-pass-1", "fullName": "Student One",
+  "classKey": "42FAK2"
+}
 ```
 
-- `201` → `{ "user": {...} }` (status `pending`)
+- `classKey` is optional. Without it the account is `pending` and waits for an
+  admin. With a valid [class key](#classrooms-apiclassrooms) it is `approved`
+  immediately, the classroom records the student, and the class is enrolled into
+  the linked course — a teacher can run a class alone.
+- Only a student role is ever created, whatever the body contains.
+
+Response:
+
+```json
+{
+  "user": { "id": "…", "role": "student", "status": "approved" },
+  "viaClass": { "className": "Class 9A", "teacherName": "Olena M." }
+}
+```
+
+`viaClass` is `null` when no key was used.
+
 - `409 CONFLICT` — username already taken
+- `400 INVALID_CLASS_KEY` — a key was typed but is wrong or revoked. Nothing is
+  created, so the name stays free and the student can fix the code.
 - `400 VALIDATION` — missing/invalid fields
 
 ### `POST /api/auth/login`
@@ -340,7 +360,96 @@ Admin only. Returns the same object as the GET.
 The value lives in `app_meta` under `public_base_url`; a value that is not
 currently valid is treated as unset rather than trusted.
 
+## Classrooms (`/api/classrooms`)
+
+A **classroom** is one teacher's group. It exists to hold a six-character key
+that a student can register with: with a valid key the account is approved on
+the spot, so a teacher can seat a class without an administrator in the room.
+
+The key is drawn from the same alphabet as a join code (`ABCDEFGHJKLMNPQRSTUVWXYZ23456789`,
+no `0`/`O`/`1`/`I`), so it can be read aloud in class. It accepts only a student
+role — the role is fixed in the registration handler, so no key, however it was
+obtained, produces anything else.
+
+- The read is authenticated for teachers and admins; a student is refused.
+- A teacher sees only their own classes. Another teacher's class answers `403`
+  for read, rename, revoke, key and delete alike. An admin sees all.
+- Registering through a key **approves** the account; registering without one is
+  unchanged (`pending`, waiting for an admin).
+- A wrong key and a revoked key both answer `404 NOT_FOUND` with the same
+  message, so a key cannot be used to find out which classes existed.
+
+### `GET /api/classrooms`
+
+```json
+{
+  "classrooms": [
+    {
+      "id": "…", "ownerId": "…", "name": "Class 9A",
+      "key": "42FAK2", "status": "active",
+      "courseId": "…", "createdAt": "…", "revokedAt": null,
+      "membersCount": 12
+    }
+  ]
+}
+```
+
+### `POST /api/classrooms`
+
+```json
+{ "name": "Class 9A", "courseId": "…" }
+```
+
+`courseId` is optional (`null` for none). A course the requester does not own is
+rejected with `400 VALIDATION` rather than silently ignored — attaching a class
+to someone else's course would enrol your students into their roll.
+
+### `GET /api/classrooms/:id`
+
+The class plus the students who arrived through it.
+
+```json
+{
+  "classroom": { "id": "…", "name": "Class 9A", "membersCount": 1 },
+  "members": [
+    { "userId": "…", "username": "olena", "fullName": "Olena M.",
+      "status": "approved", "joinedAt": "…" }
+  ]
+}
+```
+
+### `PATCH /api/classrooms/:id`
+
+`{ "name": "…", "courseId": "…" }` — rename, or change the linked course. The key
+and the existing members are untouched.
+
+### `POST /api/classrooms/:id/revoke`
+
+Sets `status: "revoked"` and stamps `revoked_at`. Nobody can register with the key
+afterwards; the accounts that already came in are untouched.
+
+### `POST /api/classrooms/:id/key`
+
+Issues a **new** key and returns it. The old one stops working immediately — this
+is the fix for a code that was photographed and left on a wall.
+
+### `DELETE /api/classrooms/:id`
+
+Removes the class and its member rows. The student accounts stay.
+
+### `GET /api/classrooms/preview?key=…`
+
+**Public.** What a key leads to, so the sign-up form can say "Class 9A · Olena M."
+before a student types a password. No account is created and nothing is recorded.
+
+```json
+{ "preview": { "className": "Class 9A", "teacherName": "Olena M." } }
+```
+
+A key holder learns the class name and the teacher's name, and nothing else.
+
 ## Live sessions (`/api/sessions`)
+
 
 
 A **session** is one live run of a test. A teacher starts it, students join
@@ -529,7 +638,7 @@ teacher who does not own it), `4404` unknown session.
 
 | Endpoint | Admin | Teacher | Student |
 |----------|:-----:|:-------:|:-------:|
-| `POST /api/auth/register` | + | + | + (student only) |
+| `POST /api/auth/register` | + | + | + (student only, `classKey` optional) |
 | `POST /api/auth/login` | + | + | + |
 | `POST /api/auth/logout`, `GET /api/auth/me` | + | + | + |
 | `GET/POST /api/users`, `PATCH/DELETE /api/users/:id` | + | – | – |
@@ -539,5 +648,6 @@ teacher who does not own it), `4404` unknown session.
 | `POST /api/sessions/join`, `GET /api/sessions/current`, `/:id/submit`, `/:id/result`, `/api/student/results` | – | – | + |
 | `GET /ws/sessions/:id` | + (board) | + (board) | + (status only) |
 | `/api/admin/stats`, `/api/admin/participants` | + | – | – |
+| `/api/classrooms*` | + | + (own) | – (preview is public) |
 | `GET /api/settings` | + | + | + |
 | `PATCH /api/settings` | + | – | – |
