@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
-## [0.4.2] — unreleased
+## [0.4.2] — 2026-10-07
 
 The interface pass. Sizes that do not depend on the language, motion that comes
 from the Material 3 Expressive tokens instead of ad-hoc transitions, a language

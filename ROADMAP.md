@@ -54,13 +54,22 @@ only restyled the same screens.
 - [x] Admin insights: DB health (+ table counts) and participants list
 - [x] Import/export share format (JSON) — Phase 2 authoring
 
-## Phase 1.1 — UI/UX polish (done)
+## Phase 1.1 — UI/UX polish (done; revisited in v0.4.2)
 
 Nothing new server-side: make everything 0.1.0 already ships feel finished.
 Planned as its own 0.1.1, released as part of 0.2.0 together with Phase 2; the
 two items that needed a real screen to judge — the component consistency pass and
 the desktop About dialog — landed later, the dialog in 0.4.0 and the pass in
 0.4.1.
+
+**Revisited in v0.4.2**, because the remaining complaint was not a missing
+feature but a wrong one: button sizes followed the language, the Ukrainian login
+screen scrolled sideways, and the motion was ad-hoc. What changed: fixed control
+geometry from tokens (36/40/48px, square icon buttons, equal-width tabs),
+Material 3 Expressive motion tokens with `prefers-reduced-motion` respected, a
+language menu with drawn flags instead of two text buttons, text cut to what is
+actually needed, and the project renamed **LANtern** with placeholder artwork and
+a documented format list for web, PWA and desktop.
 
 ### Design rules (binding)
 

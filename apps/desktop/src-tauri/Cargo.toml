@@ -1,6 +1,6 @@
 [package]
 name = "testing-system-teacher"
-version = "0.4.1"
+version = "0.4.2"
 description = "Knowledge testing system — teacher desktop application"
 authors = ["flassuu"]
 edition = "2021"

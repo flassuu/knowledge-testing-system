@@ -1,6 +1,6 @@
 {
   "name": "@testing-system/root",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "description": "Monorepo: offline classroom knowledge-testing system (course project)",
   "license": "MIT",
