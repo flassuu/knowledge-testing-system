@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildApp, type TestingApp } from '../src/app'
+import { insertTestAdmin } from './support'
 import { sessionResultsCsv, testResults } from '../src/lib/results'
 
 process.env.ADMIN_PASSWORD = 'test-admin-password'
@@ -124,6 +125,7 @@ beforeAll(async () => {
     dbPath: join(tmpDir, 'test.db'),
     webRoot: null,
   })
+  insertTestAdmin(app)
   await app.server.ready()
 
   const adminToken = await login('admin', process.env.ADMIN_PASSWORD!)

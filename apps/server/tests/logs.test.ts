@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildApp, type TestingApp } from '../src/app'
+import { insertTestAdmin, signInAs } from './support'
 import { LogBuffer } from '../src/lib/log'
 
 process.env.ADMIN_PASSWORD = 'test-admin-password'
@@ -43,6 +44,7 @@ describe('the log stream over HTTP', () => {
       dbPath: join(tmpDir, 'test.db'),
       webRoot: null,
     })
+  insertTestAdmin(app)
     adminToken = await tokenOf('admin', process.env.ADMIN_PASSWORD!)
     await app.server.inject({
       method: 'POST',
@@ -68,14 +70,41 @@ describe('the log stream over HTTP', () => {
     expect((res.json() as { error: { code: string } }).error.code).toBe('UNAUTHORIZED')
   })
 
-  it('refuses a teacher: a log names who signed in and what failed', async () => {
+  it('serves a teacher the log but refuses a student', async () => {
     const res = await app.server.inject({
       method: 'GET',
       url: '/api/logs',
       headers: bearer(teacherToken),
     })
-    expect(res.statusCode).toBe(403)
-    expect((res.json() as { error: { code: string } }).error.code).toBe('FORBIDDEN')
+    expect(res.statusCode).toBe(200)
+
+    await app.server.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { username: 'nosy', password: 'student-password', fullName: 'Nosy' },
+    })
+    // No class key, so the account is pending; sign in as admin to let it through.
+    const nosy = await app.server.inject({
+      method: 'GET',
+      url: '/api/users/pending',
+      headers: bearer(adminToken),
+    })
+    const pendingId = (nosy.json() as { users: Array<{ id: string; username: string }> })
+      .users.find((u) => u.username === 'nosy')!.id
+    await app.server.inject({
+      method: 'PATCH',
+      url: `/api/users/${pendingId}/status`,
+      headers: bearer(adminToken),
+      payload: { status: 'approved' },
+    })
+    const studentToken = await signInAs(app, 'nosy', 'student-password')
+    const denied = await app.server.inject({
+      method: 'GET',
+      url: '/api/logs',
+      headers: bearer(studentToken),
+    })
+    expect(denied.statusCode).toBe(403)
+    expect((denied.json() as { error: { code: string } }).error.code).toBe('FORBIDDEN')
   })
 
   it('serves the admin the buffered lines, newest last', async () => {

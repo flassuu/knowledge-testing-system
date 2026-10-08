@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildApp, type TestingApp } from '../src/app'
+import { insertTestAdmin } from './support'
 
 process.env.ADMIN_PASSWORD = 'test-admin-password'
 
@@ -110,6 +111,7 @@ beforeAll(async () => {
   })
   await app.server.ready()
 
+  insertTestAdmin(app)
   adminToken = await login('admin', process.env.ADMIN_PASSWORD!)
   for (const username of ['teacher1', 'teacher2']) {
     const created = await app.server.inject({

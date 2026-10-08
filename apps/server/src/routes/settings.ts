@@ -49,7 +49,13 @@ export const settingsRoutes: FastifyPluginAsync<SettingsDeps> = async (
 
   app.patch(
     '/api/settings',
-    { preHandler: requireRoles('admin'), schema: { body: patchBodySchema } },
+    {
+      // The public address is what the teacher's own QR code points at. Keeping
+      // it admin-only meant one teacher could not run a lesson on a machine that
+      // had no admin on it at all, which is the primary way this product is used.
+      preHandler: requireRoles('admin', 'teacher'),
+      schema: { body: patchBodySchema },
+    },
     async (request, reply) => {
       const body = request.body as { publicBaseUrl: string | null }
       const checked = normalizeBaseUrl(body.publicBaseUrl)

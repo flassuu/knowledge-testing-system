@@ -1,16 +1,13 @@
-import { randomUUID } from 'node:crypto'
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 import type { Database } from '../lib/db'
-import { nowIso } from '../lib/db'
 import { sendError } from '../lib/http'
 import { setUserStatus } from '../lib/accountActions'
-import { hashPassword } from '../lib/passwords'
 import {
+  createUser,
   findUserByUsername,
   findUserById,
   listUsers,
   toPublicUser,
-  type UserRow,
   type UserStatus,
 } from '../lib/users'
 import { requireRoles } from '../plugins/auth'
@@ -86,6 +83,23 @@ export const userRoutes: FastifyPluginAsync<UsersDeps> = async (
     },
   )
 
+  /**
+   * Students waiting for approval, for a teacher as well as an admin.
+   *
+   * A student who registered without a class key is stuck at `pending` until
+   * somebody approves them. That somebody used to have to be an admin, which put
+   * an institution between a lone teacher and a student who just typed their
+   * name. The full roster stays admin-only; this is the one list a teacher needs,
+   * and it only ever contains pending students.
+   */
+  app.get(
+    '/api/users/pending',
+    { preHandler: requireRoles('admin', 'teacher') },
+    async () => ({
+      users: listUsers(db, { role: 'student', status: 'pending' }).map(toPublicUser),
+    }),
+  )
+
   /** Admin creates teachers; they are approved immediately. */
   app.post(
     '/api/users',
@@ -102,35 +116,47 @@ export const userRoutes: FastifyPluginAsync<UsersDeps> = async (
       if (findUserByUsername(db, body.username)) {
         return sendError(reply, 409, 'CONFLICT', 'username already taken')
       }
-      const now = nowIso()
-      db.prepare(
-        `INSERT INTO users (id, role, status, username, password_hash, full_name, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ).run(
-        randomUUID(),
-        'teacher',
-        'approved',
-        body.username,
-        hashPassword(body.password),
-        body.fullName,
-        now,
-        now,
-      )
-      const user = findUserByUsername(db, body.username) as UserRow
+      const user = createUser(db, {
+        role: 'teacher',
+        status: 'approved',
+        username: body.username,
+        password: body.password,
+        fullName: body.fullName,
+      })
       return reply.code(201).send({ user: toPublicUser(user) })
     },
   )
 
-  /** Admins approve/block pending student registrations and revoke access. */
+  /**
+   * Approve or block an account.
+   *
+   * Admins reach anyone. A teacher reaches students only — a teacher who could
+   * block another teacher could lock a colleague out of the room they share the
+   * server with, and "one teacher, no admin" must not become "any teacher can
+   * disable any account".
+   */
   app.patch(
     '/api/users/:id/status',
     {
-      preHandler: requireRoles('admin'),
+      preHandler: requireRoles('admin', 'teacher'),
       schema: { params: statusParamsSchema, body: statusBodySchema },
     },
     async (request, reply) => {
       const params = request.params as { id: string }
       const body = request.body as { status: UserStatus }
+      const session = request.session!
+      const target = findUserById(db, params.id)
+      if (!target) {
+        return sendError(reply, 404, 'NOT_FOUND', 'user not found')
+      }
+      if (session.role === 'teacher' && target.role !== 'student') {
+        return sendError(
+          reply,
+          403,
+          'FORBIDDEN',
+          'a teacher can only approve or block students',
+        )
+      }
       // The rule - including "blocking revokes live sessions" - lives in the
       // library, so the server console cannot get it subtly different.
       const result = setUserStatus(db, params.id, body.status)

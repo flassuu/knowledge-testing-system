@@ -1,10 +1,9 @@
-import { randomUUID } from 'node:crypto'
 import { DatabaseSync } from 'node:sqlite'
-import { hashPassword } from './passwords'
+import { createUser } from './users'
 
 export interface Database {
-  /** Set when an empty database was seeded with the default admin account. */
-  seededAdminWarning: string | null
+  /** Set when an empty database was seeded with the first teacher account. */
+  seededTeacherWarning: string | null
   raw: DatabaseSync
   close(): void
 }
@@ -225,41 +224,36 @@ function migrate(db: DatabaseSync): void {
 }
 
 /**
- * Seeds the built-in admin account on first boot. Credentials can be
- * overridden via ADMIN_USERNAME / ADMIN_PASSWORD; the defaults are meant for
- * LAN demos only and warn loudly when left as-is.
- */
-/**
- * Seeds the built-in admin on an empty database.
+ * Seeds the first teacher account on an empty database.
  *
- * Returns what it did instead of printing it: a line written with `console` never
- * reaches the log stream, so on the desktop it would arrive as plain text with no
- * level and be shown as an error. The caller logs it properly.
+ * A teacher, not an admin: one person with a laptop runs a class, and making
+ * them create an admin first was ceremony with no purpose. The admin role still
+ * exists for institution-wide accounts — `admin` can create one, or the console
+ * `promote` command can — but nobody has to have one to teach.
+ *
+ * Credentials come from TEACHER_USERNAME / TEACHER_PASSWORD. ADMIN_USERNAME /
+ * ADMIN_PASSWORD still work as fallbacks so existing scripts and installs keep
+ * running. Returns what it did instead of printing it: a line written with
+ * `console` never reaches the log stream, so on the desktop it would arrive as
+ * plain text with no level and be shown as an error. The caller logs it.
  */
-export function seedAdmin(db: DatabaseSync): string | null {
-  const existing = db
-    .prepare('SELECT id FROM users WHERE role = ? LIMIT 1')
-    .get('admin')
+export function seedTeacher(db: DatabaseSync): string | null {
+  const existing = db.prepare('SELECT id FROM users WHERE role = ? LIMIT 1').get('teacher')
   if (existing) return null
 
-  const username = process.env.ADMIN_USERNAME ?? 'admin'
-  const password = process.env.ADMIN_PASSWORD ?? 'admin'
-  const now = nowIso()
-  db.prepare(
-    `INSERT INTO users (id, role, status, username, password_hash, full_name, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(
-    randomUUID(),
-    'admin',
-    'approved',
+  const username = process.env.TEACHER_USERNAME ?? process.env.ADMIN_USERNAME ?? 'teacher'
+  const password =
+    process.env.TEACHER_PASSWORD ?? process.env.ADMIN_PASSWORD ?? 'teacher'
+  const fromEnv = Boolean(process.env.TEACHER_PASSWORD ?? process.env.ADMIN_PASSWORD)
+  createUser(db, {
+    role: 'teacher',
+    status: 'approved',
     username,
-    hashPassword(password),
-    'System Administrator',
-    now,
-    now,
-  )
-  if (!process.env.ADMIN_PASSWORD) {
-    return `seeded default admin account '${username}'/'${password}' — set ADMIN_PASSWORD to override`
+    password,
+    fullName: 'Teacher',
+  })
+  if (!fromEnv) {
+    return `seeded the first teacher account '${username}'/'${password}' — set TEACHER_PASSWORD to choose your own`
   }
   return null
 }
@@ -269,11 +263,11 @@ export function openDatabase(dbPath: string): Database {
   raw.exec('PRAGMA journal_mode = WAL;')
   raw.exec('PRAGMA foreign_keys = ON;')
   migrate(raw)
-  const seeded = seedAdmin(raw)
+  const seeded = seedTeacher(raw)
   return {
     raw,
     /** A warning the caller should log; null when there is nothing to say. */
-    seededAdminWarning: seeded,
+    seededTeacherWarning: seeded,
     close() {
       raw.close()
     },

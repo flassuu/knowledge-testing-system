@@ -110,10 +110,10 @@ export function buildApp(options: AppOptions): TestingApp {
 
   // Written through the log stream, so the seed warning has a level and reaches
   // the desktop console as a warning instead of arriving as untyped text.
-  if (database.seededAdminWarning) {
+  if (database.seededTeacherWarning) {
     logs.logger.warn(
-      { hint: 'ADMIN_PASSWORD' },
-      database.seededAdminWarning,
+      { hint: 'TEACHER_PASSWORD' },
+      database.seededTeacherWarning,
     )
   }
 

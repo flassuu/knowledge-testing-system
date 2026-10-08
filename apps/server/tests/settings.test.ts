@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildApp, type TestingApp } from '../src/app'
+import { insertTestAdmin, signInAs } from './support'
 import { lanAddresses, normalizeBaseUrl } from '../src/lib/settings'
 
 // Deterministic admin bootstrap so the seed warning stays quiet in tests.
@@ -131,6 +132,7 @@ describe('GET /api/settings and PATCH /api/settings', () => {
     dbPath: join(tmpDir, 'test.db'),
     webRoot: null,
   })
+  insertTestAdmin(app)
 
   afterAll(() => {
     app.server.close()
@@ -183,15 +185,44 @@ describe('GET /api/settings and PATCH /api/settings', () => {
     }
   })
 
-  it('refuses the change for anyone who is not an admin', async () => {
+  it('lets a teacher set the public address, refuses a student', async () => {
     const res = await app.server.inject({
       method: 'PATCH',
       url: '/api/settings',
       headers: bearer(teacherToken),
       payload: { publicBaseUrl: 'http://192.168.1.65:3300' },
     })
-    expect(res.statusCode).toBe(403)
-    expect((res.json() as ErrorBody).error.code).toBe('FORBIDDEN')
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as SettingsBody).publicBaseUrl).toBe('http://192.168.1.65:3300')
+
+    await app.server.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: { username: 'nosy', password: 'student-password', fullName: 'Nosy' },
+    })
+    // No class key, so the account is pending; sign in as admin to let it through.
+    const nosy = await app.server.inject({
+      method: 'GET',
+      url: '/api/users/pending',
+      headers: bearer(adminToken),
+    })
+    const pendingId = (nosy.json() as { users: Array<{ id: string; username: string }> })
+      .users.find((u) => u.username === 'nosy')!.id
+    await app.server.inject({
+      method: 'PATCH',
+      url: `/api/users/${pendingId}/status`,
+      headers: bearer(adminToken),
+      payload: { status: 'approved' },
+    })
+    const studentToken = await signInAs(app, 'nosy', 'student-password')
+    const denied = await app.server.inject({
+      method: 'PATCH',
+      url: '/api/settings',
+      headers: bearer(studentToken),
+      payload: { publicBaseUrl: 'http://10.0.0.1:3300' },
+    })
+    expect(denied.statusCode).toBe(403)
+    expect((denied.json() as ErrorBody).error.code).toBe('FORBIDDEN')
   })
 
   it('refuses an unsigned request', async () => {

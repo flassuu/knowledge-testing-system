@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildApp, type TestingApp } from '../src/app'
+import { insertTestAdmin } from './support'
 import { CODE_ALPHABET, CODE_LENGTH, normalizeCode } from '../src/lib/codes'
 import { SCHEMA_VERSION } from '../src/lib/db'
 
@@ -119,6 +120,7 @@ describe('class keys', () => {
     dbPath: join(tmpDir, 'test.db'),
     webRoot: null,
   })
+  insertTestAdmin(app)
 
   afterAll(() => {
     app.server.close()

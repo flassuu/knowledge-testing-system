@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildApp, type TestingApp } from '../src/app'
+import { insertTestAdmin } from './support'
 
 // Deterministic admin bootstrap so the seed warning stays quiet in tests.
 process.env.ADMIN_PASSWORD = 'test-admin-password'
@@ -97,6 +98,7 @@ describe('tests & questions CRUD', () => {
     dbPath: join(tmpDir, 'test.db'),
     webRoot: null,
   })
+  insertTestAdmin(app)
 
   afterAll(() => {
     app.server.close()

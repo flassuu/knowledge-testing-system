@@ -3,8 +3,11 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildApp, type TestingApp } from '../src/app'
+import { insertTestAdmin } from './support'
 
-// Deterministic admin bootstrap so the seed warning stays quiet in tests.
+// Deterministic first-boot credentials so the seed warning stays quiet. The
+// seed is a teacher now; the admin is inserted by `insertTestAdmin` below.
+process.env.TEACHER_PASSWORD = 'test-teacher-password'
 process.env.ADMIN_PASSWORD = 'test-admin-password'
 
 interface PublicUser {
@@ -47,6 +50,7 @@ describe('accounts & auth (phase 1)', () => {
     dbPath: join(tmpDir, 'test.db'),
     webRoot: null,
   })
+  insertTestAdmin(app)
 
   afterAll(() => {
     app.server.close()
@@ -54,17 +58,17 @@ describe('accounts & auth (phase 1)', () => {
     rmSync(tmpDir, { recursive: true, force: true })
   })
 
-  it('seeds the built-in admin account', async () => {
-    const res = await login('admin', process.env.ADMIN_PASSWORD!)
+  it('seeds a teacher, not an admin: one person runs a class', async () => {
+    const res = await login('teacher', process.env.TEACHER_PASSWORD!)
     expect(res.statusCode).toBe(200)
     const body = res.json() as LoginBody
-    expect(body.user.role).toBe('admin')
+    expect(body.user.role).toBe('teacher')
     expect(body.user.status).toBe('approved')
     expect(body.token).toBeTruthy()
   })
 
   it('rejects unknown credentials', async () => {
-    const res = await login('admin', 'wrong-password')
+    const res = await login('teacher', 'wrong-password')
     expect(res.statusCode).toBe(401)
     expect((res.json() as ErrorBody).error.code).toBe('INVALID_CREDENTIALS')
   })
@@ -153,7 +157,8 @@ describe('accounts & auth (phase 1)', () => {
       headers: auth,
     })
     expect(all.statusCode).toBe(200)
-    expect((all.json() as { users: PublicUser[] }).users.length).toBe(3)
+    // The seeded first teacher plus the admin this file creates.
+    expect((all.json() as { users: PublicUser[] }).users.length).toBe(4)
 
     const pending = await app.server.inject({
       method: 'GET',
@@ -170,8 +175,9 @@ describe('accounts & auth (phase 1)', () => {
       headers: auth,
     })
     const found = (search.json() as { users: PublicUser[] }).users
-    expect(found.length).toBe(1)
-    expect(found[0]?.role).toBe('teacher')
+    // The seeded first teacher is named "Teacher", and so is this file's own.
+    expect(found.length).toBe(2)
+    expect(found.every((user) => user.role === 'teacher')).toBe(true)
   })
 
   it('lets the admin approve a student, who can then log in', async () => {

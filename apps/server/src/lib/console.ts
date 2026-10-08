@@ -2,7 +2,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import { setPasswordByUsername, setUserStatusByUsername } from './accountActions'
 import { isLogLevel, LOG_LEVELS, type LogHub } from './log'
 import { listSessions } from './sessions'
-import { listUsers } from './users'
+import { createUser, findUserByUsername, listUsers } from './users'
 
 /**
  * The server console: typed commands on the terminal the server runs in.
@@ -27,6 +27,7 @@ export type ConsoleCommandName =
   | 'approve'
   | 'block'
   | 'password'
+  | 'admin'
   | 'level'
   | 'clear'
   | 'stop'
@@ -49,6 +50,11 @@ export const CONSOLE_COMMANDS: Record<ConsoleCommandName, CommandSpec> = {
   password: {
     usage: 'password <username> <password>',
     summary: 'set a password and end that account’s sessions',
+    args: 2,
+  },
+  admin: {
+    usage: 'admin <username> <password>',
+    summary: 'create an admin account for institution-wide management',
     args: 2,
   },
   level: { usage: 'level [name]', summary: `log level: ${LOG_LEVELS.join(', ')}`, args: [0, 1] },
@@ -215,6 +221,24 @@ export async function executeCommand(
       if (!setPasswordByUsername(db, first!, second!)) return [`no such account: ${first}`]
       logs.logger.warn({ username: first, source: 'console' }, 'password changed from the console')
       return [`password set for ${first}; their sessions were ended`]
+    }
+
+    case 'admin': {
+      // An admin is optional: one teacher runs a class without one. This is how
+      // an institution creates one later, from the terminal that is already
+      // trusted, rather than by editing the seed variables and restarting.
+      if (findUserByUsername(db, first!)) {
+        return [`there is already an account called ${first}`]
+      }
+      createUser(db, {
+        role: 'admin',
+        status: 'approved',
+        username: first!,
+        password: second!,
+        fullName: 'Administrator',
+      })
+      logs.logger.warn({ username: first, source: 'console' }, 'admin account created from the console')
+      return [`${first} is now an admin; sign in with that password to manage every account`]
     }
 
     case 'level': {

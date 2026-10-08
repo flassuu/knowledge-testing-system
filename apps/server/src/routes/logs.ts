@@ -26,13 +26,18 @@ export const logRoutes: FastifyPluginAsync<LogsDeps> = async (
    * The lines the terminal shows, for a client that cannot reach the terminal:
    * the desktop console and the admin Server tab.
    *
-   * Admin only, and that is not a formality. A log names who signed in, which
+   * Teachers and admins, never students. A log names who signed in, which
    * accounts exist, which logins failed and what a draft could not reach — on a
-   * teacher's machine that is the list a student must not be able to read.
+   * teacher's machine that is the list a student must not be able to read. A
+   * teacher gets it because they are the one standing in front of the class who
+   * needs to know why a phone could not connect.
    */
   app.get(
     '/api/logs',
-    { preHandler: requireRoles('admin'), schema: { querystring: listQuerySchema } },
+    {
+      preHandler: requireRoles('admin', 'teacher'),
+      schema: { querystring: listQuerySchema },
+    },
     async (request) => {
       const query = (request.query ?? {}) as { since?: number }
       const entries = logs.buffer.since(query.since ?? 0)
@@ -57,8 +62,8 @@ export const logRoutes: FastifyPluginAsync<LogsDeps> = async (
       socket.close(4401, 'unauthorized')
       return
     }
-    if (session.role !== 'admin') {
-      socket.send(JSON.stringify({ type: 'error', code: 'FORBIDDEN', message: 'admin only' }))
+    if (session.role !== 'admin' && session.role !== 'teacher') {
+      socket.send(JSON.stringify({ type: 'error', code: 'FORBIDDEN', message: 'staff only' }))
       socket.close(4403, 'forbidden')
       return
     }

@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildApp, type TestingApp } from '../src/app'
+import { insertTestAdmin } from './support'
 import { SCHEMA_VERSION } from '../src/lib/db'
 
 // Deterministic admin bootstrap so the seed warning stays quiet in tests.
@@ -55,6 +56,7 @@ describe('admin insights (stats & participants)', () => {
     dbPath: join(tmpDir, 'test.db'),
     webRoot: null,
   })
+  insertTestAdmin(app)
 
   afterAll(() => {
     app.server.close()
@@ -132,7 +134,8 @@ describe('admin insights (stats & participants)', () => {
     expect(stats.schemaVersion).toBe(SCHEMA_VERSION)
     expect(stats.counts).toMatchObject({
       admins: 1,
-      teachers: 1,
+      // The seeded first teacher plus the one this file creates.
+      teachers: 2,
       students: 1,
       courses: 1,
       enrollments: 1,

@@ -1,4 +1,6 @@
+import { randomUUID } from 'node:crypto'
 import type { DatabaseSync } from 'node:sqlite'
+import { hashPassword } from './passwords'
 
 export type UserRole = 'admin' | 'teacher' | 'student'
 export type UserStatus = 'pending' | 'approved' | 'blocked'
@@ -52,6 +54,42 @@ export function findUserById(db: DatabaseSync, id: string): UserRow | null {
     .prepare('SELECT * FROM users WHERE id = ?')
     .get(id) as UserRow | undefined
   return row ?? null
+}
+
+/**
+ * The one place a row is inserted into `users`.
+ *
+ * The first-boot seed, the admin's "create teacher" and the console's `admin`
+ * command all land here. Three separate INSERTs of the same eight columns is how
+ * a password ends up stored unhashed in exactly one of them.
+ */
+export function createUser(
+  db: DatabaseSync,
+  user: {
+    role: UserRole
+    status: UserStatus
+    username: string
+    password: string
+    fullName: string
+  },
+): UserRow {
+  const now = new Date().toISOString()
+  db.prepare(
+    `INSERT INTO users (id, role, status, username, password_hash, full_name, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    randomUUID(),
+    user.role,
+    user.status,
+    user.username,
+    hashPassword(user.password),
+    user.fullName,
+    now,
+    now,
+  )
+  const created = findUserByUsername(db, user.username)
+  if (!created) throw new Error('user insert did not persist')
+  return created
 }
 
 export function listUsers(

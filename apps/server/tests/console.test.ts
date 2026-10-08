@@ -134,6 +134,7 @@ describe('reading a line of console input', () => {
       approve: ['someone'],
       block: ['someone'],
       password: ['someone', 'a-password-1'],
+      admin: ['someone', 'a-password-1'],
       level: ['info'],
     }
     for (const name of Object.keys(CONSOLE_COMMANDS) as ConsoleCommandName[]) {
@@ -175,18 +176,32 @@ describe('what the console is allowed to do', () => {
     ).toBe(0)
   })
 
+  it('creates an admin — nobody has to have one from the start', async () => {
+    const lines = await run('admin principal a-password-1')
+    expect(lines.join(' ')).toContain('now an admin')
+    const row = app.database.raw
+      .prepare("SELECT role, status FROM users WHERE username = 'principal'")
+      .get() as { role: string; status: string }
+    expect(row.role).toBe('admin')
+    expect(row.status).toBe('approved')
+  })
+
+  it('refuses to create a second account under a name already taken', async () => {
+    const lines = await run('admin principal another-password')
+    expect(lines.join(' ')).toContain('already an account')
+  })
+
   it('refuses to block an admin, exactly as the API refuses', async () => {
-    // The seeded admin from buildApp.
-    const lines = await run('block admin')
+    const lines = await run('block principal')
     expect(lines.join(' ')).toContain('admin')
     const row = app.database.raw
-      .prepare("SELECT status FROM users WHERE username = 'admin'")
+      .prepare("SELECT status FROM users WHERE username = 'principal'")
       .get() as { status: string }
     expect(row.status).toBe('approved')
   })
 
   it('allows an admin password reset — that is how a lockout is recovered', async () => {
-    const lines = await run('password admin a-new-password')
+    const lines = await run('password principal a-new-password')
     expect(lines.join(' ')).toContain('password set')
   })
 
@@ -319,9 +334,10 @@ describe('what the console prints', () => {
   it('runs every command without throwing, against an almost empty database', async () => {
     const names = Object.keys(CONSOLE_COMMANDS) as ConsoleCommandName[]
     const args: Record<string, string[]> = {
-      approve: ['admin'], // refused on purpose: the point is that it does not throw
-      block: ['admin'],
-      password: ['admin', 'a-password-1'],
+      approve: ['someone'],
+      block: ['someone'],
+      password: ['someone', 'a-password-1'],
+      admin: ['new-admin', 'a-password-1'],
       students: ['pending'],
       level: ['info'],
     }
