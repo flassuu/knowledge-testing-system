@@ -63,7 +63,7 @@ jobs:
       - name: Build the server binary for the sidecar
         run: |
           # The desktop app hosts the server, so the bundle has to contain it.
-          # Tauri looks for binaries/testing-server-<rust triple>, which is what
+          # Tauri looks for binaries/lantern-server-<rust triple>, which is what
           # scripts/desktop-sidecar.sh produces; without it `tauri build` fails.
           pnpm desktop:sidecar
         shell: bash
@@ -129,7 +129,7 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/rel-data"
           ADMIN_PASSWORD=ci-smoke-test \
-            ./apps/server/dist/testing-server \
+            ./apps/server/dist/lantern-server \
               --port 3499 \
               --data "$RUNNER_TEMP/rel-data" \
               --webroot apps/web-client/dist &
@@ -155,8 +155,8 @@ jobs:
 
       - name: Package the artifacts
         run: |
-          cp apps/server/dist/testing-server "testing-server_${{ steps.version.outputs.version }}_linux-x64"
-          tar -czf "web-client_${{ steps.version.outputs.version }}.tar.gz" -C apps/web-client dist
+          cp apps/server/dist/lantern-server "lantern-server_${{ steps.version.outputs.version }}_linux-x64"
+          tar -czf "lantern-web_${{ steps.version.outputs.version }}.tar.gz" -C apps/web-client dist
 
       - name: Upload the artifacts
         env:
@@ -171,6 +171,6 @@ jobs:
               --notes "See the assets to download this version and install."
           fi
           gh release upload "${{ github.ref_name }}" \
-            "testing-server_${{ steps.version.outputs.version }}_linux-x64" \
-            "web-client_${{ steps.version.outputs.version }}.tar.gz" \
+            "lantern-server_${{ steps.version.outputs.version }}_linux-x64" \
+            "lantern-web_${{ steps.version.outputs.version }}.tar.gz" \
             --clobber

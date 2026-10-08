@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    testing_system_teacher_lib::run()
+    lantern_teacher_lib::run()
 }

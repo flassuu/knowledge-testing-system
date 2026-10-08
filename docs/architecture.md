@@ -61,7 +61,7 @@ itself as static files.
   (`lib/console.ts`) — `help`, `status`, `sessions`, `users`, `students`,
   `approve`, `block`, `password`, `level`, `clear`, `stop`. The commands call the
   same library functions the HTTP routes call.
-- **Packaging:** one binary (`testing-server(.exe)`); no Node.js on targets.
+- **Packaging:** one binary (`lantern-server(.exe)`); no Node.js on targets.
 
 ### `apps/web-client` — the shared frontend (all roles)
 
@@ -82,7 +82,7 @@ itself as static files.
   Rust dependency, and the module knows nothing about Tauri — it is handed two
   closures, which is what lets the tests spawn a real server.
 - The sidecar file is produced by `scripts/desktop-sidecar.sh` (`pnpm
-  desktop:sidecar`), because Tauri looks for `binaries/testing-server-<rust
+  desktop:sidecar`), because Tauri looks for `binaries/lantern-server-<rust
   triple>` and nothing else can produce it. CI runs that step before every
   `tauri build`.
 - The API base is a **variable, not a build-time constant**: the port is a host

@@ -15,7 +15,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-server_dist="$root/apps/server/dist/testing-server"
+server_dist="$root/apps/server/dist/lantern-server"
 binaries="$root/apps/desktop/src-tauri/binaries"
 
 if [ "${1:-}" != "--no-build" ]; then
@@ -36,18 +36,18 @@ if [ -z "$host" ]; then
   exit 1
 fi
 
-# On Windows the compiler produces testing-server.exe, and Tauri expects the
+# On Windows the compiler produces lantern-server.exe, and Tauri expects the
 # suffix on the target name too.
 if [ "${OS:-}" = "Windows_NT" ] || [ -f "$server_dist.exe" ]; then
   source="$server_dist.exe"
-  target="$binaries/testing-server-$host.exe"
+  target="$binaries/lantern-server-$host.exe"
 else
   source="$server_dist"
-  target="$binaries/testing-server-$host"
+  target="$binaries/lantern-server-$host"
 fi
 
 mkdir -p "$binaries"
 cp "$source" "$target"
 chmod +x "$target" 2>/dev/null || true
 
-echo "sidecar ready: apps/desktop/src-tauri/binaries/testing-server-$host"
+echo "sidecar ready: apps/desktop/src-tauri/binaries/lantern-server-$host"

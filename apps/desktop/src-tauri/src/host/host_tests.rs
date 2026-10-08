@@ -10,7 +10,7 @@ fn sidecar_path() -> Option<PathBuf> {
     let host = std::env::var("HOST").ok()?;
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("binaries")
-        .join(format!("testing-server-{host}"));
+        .join(format!("lantern-server-{host}"));
     path.is_file().then_some(path)
 }
 
@@ -102,11 +102,11 @@ fn looks_for_the_binary_in_a_sensible_order() {
 #[test]
 fn an_explicit_path_comes_first_so_a_dev_build_can_use_its_own_binary() {
     let settings = HostSettings {
-        binary_path: "/home/dev/testing-server".to_string(),
+        binary_path: "/home/dev/lantern-server".to_string(),
         ..HostSettings::with_defaults("/tmp/data".to_string())
     };
     let found = candidates(None, &settings);
-    assert_eq!(found[0], PathBuf::from("/home/dev/testing-server"));
+    assert_eq!(found[0], PathBuf::from("/home/dev/lantern-server"));
 }
 
 #[test]

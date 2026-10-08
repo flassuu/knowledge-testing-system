@@ -23,9 +23,9 @@ pub const DEFAULT_PORT: u16 = 3300;
 /// The file name of the bundled server, inside the bundle and next to the app.
 fn binary_name() -> &'static str {
     if cfg!(target_os = "windows") {
-        "testing-server.exe"
+        "lantern-server.exe"
     } else {
-        "testing-server"
+        "lantern-server"
     }
 }
 

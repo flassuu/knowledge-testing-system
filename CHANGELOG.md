@@ -4,12 +4,18 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
-## [0.5.0] — unreleased
+## [0.5.0] — 2026-10-08
 
-Phase 5 «Deployment». So far 5.1: a student's phone can actually open the link
-the teacher shows them.
+Phase 5 «Deployment», the three ways the system is actually used, made to work
+end to end: a desktop that carries its own server, a school machine serving the
+room, and a class that gets in without an admin present.
 
-### Added
+### 5.1 — reachability: the address students can actually open
+
+The join link was built from `window.location.href`, which is `tauri://localhost`
+in the desktop app and `http://localhost:3300` in a browser on the teacher's
+machine. A phone can open neither, so the QR code was decorative.
+
 - **A public address for the school**: `GET /api/settings` for any signed-in
   role, `PATCH /api/settings` for admins, stored in `app_meta` under
   `public_base_url` (no migration — the key/value table was already there). The
@@ -24,8 +30,6 @@ the teacher shows them.
 - **The teacher's Live tab prints the address that is in the QR code**, and when
   that address is `localhost`, `127.0.0.1`, `0.0.0.0` or `tauri://localhost` it
   says plainly that a phone cannot open it and that the code can still be typed.
-
-### Changed
 - **The join link comes from the server's address**, not from the window the
   teacher happens to be looking at. `joinLink()` moved out of the Live tab into a
   pure function with the reachability check next to it, both unit tested.
@@ -167,9 +171,48 @@ text, into stdout — which broke the promise that a piped run is machine-readab
 for `systemd`, `journalctl` and CI. It now uses `logController`, which is the
 supported form.
 
-9 Rust tests, including one that starts the real server binary and one that
-captures the exit code of a failing one; 7 server tests for the password endpoint;
-220 server and 62 client tests, typecheck 3/3, both builds and `cargo test` green.
+### Renamed — the project is **LANtern**
+
+The name settled here; everything that carries it followed, because a project
+whose own artefacts are called something else is harder to talk about than it
+needs to be.
+
+| Was | Now |
+|---|---|
+| `knowledge-testing-system` (repository) | `lantern` |
+| `@testing-system/*` (workspace scope) | `@lantern/*` |
+| `testing-system-teacher` (Rust crate) | `lantern-teacher` |
+| `testing-server` (server binary, sidecar) | `lantern-server` |
+| `testing-server_<version>_linux-x64` (asset) | `lantern-server_<version>_linux-x64` |
+| `web-client_<version>.tar.gz` (asset) | `lantern-web_<version>.tar.gz` |
+| `com.testingsystem.teacher` (app identifier) | `com.lantern.teacher` |
+
+The display name stays **LANtern**; only paths, packages and file names are
+lowercase. GitHub redirects the old repository URL, so existing clones and
+badges keep working.
+
+**Two consequences worth knowing:** the desktop app's identifier changed, so
+Linux and macOS look for its settings in a new folder — the first run of 0.5.0
+shows defaults again, and the port and data folder have to be re-entered if they
+were changed from the defaults. And the desktop bundle name follows
+`productName`, so the downloaded app is still `LANtern_0.5.0_*`.
+
+**Not renamed:** the exchange format identifier `knowledge-testing.test` inside
+exported and imported files. It is a data contract rather than a name — changing
+it would make every file a teacher exported in 0.4.x unimportable.
+
+### Verification at this release
+
+220 server tests, 62 client tests, 9 Rust tests (including one that starts the
+real server binary and one that captures the exit code of a failing one), 7 of the
+server tests covering the password endpoint, typecheck across all three packages,
+both builds, `cargo test`, `pnpm smoke:console` and `pnpm check:browser` — all
+green.
+
+**Migrations:** schema version 5 (Phase 5.2 adds `classrooms` and
+`classroom_members`). `public_base_url` needed no migration — `app_meta` was
+already a key/value table. An existing database upgrades on first start with no
+action.
 
 ## [0.4.2] — 2026-10-07
 

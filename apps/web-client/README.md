@@ -1,4 +1,4 @@
-# @testing-system/web-client
+# @lantern/web-client
 
 Student client — mobile-first, works on phones and classroom PCs.
 

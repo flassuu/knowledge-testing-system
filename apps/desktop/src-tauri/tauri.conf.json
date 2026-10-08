@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "LANtern",
-  "version": "0.4.2",
-  "identifier": "com.testingsystem.teacher",
+  "version": "0.5.0",
+  "identifier": "com.lantern.teacher",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -39,7 +39,7 @@
       "icons/icon.ico"
     ],
     "externalBin": [
-      "binaries/testing-server"
+      "binaries/lantern-server"
     ]
   }
 }

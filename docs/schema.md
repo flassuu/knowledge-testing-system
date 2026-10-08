@@ -1,6 +1,6 @@
 # Database schema
 
-Schema of the system at v0.4.2 and later. SQLite via `node:sqlite` (`DatabaseSync`);
+Schema of the system at v0.5.0 and later. SQLite via `node:sqlite` (`DatabaseSync`);
 ids are server-side UUIDs; timestamps are stored as ISO-8601 UTC strings. The
 schema is enforced by idempotent, versioned migrations run at server startup;
 `GET /api/admin/stats` reports the applied version as `schemaVersion`.

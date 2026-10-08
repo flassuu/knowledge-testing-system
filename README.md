@@ -1,8 +1,8 @@
 # LANtern
 
-[![Release](https://img.shields.io/github/release/flassuu/knowledge-testing-system.svg?display_name=tag)](https://github.com/flassuu/knowledge-testing-system/releases/latest)
-[![Build desktop app](https://github.com/flassuu/knowledge-testing-system/actions/workflows/build-desktop.yml/badge.svg)](https://github.com/flassuu/knowledge-testing-system/actions/workflows/build-desktop.yml)
-[![Release build](https://github.com/flassuu/knowledge-testing-system/actions/workflows/release.yml/badge.svg)](https://github.com/flassuu/knowledge-testing-system/actions/workflows/release.yml)
+[![Release](https://img.shields.io/github/release/flassuu/lantern.svg?display_name=tag)](https://github.com/flassuu/lantern/releases/latest)
+[![Build desktop app](https://github.com/flassuu/lantern/actions/workflows/build-desktop.yml/badge.svg)](https://github.com/flassuu/lantern/actions/workflows/build-desktop.yml)
+[![Release build](https://github.com/flassuu/lantern/actions/workflows/release.yml/badge.svg)](https://github.com/flassuu/lantern/actions/workflows/release.yml)
 
 Classroom testing over a local network, with **no internet access** — a
 client-server system for running tests in a computer lab. One role-based
@@ -94,7 +94,7 @@ use the built client served by the API server, not the Vite port.
 ### Production build
 
 ```bash
-pnpm build:server      # standalone binary → apps/server/dist/testing-server
+pnpm build:server      # standalone binary → apps/server/dist/lantern-server
 pnpm build:web         # web client → apps/web-client/dist
 pnpm build:desktop     # Tauri bundles (.deb / .AppImage / .exe)
 ```
@@ -107,7 +107,7 @@ release page, unpack the client, then:
 
 ```bash
 ADMIN_PASSWORD='choose-a-real-one' \
-  ./testing-server_0.4.0_linux-x64 \
+  ./lantern-server_0.5.0_linux-x64 \
     --port 3300 \
     --data ./data \
     --webroot ./dist

@@ -1,6 +1,7 @@
 # Roadmap
 
-Offline-first, role-based knowledge-testing system (admin / teacher / student).
+Offline-first, role-based classroom testing system — **LANtern**
+(admin / teacher / student).
 Progress is tracked as SemVer releases; each phase lists what it owes, and the
 checklist is the honest state of it — an item is only ticked when it is done and
 verified, not when it is planned.
@@ -13,8 +14,8 @@ verified, not when it is planned.
 | Phase 2 — Teacher workbench | **0.2.0** (done) | Test/course authoring and sharing |
 | Phase 3 — Session runtime | **0.3.0** (done) | Live testing: join, answer, score, WS board |
 | Phase 4 — Reporting | 0.4.0 (done) | Statistics, journals, printable + CSV export |
-| Phase 5 — Deployment | **0.5.0** (next) | The three ways it has to run: desktop host, school server, classroom without an admin |
-| Phase 6 — MVP polish | 1.0.0 | Packaging polish, e2e, screenshots, offline PWA |
+| Phase 5 — Deployment | **0.5.0** (done) | The three ways it has to run: desktop host, school server, classroom without an admin |
+| Phase 6 — MVP polish | 1.0.0 (next) | Packaging polish, e2e, screenshots, offline PWA |
 
 The UI/UX polish pass (originally planned as its own 0.1.1) shipped together
 with Phase 2 as **0.2.0** — separating them would have meant a release that
@@ -211,7 +212,7 @@ These rules apply to every screen of web-client and desktop. No exceptions.
       white (no PDF library needed)
 - [x] Tag `v0.4.0` and publish the release
 
-## Phase 5 — Deployment (v0.5.0, next)
+## Phase 5 — Deployment (v0.5.0, done)
 
 The three ways the system is actually used, made to work end to end. Today the
 middle one works if the teacher happens to open the web client on the LAN
@@ -285,7 +286,7 @@ console that acts through the same library functions the API calls.
       same stream live
 - [x] Admin "Server" tab in the web client: live console, server status, and the
       same actions as API calls (approve a student, stop the server)
-- [ ] Restart is deliberately *not* an API call: only the desktop, which owns the
+- [x] Restart is deliberately *not* an API call: only the desktop, which owns the
       process, can bring it back. *(The decision is implemented — there is no such
       endpoint, and the Server tab says restart happens at the machine; the
       desktop side of it is 5.4.)*

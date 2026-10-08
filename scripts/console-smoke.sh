@@ -13,7 +13,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-binary="$root/apps/server/dist/testing-server"
+binary="$root/apps/server/dist/lantern-server"
 workdir="$(mktemp -d)"
 port=3471
 fifo="$workdir/console.in"

@@ -21,18 +21,18 @@ This is the one to use today. Everything below works on the current release.
 ```bash
 pnpm install
 pnpm build:web                 # → apps/web-client/dist, served by the server
-pnpm build:server              # → apps/server/dist/testing-server
+pnpm build:server              # → apps/server/dist/lantern-server
 ```
 
-Or take both from the release page: `testing-server_<version>_linux-x64` and
-`web-client_<version>.tar.gz` (unpack the second — the server expects it at
+Or take both from the release page: `lantern-server_<version>_linux-x64` and
+`lantern-web_<version>.tar.gz` (unpack the second — the server expects it at
 `--webroot`).
 
 ### 2. Start it
 
 ```bash
 ADMIN_PASSWORD='choose-a-real-one' \
-  ./apps/server/dist/testing-server \
+  ./apps/server/dist/lantern-server \
     --port 3300 \
     --data ./data \
     --webroot apps/web-client/dist
@@ -155,11 +155,11 @@ nothing else running and nothing installed on the machine but the app.
 pnpm install
 pnpm build:server
 pnpm desktop:sidecar        # places the binary where Tauri looks for a sidecar
-pnpm --filter @testing-system/desktop build
+pnpm --filter @lantern/desktop build
 ```
 
 `pnpm desktop:sidecar` is the step that is easy to miss: Tauri looks for
-`apps/desktop/src-tauri/binaries/testing-server-<rust triple>` and refuses to
+`apps/desktop/src-tauri/binaries/lantern-server-<rust triple>` and refuses to
 build without it. `scripts/desktop-sidecar.sh` also builds the server unless you
 pass `--no-build`.
 
@@ -180,7 +180,7 @@ pass `--no-build`.
 |---------|--------------|
 | Port | the API base follows it, so a port change needs no rebuild |
 | Data folder | where the database and uploads live; defaults inside the app's data dir |
-| Student client folder | `--webroot` — unpack `web-client_<version>.tar.gz` and point at its `dist`, so phones have something to open |
+| Student client folder | `--webroot` — unpack `lantern-web_<version>.tar.gz` and point at its `dist`, so phones have something to open |
 | Server binary | empty means the bundled one; a path is for a development build |
 | Admin password | `ADMIN_PASSWORD` at start — used **only** when the data folder has no admin yet |
 
@@ -202,7 +202,7 @@ needs the endpoint to move the password at all.
 
 ```bash
 pnpm desktop:sidecar
-NO_STRIP=true pnpm --filter @testing-system/desktop tauri build
+NO_STRIP=true pnpm --filter @lantern/desktop tauri build
 ```
 
 1. Run the bundle with a **fresh** data folder: first launch shows the defaults
@@ -274,7 +274,7 @@ How it works:
 ```bash
 pnpm typecheck                 # all three packages
 cd apps/server && bun test     # server unit + integration
-pnpm --filter @testing-system/web-client test
+pnpm --filter @lantern/web-client test
 cd apps/desktop/src-tauri && cargo test   # the host: spawns the real server
 pnpm smoke:console             # the console on a pty, and a piped run staying JSON
 pnpm check:browser             # a real Firefox, layout and happy paths

@@ -7,7 +7,7 @@
 
 ## Project overview
 
-Offline classroom knowledge-testing system (course project). A local
+Offline classroom testing system (**LANtern**, course project). A local
 client-server suite: a **teacher desktop app** (Tauri 2 + Vue 3), a
 **mobile-first student web client** (Vue 3 + PWA), and an embedded
 **Node.js REST/WebSocket server** (Fastify + `node:sqlite`) that is compiled
@@ -41,7 +41,7 @@ dist/releases/   Downloaded CI bundles (gitignored)
 - AppImage packaging needs `patchelf` in `$PATH` and, on Arch, `NO_STRIP=true`
   (linuxdeploy's internal `strip` chokes on `.relr.dyn` sections from modern
   binutils). Build with:
-  `NO_STRIP=true pnpm --filter @testing-system/desktop tauri build`.
+  `NO_STRIP=true pnpm --filter @lantern/desktop tauri build`.
 - Windows builds are done in CI (`.github/workflows/build-desktop.yml`),
   not cross-compiled locally.
 - Releases are also done in CI: pushing a `v*` tag triggers
@@ -67,7 +67,7 @@ dist/releases/   Downloaded CI bundles (gitignored)
 
 ## Conventions
 
-- **Package scope:** `@testing-system/*` (`server`, `web-client`, `desktop`).
+- **Package scope:** `@lantern/*` (`server`, `web-client`, `desktop`).
 - **Strict TypeScript** everywhere (`strict: true`), extends `tsconfig.base.json`.
 - **No `any`** unless absolutely unavoidable; document why in a comment.
 - **Do not add comments** unless they explain non-obvious decisions

@@ -21,7 +21,7 @@ Probe used by clients to confirm the local server is up. Public.
 ```json
 {
   "status": "ok",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "database": "ok",
   "uptime_ms": 1234,
   "timestamp": "2026-01-01T00:00:00.000Z"
@@ -307,9 +307,9 @@ Aggregated DB health and table counts — the admin "System & DB" screen.
 ```json
 {
   "stats": {
-    "version": "0.4.2",
+    "version": "0.5.0",
     "uptimeMs": 1234,
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "database": "ok",
     "counts": {
       "users": 5, "admins": 1, "teachers": 1, "students": 3,
