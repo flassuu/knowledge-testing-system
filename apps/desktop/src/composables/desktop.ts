@@ -113,7 +113,7 @@ function writeState(state: WindowState): void {
 export interface HostSettings {
   port: number
   dataDir: string
-  adminPassword: string
+  teacherPassword: string
   webRoot: string
   binaryPath: string
 }

@@ -18,7 +18,7 @@ fn test_settings(data_dir: &Path, binary: &Path) -> HostSettings {
     HostSettings {
         port: 3459,
         data_dir: data_dir.display().to_string(),
-        admin_password: String::new(),
+        teacher_password: String::new(),
         web_root: String::new(),
         binary_path: binary.display().to_string(),
     }
@@ -222,7 +222,7 @@ fn refuses_settings_that_would_break_the_server_quietly() {
     // A port of 0 would ask the OS for a random one, which the app could not
     // then talk to; a blank data folder is not a folder.
     let settings = parse_settings(
-        r#"{"port":0,"dataDir":"","adminPassword":"","webRoot":"","binaryPath":""}"#,
+        r#"{"port":0,"dataDir":"","teacherPassword":"","webRoot":"","binaryPath":""}"#,
         fallback.clone(),
     );
     assert_eq!(settings.port, DEFAULT_PORT);
@@ -230,7 +230,7 @@ fn refuses_settings_that_would_break_the_server_quietly() {
 
     // A good file is taken as written.
     let settings = parse_settings(
-        r#"{"port":4200,"dataDir":"/var/lib/lantern","adminPassword":"x","webRoot":"/srv","binaryPath":""}"#,
+        r#"{"port":4200,"dataDir":"/var/lib/lantern","teacherPassword":"x","webRoot":"/srv","binaryPath":""}"#,
         fallback.clone(),
     );
     assert_eq!(settings.port, 4200);

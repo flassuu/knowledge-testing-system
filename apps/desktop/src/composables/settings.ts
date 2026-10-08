@@ -21,7 +21,7 @@ export function getSettingsState(): SettingsState {
   return state
 }
 
-export async function loadSettings(): Promise<void> {
+export async function loadSettings(): Promise<SettingsState> {
   try {
     state.settings = await getSettings()
   } catch {
@@ -31,6 +31,7 @@ export async function loadSettings(): Promise<void> {
   } finally {
     state.loaded = true
   }
+  return state
 }
 
 /** Applied after an admin saves, so the rest of the app sees it immediately. */

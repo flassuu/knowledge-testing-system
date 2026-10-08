@@ -51,7 +51,7 @@ fn save_host_settings(app: AppHandle, settings: HostSettings) -> Result<HostSett
         } else {
             settings.port
         },
-        admin_password: settings.admin_password.trim().to_string(),
+        teacher_password: settings.teacher_password.trim().to_string(),
         ..settings
     };
     host::save_settings(&app, cleaned.clone())?;

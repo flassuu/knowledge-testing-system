@@ -39,10 +39,13 @@ pub struct HostSettings {
     /// the working directory, which for a double-clicked app is nowhere useful —
     /// the default is an absolute path inside the app's data directory.
     pub data_dir: String,
-    /// Passed as `ADMIN_PASSWORD` when the server starts. It only seeds a
-    /// database that has no admin yet; to change an existing one, the app calls
-    /// `POST /api/auth/password`.
-    pub admin_password: String,
+    /// Seeded as the first teacher when the server starts. It only seeds a
+    /// data directory with no teacher yet; to change an existing one, the app
+    /// calls `POST /api/auth/password`. An admin is created later from the
+    /// server console, if an institution needs one.
+    /// Seeded as the *first teacher* account, not an admin: one person with a
+    /// laptop runs a class. Sent as TEACHER_PASSWORD.
+    pub teacher_password: String,
     /// Optional `--webroot`: the built student client, so phones on the LAN have
     /// something to open. Empty means "serve the API only".
     pub web_root: String,
@@ -55,7 +58,7 @@ impl HostSettings {
         Self {
             port: DEFAULT_PORT,
             data_dir,
-            admin_password: String::new(),
+            teacher_password: String::new(),
             web_root: String::new(),
             binary_path: String::new(),
         }
@@ -275,8 +278,8 @@ pub fn start(context: &SpawnContext, state: &HostState) -> ServerStatus {
     if !settings.web_root.trim().is_empty() {
         command.arg("--webroot").arg(settings.web_root.trim());
     }
-    if !settings.admin_password.is_empty() {
-        command.env("ADMIN_PASSWORD", settings.admin_password.trim());
+    if !settings.teacher_password.is_empty() {
+        command.env("TEACHER_PASSWORD", settings.teacher_password.trim());
     }
 
     let mut child = match command.spawn() {

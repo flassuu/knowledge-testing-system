@@ -6,7 +6,10 @@ export async function getSettings(): Promise<ServerSettings> {
   return apiFetch<ServerSettings>('/api/settings')
 }
 
-/** Admin only. `null` clears the address, and clients fall back to their origin. */
+/**
+ * Admin or teacher. `null` clears the address, and clients fall back to their
+ * own origin - which no phone can open, so clearing it is rarely what you want.
+ */
 export async function updateSettings(
   publicBaseUrl: string | null,
 ): Promise<ServerSettings> {

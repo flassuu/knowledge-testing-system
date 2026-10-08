@@ -66,7 +66,7 @@ const copied = ref(false)
 const dataDirDraft = ref('')
 const webRootDraft = ref('')
 const binaryDraft = ref('')
-const adminPasswordDraft = ref('')
+const teacherPasswordDraft = ref('')
 const currentPasswordDraft = ref('')
 const newPasswordDraft = ref('')
 const changingPassword = ref(false)
@@ -123,7 +123,7 @@ function applySettings(next: HostSettings | null): void {
   dataDirDraft.value = next.dataDir
   webRootDraft.value = next.webRoot
   binaryDraft.value = next.binaryPath
-  adminPasswordDraft.value = next.adminPassword
+  teacherPasswordDraft.value = next.teacherPassword
 }
 
 async function refresh(): Promise<void> {
@@ -202,7 +202,7 @@ async function save(): Promise<void> {
       dataDir: dataDirDraft.value.trim(),
       webRoot: webRootDraft.value.trim(),
       binaryPath: binaryDraft.value.trim(),
-      adminPassword: adminPasswordDraft.value,
+      teacherPassword: teacherPasswordDraft.value,
     })
     applySettings(saved)
 
@@ -243,7 +243,7 @@ async function applyNewPassword(): Promise<void> {
     await changePassword(currentPasswordDraft.value, newPasswordDraft.value)
     currentPasswordDraft.value = ''
     newPasswordDraft.value = ''
-    adminPasswordDraft.value = ''
+    teacherPasswordDraft.value = ''
     toast.success(t('desktop.server.passwordChanged'))
   } catch (error) {
     loadError.value =
@@ -522,18 +522,18 @@ onBeforeUnmount(() => {
         </div>
         <div>
           <label class="text-xs font-medium text-on-surface-variant" for="host-admin">
-            {{ t('desktop.server.adminPassword') }}
+            {{ t('desktop.server.teacherPassword') }}
           </label>
           <AppInput
             id="host-admin"
-            v-model="adminPasswordDraft"
+            v-model="teacherPasswordDraft"
             type="password"
             autocomplete="off"
             class="mt-1"
-            :placeholder="t('desktop.server.adminPasswordPlaceholder')"
+            :placeholder="t('desktop.server.teacherPasswordPlaceholder')"
           />
           <p class="mt-1 text-[11px] text-on-surface-variant">
-            {{ t('desktop.server.adminPasswordHint') }}
+            {{ t('desktop.server.teacherPasswordHint') }}
           </p>
         </div>
         <div>
