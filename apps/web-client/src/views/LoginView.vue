@@ -55,9 +55,9 @@ onMounted(() => {
   const savedUsername = localStorage.getItem(LAST_USERNAME_KEY)
   if (savedUsername) {
     username.value = savedUsername
-  } else if (selectedRole.value === 'admin') {
-    // Convenience hint for local demos: prefill the built-in admin login.
-    username.value = 'admin'
+  } else if (selectedRole.value === 'teacher') {
+    // Convenience for a first sign-in: the first account seeded is the teacher.
+    username.value = 'teacher'
   }
 })
 

@@ -22,7 +22,9 @@ import {
   revokeClassroom,
 } from '../../api/classrooms'
 import { listCourses } from '../../api/courses'
-import type { Classroom, ClassroomMember, CourseSummary } from '../../api/types'
+import { updateSettings } from '../../api/settings'
+import { listPendingStudents, setUserStatus } from '../../api/users'
+import type { Classroom, ClassroomMember, CourseSummary, PublicUser } from '../../api/types'
 import EmptyState from '../common/EmptyState.vue'
 import QrCodeCard from '../common/QrCode.vue'
 import SkeletonList from '../common/SkeletonList.vue'
@@ -30,7 +32,7 @@ import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
 import AppInput from '../../components/common/AppInput.vue'
 import { useConfirm } from '../../composables/confirm'
-import { effectiveBaseUrl, loadSettings } from '../../composables/settings'
+import { applySettings, effectiveBaseUrl, loadSettings } from '../../composables/settings'
 import { useToast } from '../../composables/toast'
 import { isReachableFromPhone, registrationLink } from '../../utils/links'
 
@@ -48,6 +50,8 @@ const toast = useToast()
 const confirm = useConfirm()
 
 const classrooms = ref<Classroom[]>([])
+/** Students stuck at `pending` because they registered with no class key. */
+const pending = ref<PublicUser[]>([])
 const courses = ref<CourseSummary[]>([])
 const loading = ref(true)
 const errorKey = ref('')
@@ -74,6 +78,13 @@ async function load(): Promise<void> {
     const [list, courseList] = await Promise.all([listClassrooms(), listCourses()])
     classrooms.value = list
     courses.value = courseList
+    // A failure here must not empty the tab: the classes themselves loaded, and
+    // a student waiting for approval is an inconvenience, not an outage.
+    try {
+      pending.value = await listPendingStudents()
+    } catch {
+      pending.value = []
+    }
   } catch (error) {
     errorKey.value = error instanceof ApiError ? error.code : ''
   } finally {
@@ -154,6 +165,60 @@ async function newKey(classroom: Classroom): Promise<void> {
   }
 }
 
+const addressDraft = ref('')
+const savingAddress = ref(false)
+/** LAN addresses the server answers on, as one-tap chips. */
+const suggestions = ref<string[]>([])
+
+/**
+ * The address that goes into the QR code.
+ *
+ * The admin sets this on the System tab, but a teacher running a lesson alone has
+ * no admin to ask, and without it the code points at `localhost` — which scans
+ * perfectly and then fails on every phone. So the teacher gets the same field
+ * here, next to the classes it matters for.
+ */
+async function saveAddress(): Promise<void> {
+  const value = addressDraft.value.trim()
+  savingAddress.value = true
+  try {
+    applySettings(await updateSettings(value === '' ? null : value))
+    baseUrl.value = effectiveBaseUrl()
+    toast.success(t('teacher.classes.addressSaved'))
+  } catch (error) {
+    report(error)
+  } finally {
+    savingAddress.value = false
+  }
+}
+
+/**
+ * Approving is what the classroom key normally does. This path exists for the
+ * student who typed no key: without it and without an admin they wait forever,
+ * and the teacher has no way to unstick them.
+ */
+async function approve(student: PublicUser): Promise<void> {
+  try {
+    await setUserStatus(student.id, 'approved')
+    pending.value = pending.value.filter((entry) => entry.id !== student.id)
+    toast.success(t('teacher.classes.waitingApprovedToast', { name: student.fullName }))
+  } catch (error) {
+    report(error)
+  }
+}
+
+async function deny(student: PublicUser): Promise<void> {
+  if (!(await confirm({ message: t('teacher.classes.waitingDenyConfirm', { name: student.fullName }) })))
+    return
+  try {
+    await setUserStatus(student.id, 'blocked')
+    pending.value = pending.value.filter((entry) => entry.id !== student.id)
+    toast.success(t('teacher.classes.waitingDeniedToast', { name: student.fullName }))
+  } catch (error) {
+    report(error)
+  }
+}
+
 async function revoke(classroom: Classroom): Promise<void> {
   if (
     !(await confirm({ message: t('teacher.classes.revokeConfirm', { name: classroom.name }) }))
@@ -204,8 +269,10 @@ function courseTitle(courseId: string | null): string {
 
 onMounted(() => {
   void load()
-  void loadSettings().then(() => {
+  void loadSettings().then((state) => {
     baseUrl.value = effectiveBaseUrl()
+    addressDraft.value = state.settings?.publicBaseUrl ?? ''
+    suggestions.value = state.settings?.suggestions ?? []
   })
 })
 </script>
@@ -223,6 +290,41 @@ onMounted(() => {
         <RefreshCw class="size-4" aria-hidden="true" />
       </AppButton>
     </div>
+
+    <!-- The address every QR code on this tab is built from -->
+    <AppCard as="section">
+      <h3 class="text-sm font-semibold text-on-surface">
+        {{ t('teacher.classes.addressTitle') }}
+      </h3>
+      <p class="mt-1 text-xs text-on-surface-variant">
+        {{ t('teacher.classes.addressHint') }}
+      </p>
+      <ul v-if="suggestions.length" class="mt-2 flex flex-wrap gap-1.5">
+        <li v-for="suggestion in suggestions" :key="suggestion">
+          <AppButton
+            variant="secondaryPlain"
+            size="sm"
+            class="font-mono"
+            :aria-pressed="addressDraft === suggestion"
+            @click="addressDraft = suggestion"
+          >
+            {{ suggestion }}
+          </AppButton>
+        </li>
+      </ul>
+      <div class="mt-3 flex flex-wrap items-end gap-2">
+        <AppInput
+          id="public-address"
+          v-model="addressDraft"
+          class="min-w-48 flex-1"
+          placeholder="http://192.168.1.65:3300"
+          inputmode="url"
+        />
+        <AppButton :disabled="savingAddress" @click="saveAddress">
+          {{ t('teacher.classes.addressSave') }}
+        </AppButton>
+      </div>
+    </AppCard>
 
     <!-- Creating a class -->
     <AppCard as="section">
@@ -468,5 +570,56 @@ onMounted(() => {
         </AppCard>
       </li>
     </ul>
+
+    <!-- Students who registered without a class key. Without this they sit at
+         "awaiting approval" with nobody able to let them in, which is the whole
+         reason the seed is a teacher now. -->
+    <AppCard v-if="pending.length" as="section" class="mt-4">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h3 class="text-sm font-semibold text-on-surface">
+            {{ t('teacher.classes.waitingTitle') }}
+          </h3>
+          <p class="mt-1 text-xs text-on-surface-variant">
+            {{ t('teacher.classes.waitingHint') }}
+          </p>
+        </div>
+        <span
+          class="shrink-0 rounded-full bg-secondary-container px-2.5 py-1 text-xs font-medium text-on-secondary-container"
+        >
+          {{ pending.length }}
+        </span>
+      </div>
+
+      <ul class="mt-3 space-y-2">
+        <li
+          v-for="student in pending"
+          :key="student.id"
+          class="flex items-center justify-between gap-3"
+        >
+          <div class="min-w-0">
+            <p class="truncate text-sm text-on-surface">{{ student.fullName }}</p>
+            <p class="truncate text-xs text-on-surface-variant">{{ student.username }}</p>
+          </div>
+          <div class="flex shrink-0 gap-2">
+            <AppButton
+              variant="ghostDanger"
+              size="sm"
+              :aria-label="t('teacher.classes.waitingDeny', { name: student.fullName })"
+              @click="deny(student)"
+            >
+              {{ t('teacher.classes.waitingDenyShort') }}
+            </AppButton>
+            <AppButton
+              size="sm"
+              :aria-label="t('teacher.classes.waitingApprove', { name: student.fullName })"
+              @click="approve(student)"
+            >
+              {{ t('teacher.classes.waitingApproveShort') }}
+            </AppButton>
+          </div>
+        </li>
+      </ul>
+    </AppCard>
   </section>
 </template>

@@ -16,6 +16,16 @@ function queryString(params: UserListParams): string {
   return qs ? `?${qs}` : ''
 }
 
+/**
+ * Students waiting for approval. Admin or teacher: the full roster stays
+ * admin-only, but a student who registered without a class key has to be let in
+ * by somebody, and on a machine with no admin that somebody is the teacher.
+ */
+export async function listPendingStudents(): Promise<PublicUser[]> {
+  const result = await apiFetch<{ users: PublicUser[] }>('/api/users/pending')
+  return result.users
+}
+
 /** Admin only. */
 export async function listUsers(params: UserListParams = {}): Promise<PublicUser[]> {
   const result = await apiFetch<{ users: PublicUser[] }>(`/api/users${queryString(params)}`)

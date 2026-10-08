@@ -22,6 +22,16 @@ export async function listUsers(params: UserListParams = {}): Promise<PublicUser
   return result.users
 }
 
+/**
+ * Students waiting for approval. Admin or teacher: the full roster stays
+ * admin-only, but a student who registered without a class key has to be let in
+ * by somebody, and on a machine with no admin that somebody is the teacher.
+ */
+export async function listPendingStudents(): Promise<PublicUser[]> {
+  const result = await apiFetch<{ users: PublicUser[] }>('/api/users/pending')
+  return result.users
+}
+
 /** Admin only: creates a teacher account (approved immediately). */
 export async function createUser(input: {
   username: string
