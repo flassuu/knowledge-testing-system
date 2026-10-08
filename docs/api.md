@@ -44,7 +44,9 @@ Request body:
 ```
 
 - `classKey` is optional. Without it the account is `pending` and waits for an
-  admin. With a valid [class key](#classrooms-apiclassrooms) it is `approved`
+  approval — from an admin, or from a teacher (see
+  [`GET /api/users/pending`](#get-apiuserspending)). With a valid
+  [class key](#classrooms-apiclassrooms) it is `approved`
   immediately, the classroom records the student, and the class is enrolled into
   the linked course — a teacher can run a class alone.
 - Only a student role is ever created, whatever the body contains.
@@ -72,7 +74,7 @@ Verifies credentials and issues a role-scoped bearer token. Public.
 Request body:
 
 ```json
-{ "username": "admin", "password": "admin" }
+{ "username": "teacher", "password": "teacher" }
 ```
 
 - `200` → `{ "token": "<opaque>", "user": {...} }`
@@ -98,9 +100,23 @@ returned — including the one that made the change, so the client must store it
 - `401 INVALID_CREDENTIALS` — the current password is wrong
 - `400 VALIDATION` — missing fields, or a new password under 8 characters
 
-This is what makes the desktop app's "admin password" setting work on a database
-that already exists: `ADMIN_PASSWORD` is read once, when the data folder has no
-admin yet.
+This is what makes the desktop app's "Teacher password" setting work on a data
+folder that already exists: `TEACHER_PASSWORD` is read once, when the folder has
+no teacher yet.
+
+### First boot: the account is a teacher
+
+An empty data folder is seeded with **one teacher**, not an admin. One person
+with a laptop runs a class; making them create an admin first was ceremony with
+no purpose.
+
+- `TEACHER_USERNAME` / `TEACHER_PASSWORD` set the credentials. Defaults:
+  `teacher` / `teacher`, and the default is logged as a warning.
+- `ADMIN_USERNAME` / `ADMIN_PASSWORD` still work as fallbacks, so existing
+  installs and scripts keep running.
+- A **console** `admin <username> <password>` command creates an admin later, for
+  the institution-wide screens (full roster, stats, participants). Nobody has to
+  have one to teach.
 
 ### `POST /api/auth/logout`
 
@@ -114,7 +130,12 @@ Returns the logged-in user. Requires a valid token.
 { "user": { "id": "…", "role": "student", "status": "approved", "username": "student1", "fullName": "Student One", "createdAt": "…", "updatedAt": "…" } }
 ```
 
-## User management (`/api/users`, admin only)
+## User management (`/api/users`)
+
+The full roster is admin-only. Two endpoints are open to a teacher, because a
+class run without an admin has to still be able to seat a student and read the
+log: [`GET /api/users/pending`](#get-apiuserspending) and
+[`PATCH /api/users/:id/status`](#patch-apiusersidstatus).
 
 Users are returned without password material: `{ id, role, status, username, fullName, createdAt, updatedAt }`.
 
@@ -135,14 +156,33 @@ Admin creates a teacher (approved immediately). Request body like
 - `201` → `{ "user": {...} }`
 - `409 CONFLICT` — username already taken
 
+### `GET /api/users/pending`
+
+Admin **or teacher**. Students who registered without a class key and are waiting
+to be let in. Only ever pending students, never the roster.
+
+```json
+{ "users": [ { "id": "…", "username": "student1", "status": "pending", … } ] }
+```
+
+The teacher's **Classes** tab shows this list with an Approve / Refuse pair for
+each entry. Without it, a student who typed no key waits for an admin that a lone
+setup does not have.
+
 ### `PATCH /api/users/:id/status`
 
-Admin approves/blocked a student or teacher. Body:
+Approve or block an account. Body:
 `{ "status": "pending" | "approved" | "blocked" }`. Blocking revokes all
 active sessions for that user. Admin accounts are immutable.
 
+- **Admin** — any non-admin account.
+- **Teacher** — students only. A teacher who could block another teacher could
+  lock a colleague out of a room they share the server with, so `403` is the
+  answer for any non-student target.
+
 - `200` → `{ "user": {...} }`
 - `400 INVALID_OPERATION` — target is an admin account
+- `403 FORBIDDEN` — a teacher aimed at a teacher or admin
 - `404 NOT_FOUND` — no such user
 
 ### `DELETE /api/users/:id`
@@ -366,7 +406,11 @@ phone camera will type in.
 
 ### `PATCH /api/settings`
 
-Admin only. Returns the same object as the GET.
+Admin **or teacher**. Returns the same object as the GET.
+
+A teacher needs this: the value goes into the QR their students scan, so a
+teacher running a lesson on a machine with no admin on it would otherwise be
+unable to make a single phone connect.
 
 ```json
 { "publicBaseUrl": "http://192.168.1.65:3300" }
@@ -642,8 +686,12 @@ the app's report screen renders; the CSV is meant to leave the app.
 ## Logs (`/api/logs`, `/ws/server`)
 
 The same log lines the terminal console prints, for a client that has no
-terminal: the desktop console and the admin **Server** tab. Admin only — a log
-names who signed in, which accounts exist and what failed.
+terminal: the desktop console, and the admin **Server** tab.
+
+**Admin or teacher, never a student.** A log names who signed in, which accounts
+exist and what failed — on a teacher's machine that is the list a student must
+not read. A teacher gets it because they are the one standing in front of the
+class who needs to know why a phone could not connect.
 
 ### `GET /api/logs?since=<seq>`
 
@@ -715,7 +763,10 @@ teacher who does not own it), `4404` unknown session.
 | `POST /api/auth/register` | + | + | + (student only, `classKey` optional) |
 | `POST /api/auth/login` | + | + | + |
 | `POST /api/auth/logout`, `GET /api/auth/me` | + | + | + |
-| `GET/POST /api/users`, `PATCH/DELETE /api/users/:id` | + | – | – |
+| `GET/POST /api/users`, `DELETE /api/users/:id` | + | – | – |
+| `GET /api/users/pending` | + | + | – |
+| `PATCH /api/users/:id/status` | + (any non-admin) | + (students only) | – |
+| `GET /api/logs`, `GET /ws/server` | + | + | – |
 | `/api/tests`, `/api/tests/:id`, `/api/courses*` | + | + (own) | – |
 | `GET /api/tests/:id/results` | + | + (own) | – |
 | `GET/POST /api/sessions`, `PATCH /api/sessions/:id`, `…/participants`, `…/review`, `…/results.csv` | + | + (own) | – |
@@ -725,4 +776,4 @@ teacher who does not own it), `4404` unknown session.
 | `/api/classrooms*` | + | + (own) | – (preview is public) |
 | `GET /api/logs`, `/ws/server` | + | – | – |
 | `GET /api/settings` | + | + | + |
-| `PATCH /api/settings` | + | – | – |
+| `PATCH /api/settings` | + | + | – |

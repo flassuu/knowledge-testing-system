@@ -31,7 +31,7 @@ Or take both from the release page: `lantern-server_<version>_linux-x64` and
 ### 2. Start it
 
 ```bash
-ADMIN_PASSWORD='choose-a-real-one' \
+TEACHER_PASSWORD='choose-a-real-one' \
   ./apps/server/dist/lantern-server \
     --port 3300 \
     --data ./data \
@@ -55,11 +55,21 @@ When the terminal shows the LANtern banner, the interactive console is attached:
 the keyboard. `--no-console` turns it off; a pipe turns it off by itself, which
 is what happens when the desktop app starts the server.
 
-### 3. Set the address students can open
+### 3. Sign in
 
-Sign in as **admin** → **System & DB** → **Public address**. The server lists the
-addresses this machine answers on; pick one (or type your own) and save. The same
-value is available without guessing:
+Open `http://192.168.1.65:3300` and sign in as **teacher** with the password you
+set, picking the teacher role on the sign-in screen.
+
+The first account on an empty data folder is a teacher. There is no admin to
+create first, and none is needed for anything in this runbook. If a school wants
+one for the institution-wide screens later, the console takes it:
+`admin principal some-password`.
+
+### 4. Set the address students can open
+
+A teacher can set this directly. The server lists the addresses this machine
+answers on; pick one (or type your own) and save. The same value is available
+without guessing:
 
 ```bash
 ip -4 route get 1.1.1.1 | rg -o 'src [0-9.]+'     # e.g. src 192.168.1.65
@@ -75,15 +85,8 @@ The setting is what goes into the join link, the "Copy join link" button and the
 QR code, so it is worth checking once: scan the QR with a phone, or open the
 copied link on one. If it opens the app, the address is right.
 
-### 4. Create the accounts
-
-1. Open `http://192.168.1.65:3300` → sign in as **admin** with the password you
-   set. Pick the admin role on the sign-in screen.
-2. **Users → New teacher** → create the teacher account (this is the only way:
-   teachers cannot be created by anyone else).
-3. Sign out, sign in as the teacher (pick the teacher role).
-4. That is all the admin has to do. Students register themselves in the next
-   step, on their own phones.
+Students register themselves, on their own phones. There is no account to
+create in advance.
 
 ### 5. Get the student in — with a class key, or an approval
 
@@ -97,12 +100,15 @@ the teacher creates a class and hands out its key.
    filled in from the QR, and the account is created **approved** — the student
    can sign in immediately, and nobody needs to press "Approve".
 
-Without a class key the old path still works:
+Without a class key the other path still works, and needs no admin:
 
-1. Sign back in as admin → **Users** → the student row shows `pending`.
-2. **Approve** (or select several rows and use the bulk button).
+1. Sign in as the teacher → **Classes** → at the bottom, **Waiting for approval**
+   lists the student.
+2. **Approve**.
 3. The student can now sign in. Until this happens the API answers
-   `403 PENDING_APPROVAL` — that is the wall scenario C removes.
+   `403 PENDING_APPROVAL`.
+
+An admin's **Users** tab does the same for the whole school.
 
 ### 6. The teacher prepares the test
 
@@ -182,7 +188,7 @@ pass `--no-build`.
 | Data folder | where the database and uploads live; defaults inside the app's data dir |
 | Student client folder | `--webroot` — unpack `lantern-web_<version>.tar.gz` and point at its `dist`, so phones have something to open |
 | Server binary | empty means the bundled one; a path is for a development build |
-| Admin password | `ADMIN_PASSWORD` at start — used **only** when the data folder has no admin yet |
+| Teacher password | `TEACHER_PASSWORD` at start — used **only** when the data folder has no teacher yet |
 
 **Changing the admin password** is a separate pair of fields, and deliberately
 so: it calls `POST /api/auth/password`, which ends every session including the

@@ -4,6 +4,40 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### One teacher, no admin
+
+The product is a person with a laptop and a room full of phones. Everything
+around that had an admin standing in front of it for no good reason.
+
+- **First boot seeds a teacher, not an admin.** An empty data folder creates one
+  `teacher` account, so the shortest path from a fresh install to a class is:
+  start the server, sign in, make a class, show the key. Previously it was: start
+  the server, sign in as admin, create a teacher, sign out, sign in as teacher.
+  `TEACHER_USERNAME` / `TEACHER_PASSWORD` set the credentials;
+  `ADMIN_USERNAME` / `ADMIN_PASSWORD` still work as fallbacks so existing
+  installs and scripts are untouched.
+- **An admin is optional and creatable later** — the server console gained
+  `admin <username> <password>`. The institution-wide screens (full roster,
+  stats, participants) are still there for a school that wants them; a single
+  teacher never has to see one.
+- **A teacher can set the public address.** It goes into the QR code students
+  scan, so a teacher on a machine with no admin could not make a single phone
+  connect. `PATCH /api/settings` is now admin-or-teacher.
+- **A teacher can read the server log** — `GET /api/logs` and the `/ws/server`
+  tail, admin-or-teacher. A student is still refused: a log names who signed in
+  and what failed.
+- **A teacher can let a waiting student in.** `GET /api/users/pending` lists the
+  students who registered without a class key, and the teacher's **Classes** tab
+  shows them with Approve / Refuse. A teacher may change the status of students
+  only — `403` for another teacher, because one teacher must not be able to lock
+  a colleague out of a room they share the server with. The full roster and
+  deleting accounts stay admin-only.
+
+`apps/server/tests/solo.test.ts` walks the whole path from an empty folder to a
+class in progress, asserting at every step that no admin was created.
+
 ## [0.5.0] — 2026-10-08
 
 Phase 5 «Deployment», the three ways the system is actually used, made to work
