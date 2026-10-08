@@ -2,8 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CircleCheck } from '@lucide/vue'
-import LanguageSwitcher from '../components/LanguageSwitcher.vue'
-import ThemeSwitcher from '../components/ThemeSwitcher.vue'
+import AppHeader from '../components/AppHeader.vue'
 import { register } from '../api/auth'
 import { previewClassKey } from '../api/classrooms'
 import { ApiError } from '../api/client'
@@ -20,7 +19,7 @@ import AppInput from '../components/common/AppInput.vue'
  * the password is typed, so a student learns "Class 9A · Olena M." - or that
  * the code is wrong - before they have committed to anything.
  */
-const emit = defineEmits<{ back: [] }>()
+const emit = defineEmits<{ back: []; server: [] }>()
 
 const { t } = useI18n()
 
@@ -137,23 +136,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <main
-    class="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-6 py-10"
-  >
-    <header class="mb-8 flex items-center justify-between">
-      <h1 class="text-lg font-bold text-on-surface">{{ t('app.name') }}</h1>
-      <div class="flex items-center gap-2">
-        <ThemeSwitcher />
-        <LanguageSwitcher />
-        <AppButton
-          type="button"
-          @click="back"
-          variant="secondaryMuted" size="sm"
-        >
+  <div class="flex min-h-dvh flex-col bg-surface">
+    <AppHeader hosted @server="emit('server')" />
+    <main class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-10">
+      <div class="mb-6 flex justify-end">
+        <AppButton type="button" @click="back" variant="secondaryMuted" size="sm">
           {{ t('auth.backToLogin') }}
         </AppButton>
       </div>
-    </header>
 
     <section
       v-if="created"
@@ -277,5 +267,6 @@ onMounted(() => {
         </AppButton>
       </form>
     </AppCard>
-  </main>
+    </main>
+  </div>
 </template>

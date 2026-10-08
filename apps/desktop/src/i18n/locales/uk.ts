@@ -65,6 +65,7 @@ const uk: typeof en = {
     },
   },
   server: {
+    label: 'Сервер',
     checking: 'Перевірка…',
     online: 'Мережа',
     offline: 'Немає звʼязку',
@@ -73,12 +74,12 @@ const uk: typeof en = {
     recheckHint: 'Стан сервера — натисніть, щоб перевірити',
   },
   theme: {
+    darkMode: 'Темна тема',
     switchToLight: 'Перемкнути на світлу тему',
     switchToDark: 'Перемкнути на темну тему',
   },
   auth: {
-    chooseRole: 'Вхід',
-    chooseRoleHint: 'Оберіть роль.',
+    signInHint: 'Ім’я, яке дав учитель, або назва класу.',
     username: 'Ім\'я користувача',
     password: 'Пароль',
     showPassword: 'Показати пароль',
@@ -564,6 +565,9 @@ const uk: typeof en = {
       resultsFailed: 'Не вдалося завантажити ваші результати.',
       downloadFailed: 'Не вдалося завантажити файл.',
     },
+  },
+  menu: {
+    account: 'Обліковий запис',
   },
   common: {
     language: 'Мова',

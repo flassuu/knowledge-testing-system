@@ -1,108 +1,78 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Info } from '@lucide/vue'
-import LanguageSwitcher from './LanguageSwitcher.vue'
+import { Server } from '@lucide/vue'
 import ServerStatus from './ServerStatus.vue'
-import ThemeSwitcher from './ThemeSwitcher.vue'
+import LanguageSwitcher from './LanguageSwitcher.vue'
+import AccountMenu from './AccountMenu.vue'
+import AppButton from './common/AppButton.vue'
+import BrandMark from './BrandMark.vue'
+import OfflineBanner from './common/OfflineBanner.vue'
 import { useAuth } from '../stores/auth'
-import AppButton from '../components/common/AppButton.vue'
-import AboutDialog from '../components/common/AboutDialog.vue'
-import BrandMark from '../components/BrandMark.vue'
-// Desktop-only, like the API base: the web client has no version to show.
-// Aliased: ServerStatus is also a component above.
-import {
-  isDesktop,
-  getServerStatus,
-  onServerExit,
-  type ServerStatus as HostedServer,
-} from '../composables/desktop'
 
+const props = defineProps<{
+  /** Desktop only: the app hosts the server, and has no frame to drag. */
+  hosted?: boolean
+}>()
 const emit = defineEmits<{ server: [] }>()
 
 const { t } = useI18n()
-const { user, signOut } = useAuth()
-
-/** Whether the hosted server is up, so the teacher is not left guessing. */
-const serverStatus = ref<HostedServer | null>(null)
-
-onMounted(async () => {
-  if (!isDesktop()) return
-  serverStatus.value = await getServerStatus()
-  await onServerExit(() => {
-    void getServerStatus().then((next) => {
-      serverStatus.value = next
-    })
-  })
-})
+const { user } = useAuth()
 
 const roleLabel = computed(() => t(`role.${user.value?.role ?? 'student'}`))
-
-const aboutOpen = ref(false)
-// The environment never changes at runtime, so this is decided once per mount.
-const desktop = isDesktop()
-
-const roleBadgeClass: Record<string, string> = {
-  admin: 'bg-primary-container text-on-primary-container',
-  teacher: 'bg-secondary-container text-on-secondary-container',
-  student: 'bg-warning-container text-on-warning-container',
-}
 </script>
 
 <template>
-  <header
-    class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-outline-variant bg-surface-container px-4 py-2.5 sm:px-6"
-  >
-    <div class="flex min-w-0 items-center gap-2">
-      <BrandMark :size="26" class="shrink-0" />
-      <h1 class="truncate text-base font-bold tracking-tight text-on-surface">
+  <!--
+    On Linux the frame is off (`tauri.linux.conf.json`), so the empty space here
+    is what drags the window: `data-tauri-drag-region` is the whole of it. On the
+    other platforms the platform draws its own frame and this is a bar under it.
+  -->
+  <header class="sticky top-0 z-30 border-b border-outline-variant bg-surface-container">
+    <div class="flex h-14 items-center gap-3 px-3 sm:px-4">
+      <BrandMark :size="24" class="shrink-0" data-tauri-drag-region />
+      <h1
+        class="min-w-0 truncate text-base font-bold tracking-tight text-on-surface"
+        data-tauri-drag-region
+      >
         {{ t('app.name') }}
       </h1>
+      <!-- Only for staff: a student does not need to be told what they are. -->
       <span
-        v-if="user"
+        v-if="user && user.role !== 'student'"
         class="hidden shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold sm:inline"
-        :class="roleBadgeClass[user.role] ?? 'bg-surface-container-high text-on-surface-variant'"
+        :class="
+          user.role === 'admin'
+            ? 'bg-primary-container text-on-primary-container'
+            : 'bg-secondary-container text-on-secondary-container'
+        "
       >
         {{ roleLabel }}
       </span>
-    </div>
 
-    <!-- Controls keep their size whatever the labels say, so the header never
-         reflows between locales. -->
-    <div class="flex shrink-0 items-center gap-1">
-      <ServerStatus />
-      <span class="hidden max-w-40 truncate text-sm text-on-surface-variant lg:inline">
-        {{ user?.fullName }}
-      </span>
-      <ThemeSwitcher />
-      <LanguageSwitcher />
-      <AppButton
-        v-if="desktop"
-        variant="ghost"
-        icon
-        :aria-label="t('desktop.server.title')"
-        :title="t('desktop.server.title')"
-        @click="emit('server')"
-      >
-        <span
-          class="size-2 rounded-full"
-          :class="serverStatus?.running ? 'bg-success' : 'bg-outline'"
-        />
-      </AppButton>
-      <AppButton
-        v-if="desktop"
-        variant="ghost"
-        icon
-        :aria-label="t('common.about.title')"
-        @click="aboutOpen = true"
-      >
-        <Info class="size-4" aria-hidden="true" />
-      </AppButton>
-      <AppButton v-if="user" variant="secondaryMuted" size="sm" @click="signOut">
-        {{ t('auth.signOut') }}
-      </AppButton>
+      <!-- The empty space is the drag handle; the controls keep their own boxes. -->
+      <div class="min-w-4 flex-1 self-stretch" data-tauri-drag-region />
+
+      <div class="flex shrink-0 items-center gap-2">
+        <ServerStatus />
+        <LanguageSwitcher />
+        <!-- Only somebody signed in has an account to show, and the button opens
+             the theme, the language and signing out. -->
+        <AccountMenu v-if="user" :hosted="props.hosted" @server="emit('server')" />
+        <!-- Starting the server is a thing the teacher does here before signing
+             in, so it stays a control of its own rather than a menu row. -->
+        <AppButton
+          v-if="props.hosted"
+          variant="ghost"
+          icon
+          :aria-label="t('desktop.server.title')"
+          :title="t('desktop.server.title')"
+          @click="emit('server')"
+        >
+          <Server class="size-4" aria-hidden="true" />
+        </AppButton>
+      </div>
     </div>
+    <OfflineBanner />
   </header>
-
-  <AboutDialog :open="aboutOpen" @close="aboutOpen = false" />
 </template>

@@ -10,7 +10,6 @@ import TeacherDashboard from './views/TeacherDashboard.vue'
 import StudentDashboard from './views/StudentDashboard.vue'
 import ConfirmDialog from './components/common/ConfirmDialog.vue'
 import ToastHost from './components/common/ToastHost.vue'
-import OfflineBanner from './components/common/OfflineBanner.vue'
 import { getHealthState, startHealthPolling, stopHealthPolling } from './composables/health'
 import { useToast } from './composables/toast'
 
@@ -58,7 +57,6 @@ const screen = computed<Screen>(() => {
 </script>
 
 <template>
-  <OfflineBanner />
   <div v-if="screen === 'loading'" class="flex min-h-dvh items-center justify-center p-6">
     <div role="status" class="w-full max-w-xs space-y-3">
       <span class="sr-only">{{ t('common.loading') }}</span>
@@ -73,7 +71,11 @@ const screen = computed<Screen>(() => {
     @register="mode = 'register'"
     @server="mode = 'server'"
   />
-  <RegisterView v-else-if="screen === 'register'" @back="mode = 'login'" />
+  <RegisterView
+    v-else-if="screen === 'register'"
+    @back="mode = 'login'"
+    @server="mode = 'server'"
+  />
   <ServerView v-else-if="screen === 'server'" @back="mode = 'login'" />
   <AdminDashboard v-else-if="screen === 'admin'" />
   <TeacherDashboard v-else-if="screen === 'teacher'" @server="mode = 'server'" />
