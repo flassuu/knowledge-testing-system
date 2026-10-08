@@ -13,7 +13,22 @@ set -euo pipefail
 #      Mesa 26, making EGL init abort with EGL_BAD_PARAMETER.
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-APPIMAGE="${APPIMAGE:-$SCRIPT_DIR/lantern_0.5.0_amd64.AppImage}"
+
+# The bundle is named after productName, so it is `LANtern_<version>_amd64.AppImage`
+# — mixed case, and a different version every release. Globbing it means this
+# launcher keeps working across releases instead of needing an edit each time;
+# set APPIMAGE to point at a specific build.
+if [ -n "${APPIMAGE:-}" ]; then
+  :
+else
+  APPIMAGE="$(ls -1t "$SCRIPT_DIR"/LANtern_*_amd64.AppImage 2>/dev/null | head -n 1 || true)"
+  if [ -z "$APPIMAGE" ]; then
+    echo "No LANtern AppImage next to this script ($SCRIPT_DIR)." >&2
+    echo "Build one with: NO_STRIP=true pnpm --filter @lantern/desktop tauri build" >&2
+    echo "or point APPIMAGE at the file you want to run." >&2
+    exit 1
+  fi
+fi
 
 chmod +x "$APPIMAGE"
 
