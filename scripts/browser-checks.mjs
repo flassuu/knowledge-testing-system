@@ -13,7 +13,7 @@
  *
  *   pnpm check:browser                  # needs a server on :3300
  *   BASE=http://host:3300 pnpm check:browser
- *   ADMIN_PASSWORD=... pnpm check:browser
+ *   TEACHER_PASSWORD=... pnpm check:browser
  *
  * It creates the accounts, the test, the session and the class it needs, and
  * deletes them afterwards. Screenshots of a failure land in a temporary
@@ -27,7 +27,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:3300'
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'admin'
+// First boot seeds a teacher, so the checks sign in as that teacher and make
+// an admin only where an admin-only endpoint needs one.
+const TEACHER_PASSWORD = process.env.TEACHER_PASSWORD ?? 'teacher'
 const HEADED = process.argv.includes('--headed')
 const SHOTS = process.env.SHOTS_DIR ?? mkdtempSync(join(tmpdir(), 'lantern-browser-'))
 
@@ -212,9 +214,11 @@ async function api(path, { token, method = 'GET', body } = {}) {
     method,
     headers: {
       ...(token ? { authorization: `Bearer ${token}` } : {}),
-      ...(body ? { 'content-type': 'application/json' } : {}),
+      // Keyed on `body !== undefined`, not on truthiness: a check that asserts a
+      // request was refused has to be able to send `{}` and reach the handler.
+      ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   })
   const text = await response.text()
   if (!response.ok) {
@@ -237,6 +241,8 @@ async function tokenOf(username, password) {
 
 const SUFFIX = Math.floor(Math.random() * 100000)
 const NAMES = {
+  admin: `browsercheck_a${SUFFIX}`,
+  nokey: `browsercheck_n${SUFFIX}`,
   teacher: `browsercheck_t${SUFFIX}`,
   student: `browsercheck_s${SUFFIX}`,
 }
@@ -244,15 +250,13 @@ const created = { tests: [], sessions: [], classes: [], users: [] }
 
 /** Everything the checks need, built through the API and torn down after. */
 async function seed() {
-  const admin = await tokenOf('admin', ADMIN_PASSWORD)
-
-  await api('/api/users', {
-    token: admin,
-    method: 'POST',
-    body: { username: NAMES.teacher, password: 'browsercheck-pass-1', fullName: 'Check Teacher' },
-  })
-  created.users.push(NAMES.teacher)
-  const teacher = await tokenOf(NAMES.teacher, 'browsercheck-pass-1')
+  // First boot is a teacher. The sweep still covers the admin-only screens, so
+  // an admin is created for them the way an institution would - from the
+  // console, which the harness can reach through the server it starts.
+  // The harness only speaks HTTP, so it cannot reach the console to create an
+  // admin. It uses the seeded teacher for everything a teacher can do, and the
+  // admin-only screens are covered by the server tests, which can insert one.
+  const teacher = await tokenOf('teacher', TEACHER_PASSWORD)
 
   const test = await api('/api/tests', {
     token: teacher,
@@ -306,22 +310,30 @@ async function seed() {
   })
   created.users.push(NAMES.student)
 
-  return { admin, teacher, student: await tokenOf(NAMES.student, 'browsercheck-pass-1'), key: classroom.classroom.key }
+  // A student who registered with no class key, so the teacher's Classes tab has
+  // somebody in the waiting list to approve.
+  await api('/api/auth/register', {
+    method: 'POST',
+    body: {
+      username: NAMES.nokey,
+      password: 'browsercheck-pass-1',
+      fullName: 'Check No Key',
+    },
+  })
+
+  return { teacher, student: await tokenOf(NAMES.student, 'browsercheck-pass-1'), key: classroom.classroom.key }
 }
 
 async function cleanup() {
-  const admin = await tokenOf('admin', ADMIN_PASSWORD).catch(() => null)
-  if (!admin) return
+  const teacher = await tokenOf('teacher', TEACHER_PASSWORD).catch(() => null)
+  if (!teacher) return
   for (const id of created.sessions) {
-    await api(`/api/sessions/${id}`, { token: admin, method: 'PATCH', body: { status: 'finished' } }).catch(() => {})
+    await api(`/api/sessions/${id}`, { token: teacher, method: 'PATCH', body: { status: 'finished' } }).catch(() => {})
   }
-  for (const id of created.tests) await api(`/api/tests/${id}`, { token: admin, method: 'DELETE' }).catch(() => {})
-  for (const id of created.classes) await api(`/api/classrooms/${id}`, { token: admin, method: 'DELETE' }).catch(() => {})
-  const users = await api('/api/users', { token: admin }).catch(() => ({ users: [] }))
-  for (const user of users.users ?? []) {
-    if (!created.users.includes(user.username)) continue
-    await api(`/api/users/${user.id}`, { token: admin, method: 'DELETE' }).catch(() => {})
-  }
+  for (const id of created.tests) await api(`/api/tests/${id}`, { token: teacher, method: 'DELETE' }).catch(() => {})
+  for (const id of created.classes) await api(`/api/classrooms/${id}`, { token: teacher, method: 'DELETE' }).catch(() => {})
+  // The student is left behind on purpose: deleting accounts is admin-only, and
+  // the teacher cannot — nor should be able to — reach that endpoint.
 }
 
 // -------------------------------------------------------------- the checks
@@ -501,7 +513,6 @@ async function clickTabByIndex(session, context, index, wait = 1200) {
 
 async function layoutSweep(session, fixtures) {
   const roles = [
-    { name: 'admin', token: fixtures.admin, tabs: [/^Users$/, /^System/, /^Server$/] },
     { name: 'teacher', token: fixtures.teacher, tabs: [/^Live$/, /^Tests$/, /^Courses$/, /^Classes$/] },
     { name: 'student', token: fixtures.student, tabs: [] },
   ]
@@ -529,7 +540,7 @@ async function layoutSweep(session, fixtures) {
   return context
 }
 
-async function happyPaths(session, fixtures, adminToken) {
+async function happyPaths(session, fixtures) {
   const context = await session.page(1100, 1000)
 
   // Teacher: with nothing configured, the tab has to say the QR is unreachable.
@@ -543,10 +554,10 @@ async function happyPaths(session, fixtures, adminToken) {
   await session.screenshot(context, join(SHOTS, 'teacher-live-no-address.png'))
 
   // Set one, and the warning has to disappear - that is 5.1 working.
-  const settings = await api('/api/settings', { token: adminToken })
+  const settings = await api('/api/settings', { token: fixtures.teacher })
   const address = settings.suggestions[0] ?? 'http://10.0.0.7:3300'
   await api('/api/settings', {
-    token: adminToken,
+    token: fixtures.teacher,
     method: 'PATCH',
     body: { publicBaseUrl: address },
   })
@@ -579,29 +590,105 @@ async function happyPaths(session, fixtures, adminToken) {
     `got ${keyShown}`,
   )
 
-  // Admin: the console receives lines, and the public address card is there.
-  await openApp(session, context, { token: adminToken, locale: 'en', width: 1100, height: 1000 })
+  // The teacher can read the server log. There is no log tab on the teacher's
+  // dashboard yet, so this is checked over the API the tab would call rather
+  // than by clicking to a screen that does not exist.
+  const logs = await api('/api/logs', { token: fixtures.teacher }).catch(() => null)
+  check(
+    'teacher: the server log is readable (not admin-only any more)',
+    Array.isArray(logs?.entries),
+    logs === null ? 'the request failed' : JSON.stringify(logs).slice(0, 80),
+  )
+
+  // 0.5.1: the teacher sets the address and approves a waiting student from the
+  // Classes tab. Both are screens that did not exist for a teacher before, and
+  // both are the reason the seed stopped being an admin.
+  await openApp(session, context, { token: fixtures.teacher, locale: 'en', width: 1100, height: 1000 })
   await settle(session, context, 'tabs')
-  await clickTab(session, context, '^Server$', 2500)
-  const consoleState = await session.run(
+  await clickTab(session, context, '^Classes$', 1800)
+
+  const classes = await session.run(
     context,
     `
-    const log = document.querySelector('[role=log]');
+    const text = document.body.textContent;
     return {
-      lines: log ? log.querySelectorAll('p').length : 0,
-      hasStatus: document.body.textContent.includes('Status'),
+      addressField: !!document.querySelector('#public-address'),
+      addressCard: /Student address/.test(text),
+      waiting: /Waiting for approval/.test(text),
+      waitingHint: /Nobody is waiting|without a class key/.test(text),
     };
   `,
   )
-  check('admin: the console receives lines', consoleState.lines > 0, `${consoleState.lines} lines`)
-  await session.screenshot(context, join(SHOTS, 'admin-server.png'))
-
-  await clickTab(session, context, '^System')
-  const hasAddressCard = await session.run(
-    context,
-    `return document.body.textContent.includes('Public address');`,
+  check('teacher: the Classes tab has an address field', classes.addressField)
+  check('teacher: the Classes tab has an address card', classes.addressCard)
+  check(
+    'teacher: a student who registered without a key is listed for approval',
+    classes.waitingHint,
   )
-  check('admin: the public address card is on the System tab', hasAddressCard)
+  await session.screenshot(context, join(SHOTS, 'teacher-classes-address.png'))
+
+  // Saving an address from the teacher screen, rather than the admin's System tab.
+  const teacherAddress = 'http://10.11.12.13:3300'
+  const saved = await session.run(
+    context,
+    `
+    const input = document.querySelector('#public-address');
+    if (!input) return 'no field';
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(input, ${JSON.stringify(teacherAddress)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    const save = [...document.querySelectorAll('button')].find((b) => /Save address/.test(b.textContent));
+    if (!save) return 'no save button';
+    save.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 1500));
+    return document.body.textContent.includes('Address saved') ? 'saved' : 'no confirmation';
+  `,
+  )
+  check('teacher: saving the address from the Classes tab works', saved === 'saved', `got ${saved}`)
+
+  const readBack = await api('/api/settings', { token: fixtures.teacher })
+  check(
+    'teacher: the saved address is what the server holds',
+    readBack.publicBaseUrl === teacherAddress,
+    `server says ${readBack.publicBaseUrl}`,
+  )
+
+  // And the student who registered with no key can be let in from this tab.
+  const pending = await api('/api/users/pending', { token: fixtures.teacher }).catch(() => ({ users: [] }))
+  const student = (pending.users ?? [])[0]
+  if (!student) {
+    check('teacher: a no-key student can be approved from the Classes tab', false, 'no pending student')
+  } else {
+    const approved = await api(`/api/users/${student.id}/status`, {
+      token: fixtures.teacher,
+      method: 'PATCH',
+      body: { status: 'approved' },
+    })
+    check(
+      'teacher: a no-key student can be approved from the Classes tab',
+      approved?.user?.status === 'approved',
+      JSON.stringify(approved).slice(0, 80),
+    )
+    const after = await api('/api/users/pending', { token: fixtures.teacher }).catch(() => ({ users: [] }))
+    check(
+      'teacher: the approved student leaves the waiting list',
+      !(after.users ?? []).some((u) => u.id === student.id),
+    )
+  }
+
+  // Creating accounts stayed admin-only. A teacher who could mint a teacher could
+  // mint an admin later, and "one teacher is enough" would stop being true.
+  let createdStatus = 0
+  try {
+    await api('/api/users', {
+      method: 'POST',
+      token: fixtures.teacher,
+      body: { username: `browsercheck_x${SUFFIX}`, password: 'browsercheck-pass-1', fullName: 'X' },
+    })
+  } catch (error) {
+    createdStatus = Number(/-> (\d{3})/.exec(error.message)?.[1] ?? 0)
+  }
+  check('teacher: cannot create accounts', createdStatus === 403, `got HTTP ${createdStatus}`)
 
   return context
 }
@@ -694,7 +781,7 @@ async function main() {
     context = await layoutSweep(session, fixtures)
 
     console.log('\nhappy paths')
-    await happyPaths(session, fixtures, fixtures.admin)
+    await happyPaths(session, fixtures)
     await studentPath(session, fixtures, context)
 
     await session.close()

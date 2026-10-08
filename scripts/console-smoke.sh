@@ -41,7 +41,7 @@ fi
 
 echo "== the interactive console, on a pty"
 mkfifo "$fifo"
-ADMIN_PASSWORD=smoke-console-pw script -qec \
+TEACHER_PASSWORD=smoke-console-pw script -qec \
   "$binary --port $port --data $workdir/data --webroot $root/apps/web-client/dist" \
   /dev/null <"$fifo" >"$workdir/tty.log" 2>&1 &
 console_pid=$!
@@ -70,6 +70,15 @@ echo "approve nobody" >&3
 sleep 1
 grep -q "no such account" "$workdir/tty.log" || fail "the approve command did not report the missing account"
 
+# Nobody starts as an admin; the console is how one gets created later.
+echo "admin principal console-admin-pw" >&3
+sleep 1
+grep -q "now an admin" "$workdir/tty.log" || fail "the admin command did not create the account"
+
+echo "status" >&3
+sleep 1
+grep -q "1 admin" "$workdir/tty.log" || fail "the status line does not count the new admin"
+
 echo "stop" >&3
 for _ in $(seq 1 20); do
   if grep -q "stopping the server" "$workdir/tty.log"; then break; fi
@@ -81,7 +90,7 @@ exec 3>&-
 echo "   console: ok"
 
 echo "== a piped run stays machine-readable"
-ADMIN_PASSWORD=smoke-console-pw "$binary" \
+TEACHER_PASSWORD=smoke-console-pw "$binary" \
   --port $((port + 1)) --data "$workdir/data2" --no-console \
   >"$workdir/pipe.log" 2>&1 &
 piped_pid=$!
