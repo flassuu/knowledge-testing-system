@@ -9,7 +9,6 @@ import TeacherDashboard from './views/TeacherDashboard.vue'
 import StudentDashboard from './views/StudentDashboard.vue'
 import ConfirmDialog from './components/common/ConfirmDialog.vue'
 import ToastHost from './components/common/ToastHost.vue'
-import OfflineBanner from './components/common/OfflineBanner.vue'
 import { getHealthState, startHealthPolling, stopHealthPolling } from './composables/health'
 import { useToast } from './composables/toast'
 
@@ -54,7 +53,6 @@ const screen = computed<Screen>(() => {
 </script>
 
 <template>
-  <OfflineBanner />
   <div v-if="screen === 'loading'" class="flex min-h-dvh items-center justify-center p-6">
     <div role="status" class="w-full max-w-xs space-y-3">
       <span class="sr-only">{{ t('common.loading') }}</span>

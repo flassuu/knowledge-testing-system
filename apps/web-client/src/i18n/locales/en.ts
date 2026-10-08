@@ -9,6 +9,7 @@ export default {
     admin: 'Admin',
   },
   server: {
+    label: 'Server',
     checking: 'Checking…',
     online: 'Online',
     offline: 'Offline',
@@ -17,12 +18,11 @@ export default {
     recheckHint: 'Server status — click to re-check',
   },
   theme: {
+    darkMode: 'Dark theme',
     switchToLight: 'Switch to light theme',
     switchToDark: 'Switch to dark theme',
   },
-  auth: {
-    chooseRole: 'Sign in',
-    chooseRoleHint: 'Pick your role.',
+  auth: {    signInHint: 'Your teacher or your class name.',
     username: 'Username',
     password: 'Password',
     showPassword: 'Show password',
@@ -441,6 +441,7 @@ export default {
   },
   student: {
     heading: 'Student home',
+    greeting: 'Hello, {name}',
     subheading: 'Join tests, read materials, see your results.',
     history: {
       heading: 'My results',
@@ -509,6 +510,9 @@ export default {
       resultsFailed: 'Could not load your results.',
       downloadFailed: 'Could not download the file.',
     },
+  },
+  menu: {
+    account: 'Account',
   },
   common: {
     language: 'Language',

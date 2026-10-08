@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppHeader from '../components/AppHeader.vue'
+import { useAuth } from '../stores/auth'
 import JoinSessionCard from '../components/student/JoinSessionCard.vue'
 import SessionResult from '../components/student/SessionResult.vue'
 import StudentCourses from '../components/student/StudentCourses.vue'
@@ -18,6 +19,7 @@ import {
 import AppButton from '../components/common/AppButton.vue'
 
 const { t } = useI18n()
+const { user } = useAuth()
 
 const code = ref('')
 const joining = ref(false)
@@ -112,8 +114,11 @@ onMounted(() => {
     <AppHeader />
 
     <main class="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
+      <!-- The name is here rather than in the header because this is a shared
+           family phone: "Check Student" is what tells the next person at this
+           screen whose results they are looking at. -->
       <h2 class="text-xl font-semibold text-on-surface">
-        {{ t('student.heading') }}
+        {{ t('student.greeting', { name: user?.fullName ?? '' }) }}
       </h2>
       <p class="mt-1 text-sm text-on-surface-variant">{{ t('student.subheading') }}</p>
 
@@ -173,9 +178,6 @@ onMounted(() => {
         </div>
       </template>
 
-      <p class="mt-8 text-center text-xs text-on-surface-variant">
-        {{ t('footer.message') }}
-      </p>
     </main>
   </div>
 </template>
