@@ -33,6 +33,9 @@ Thumbs.db
 .vscode/
 *.code-workspace
 
+# Session handoff notes (local only; opencode.json stays tracked)
+.opencode/HANDOFF.md
+
 # Misc
 *.local
 *.AppImage
