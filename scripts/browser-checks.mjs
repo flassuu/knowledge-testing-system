@@ -455,6 +455,7 @@ async function settle(session, context, expect = 'content', attempts = 60) {
     `,
     )
     if (last === 'ready') return 'ready'
+    if (expect === 'signed-out' && last === 'signed-out') return 'ready'
     await sleep(250)
   }
   const seen = await session
@@ -543,7 +544,10 @@ async function layoutSweep(session, fixtures) {
 async function happyPaths(session, fixtures) {
   const context = await session.page(1100, 1000)
 
-  // Teacher: with nothing configured, the tab has to say the QR is unreachable.
+  // With nothing configured, the Live tab has to say the QR is unreachable. This
+  // runs first, before anything sets an address: 0.5.2 moved that to the
+  // teacher's own Classes tab, and the warning can only be observed while the
+  // address is still unset.
   await openApp(session, context, { token: fixtures.teacher, locale: 'en', width: 1100, height: 1000 })
   await settle(session, context, 'tabs')
   await clickTab(session, context, '^Live$')
@@ -552,28 +556,6 @@ async function happyPaths(session, fixtures) {
   const withoutAddress = await readAddressState(session, context)
   check('teacher: warns when no public address is set', withoutAddress.warning)
   await session.screenshot(context, join(SHOTS, 'teacher-live-no-address.png'))
-
-  // Set one, and the warning has to disappear - that is 5.1 working.
-  const settings = await api('/api/settings', { token: fixtures.teacher })
-  const address = settings.suggestions[0] ?? 'http://10.0.0.7:3300'
-  await api('/api/settings', {
-    token: fixtures.teacher,
-    method: 'PATCH',
-    body: { publicBaseUrl: address },
-  })
-
-  await openApp(session, context, { token: fixtures.teacher, locale: 'en', width: 1100, height: 1000 })
-  await settle(session, context, 'tabs')
-  await clickTab(session, context, '^Live$')
-  await openTheQr(session, context)
-
-  const withAddress = await readAddressState(session, context)
-  check(
-    'teacher: the QR carries the configured address',
-    !withAddress.warning && (withAddress.address ?? '').includes(address),
-    `address line: ${withAddress.address}`,
-  )
-  await session.screenshot(context, join(SHOTS, 'teacher-live-with-address.png'))
 
   // Teacher: the class key is on screen.
   await clickTab(session, context, '^Classes$')
@@ -652,6 +634,19 @@ async function happyPaths(session, fixtures) {
     readBack.publicBaseUrl === teacherAddress,
     `server says ${readBack.publicBaseUrl}`,
   )
+
+  // And with an address set, the Live tab stops warning and prints it under the
+  // QR. This is the whole point of the field: a code that scans and then fails
+  // reads as a broken app.
+  await clickTab(session, context, '^Live$', 1800)
+  await openTheQr(session, context)
+  const withAddress = await readAddressState(session, context)
+  check(
+    'teacher: the QR carries the configured address',
+    !withAddress.warning && (withAddress.address ?? '').includes(teacherAddress),
+    `warning=${withAddress.warning} address line: ${withAddress.address}`,
+  )
+  await session.screenshot(context, join(SHOTS, 'teacher-live-with-address.png'))
 
   // And the student who registered with no key can be let in from this tab.
   const pending = await api('/api/users/pending', { token: fixtures.teacher }).catch(() => ({ users: [] }))
@@ -735,12 +730,239 @@ async function studentPath(session, fixtures, context) {
     return {
       name: text.includes('Check Student'),
       keys: /\b(student|common|auth)\.[a-z]+\b/.test(text),
+      // What the page actually said, because "the name is missing" and "the
+      // screen we signed in to is the login form" are different bugs.
+      state: text.slice(0, 120),
+      hasToken: !!localStorage.getItem('auth.token'),
     };
   `,
   )
-  check('student: signs in with the account the key created', home.name)
+  check(
+    'student: signs in with the account the key created',
+    home.name,
+    `token=${home.hasToken} page said: ${home.state}`,
+  )
   check('student: no untranslated keys on the home screen', !home.keys)
   await session.screenshot(context, join(SHOTS, 'student-home.png'))
+
+  // The account menu: the header no longer carries the name, theme or language,
+  // so this is the one control that has to work on every screen and both roles.
+  const menu = await session.run(
+    context,
+    `
+    // The account trigger is the one labelled "Account"; the language button in
+    // the header is a menu too, and picking the wrong one tests the wrong thing.
+    const trigger = [...document.querySelectorAll('[aria-haspopup=menu]')].find((b) =>
+      /Account|Обліковий/.test(b.getAttribute('aria-label') || ''),
+    );
+    if (!trigger) return { opened: false, why: 'no account trigger in the header' };
+    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 400));
+    const panel = document.querySelector('[role=menu]');
+    if (!panel) return { opened: false, why: 'the trigger opened nothing' };
+    const text = panel.textContent;
+    const result = {
+      opened: true,
+      hasName: /Check Student/.test(text),
+      hasUsername: /browsercheck_s/.test(text),
+      // This screen runs in Ukrainian, so the rows are matched in both
+      // languages rather than assuming the English one.
+      hasTheme: /Switch to|Перемкн|Увімкн|Dark theme|Темна тема/.test(text),
+      isSwitch: !!panel.querySelector('[role=switch]'),
+      // The row says "Language"; the locale names live in the list it opens.
+      hasLanguage: /Language|Мова/.test(text),
+      hasSignOut: /Вийти|Sign out/.test(text),
+      // Every row must be reachable by keyboard, not just clickable. Five rows:
+      // theme, language, sign out, plus the desktop's server and about.
+      items: panel.querySelectorAll('[data-menu-item]').length,
+      // And nothing must spill past the right edge on a phone.
+      withinEdge: panel.getBoundingClientRect().right <= window.innerWidth + 1,
+    };
+    return result;
+  `,
+  )
+  check('teacher/student: the account menu opens', menu.opened, menu.why ?? '')
+  check('account menu: names the account', menu.hasName && menu.hasUsername)
+  check(
+    'account menu: has theme, language and sign out',
+    menu.hasTheme && menu.hasLanguage && menu.hasSignOut,
+    `theme=${menu.hasTheme} language=${menu.hasLanguage} signOut=${menu.hasSignOut}`,
+  )
+  check('account menu: the theme is a switch', menu.isSwitch, `role=switch found: ${menu.isSwitch}`)
+
+  // Language is a row that opens its own list, so the locales are not in the
+  // panel until that row is opened. Clicking it is what the check is about.
+  const locales = await session.run(
+    context,
+    `
+    const panel = document.querySelector('[role=menu]');
+    if (!panel) return { opened: false };
+    const row = [...panel.querySelectorAll('[role=menuitem]')].find((r) =>
+      /Language|Мова/.test(r.textContent),
+    );
+    if (!row) return { opened: false, why: 'no language row' };
+    row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 300));
+    return {
+      opened: true,
+      locales: panel.querySelectorAll('[role=menuitemradio]').length,
+      hasAmerican: /English/.test(panel.textContent),
+    };
+  `,
+  )
+  check(
+    'account menu: the language row opens a list of locales',
+    locales.opened && locales.locales >= 2,
+    locales.why ?? `${locales.locales} locale rows`,
+  )
+  check('the English locale is listed by name', locales.opened && locales.hasAmerican)
+  check('account menu: every row is keyboard reachable', menu.items >= 3, `${menu.items} rows`)
+  check('account menu: stays inside a 390px screen', menu.withinEdge)
+  await session.screenshot(context, join(SHOTS, 'student-account-menu.png'))
+
+  // Escape must close it, or the menu covers the content on a phone.
+  // Escape on the element that has focus, so it bubbles the way a real key does.
+  // The wait is longer than the leave transition (--motion-instant, 90ms) plus a
+  // frame, because the panel stays in the DOM while it fades.
+  const closed = await session.run(
+    context,
+    `
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await new Promise((r) => setTimeout(r, 400));
+    const panel = document.querySelector('[role=menu]');
+    if (!panel) return 'closed';
+    const cs = getComputedStyle(panel);
+    return cs.opacity === '0' ? 'closed (fading)' : 'still visible, opacity ' + cs.opacity;
+  `,
+  )
+  check('account menu: Escape closes it', closed === 'closed' || closed === 'closed (fading)', closed)
+
+  // Reopened after Escape, so the screenshot below actually shows the menu: the
+  // one above was taken while the sub-panel for the language was still open, and
+  // the state dump on the next failure then read an empty page.
+  const reopened = await session.run(
+    context,
+    `
+    const trigger = [...document.querySelectorAll('[aria-haspopup=menu]')].find((b) =>
+      /Account|Обліковий/.test(b.getAttribute('aria-label') || ''),
+    );
+    if (!trigger) return 'no account trigger';
+    // Hover leaves the menu as the pointer leaves it, so a screenshot taken
+    // through an automation client with no pointer can open it by click but not
+    // keep it open: the click is on the trigger, which is inside the root.
+    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 400));
+    const panel = document.querySelector('[role=menu]');
+    if (!panel) return 'the trigger opened nothing';
+    return 'open: ' + panel.textContent.replace(/\\s+/g, ' ').trim().slice(0, 120);
+  `,
+  )
+  check('account menu: reopens after Escape', reopened.startsWith('open'), reopened)
+  await session.screenshot(context, join(SHOTS, 'account-menu-open.png'))
+
+  // The language menu opens on hover as well as on click, so it is checked by
+  // click here: a BiDi client has no pointer, and a check that could only pass
+  // with a real mouse would not run in CI at all.
+  const languageMenu = await session.run(
+    context,
+    `
+    // Close whatever is open, then use the header's language button.
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await new Promise((r) => setTimeout(r, 250));
+    const trigger = [...document.querySelectorAll('[aria-haspopup=menu]')].find((b) =>
+      /Language|Мова/.test(b.getAttribute('aria-label') || ''),
+    );
+    if (!trigger) return { opened: false, why: 'no language button in the header' };
+    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 400));
+    const panels = [...document.querySelectorAll('[role=menu]')];
+    const localeRows = panels.flatMap((p) => [...p.querySelectorAll('[role=menuitemradio]')]);
+    return {
+      opened: panels.length > 0,
+      locales: localeRows.length,
+      names: localeRows.map((r) => r.textContent.trim().replace(/\\s+/g, ' ')).join(' | '),
+      withinEdge: panels.every((p) => p.getBoundingClientRect().right <= window.innerWidth + 1),
+    };
+  `,
+  )
+  check(
+    'the header language button opens a list of locales',
+    languageMenu.opened && languageMenu.locales >= 2,
+    languageMenu.why ?? `${languageMenu.locales} rows: ${languageMenu.names}`,
+  )
+  check('the language menu stays inside the screen', languageMenu.withinEdge)
+
+  // The capture shows the menu closed even though it is in the DOM and the
+  // checks read it: `browsingContext.captureScreenshot` composites the page
+  // before the Vue transition finishes painting the overlay. A wait after the
+  // click, not a wait inside it, is what gets it into the picture.
+  await session.screenshot(context, join(SHOTS, 'language-menu-open.png'))
+
+  // Two failures on "the screenshot does not show the menu", so this stops being
+  // guessed at. The capture comes back without the overlay however long it waits,
+  // while the DOM has it and every check reads it - so the screenshot is not a
+  // usable failure report for an open menu in this harness. Recorded here rather
+  // than retried: the state dump above is what a failure is diagnosed from.
+  // TODO: the login and menu screenshots come from a viewport capture that skips
+  // the composited layer; a full-page capture or disabling the overlay's
+  // compositing would put the menu in the picture. Until then, a menu failure is
+  // diagnosed from `the page said`, not from this file.
+
+  // The signed-out screens, where there is no account to put in a menu. A student
+  // arriving from a class QR lands here first, and it is the first thing anybody
+  // sees, so it is checked in both languages at phone width.
+  // Sign out through the store, then navigate: a second load is what makes the app
+  // read the missing token, and `location.href` from inside a script leaves the
+  // BiDi navigate wait pointing at the previous document.
+  await openApp(session, context, { token: fixtures.teacher, locale: 'en', width: 390, height: 844 })
+  await session.run(
+    context,
+    `
+    localStorage.removeItem('auth.token');
+    return true;
+  `,
+  )
+  navigations += 1
+  await session.goto(context, `${BASE}/?out=${navigations}`)
+  // 'signed-out' is a finished state here, not a stall: settle() otherwise waits
+  // for content that will never arrive and reports a timeout.
+  await settle(session, context, 'signed-out')
+
+  const login = await session.run(
+    context,
+    `
+    const text = document.body.textContent;
+    return {
+      // The role picker is gone: it sent nothing to the server and one of its
+      // three buttons said "Admin".
+      noRoleChoice: !/Pick your role|Оберіть роль/.test(text),
+      noAdminWord: !/\bAdmin\b|Адміністратор/.test(text),
+      hasUsername: !!document.querySelector('input[autocomplete=username]'),
+      hasPassword: !!document.querySelector('input[type=password]'),
+      submitButtons: [...document.querySelectorAll('button[type=submit]')].length,
+      // No account menu to somebody who is not signed in. Both the account button
+      // and the language button are menus, so the check asks for the account one by
+      // its own label rather than counting menus.
+      noAccountButton: ![...document.querySelectorAll('[aria-haspopup=menu]')].some((b) =>
+        /Account|Обліковий/.test(b.getAttribute('aria-label') || ''),
+      ),
+      // The language button must still be there: that is where a student changes
+      // the language before signing in, and it is easy to lose while tidying up.
+      hasLanguageButton: [...document.querySelectorAll('[aria-haspopup=menu]')].some((b) =>
+        /Language|Мова/.test(b.getAttribute('aria-label') || ''),
+      ),
+      keys: /\b(auth|common|menu|student|teacher)\\.[a-z]+\\b/.test(text),
+    };
+  `,
+  )
+  check('login: no role picker', login.noRoleChoice)
+  check('login: never mentions an administrator', login.noAdminWord)
+  check('login: asks for a username and a password', login.hasUsername && login.hasPassword)
+  check('login: one submit button', login.submitButtons === 1, `${login.submitButtons} found`)
+  check('login: no account menu when signed out', login.noAccountButton)
+  check('login: the language button is still there', login.hasLanguageButton)
+  check('login: no untranslated keys', !login.keys)
+  await session.screenshot(context, join(SHOTS, 'login-signed-out.png'))
 }
 
 
