@@ -82,9 +82,6 @@ onMounted(countPending)
         <ServerTab v-else />
       </div>
 
-      <p class="mt-8 text-center text-xs text-on-surface-variant">
-        {{ t('footer.message') }}
-      </p>
     </main>
   </div>
 </template>
