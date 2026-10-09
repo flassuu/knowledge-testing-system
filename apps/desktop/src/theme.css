@@ -146,13 +146,16 @@
    * tooltip would say, and a tooltip on top of it only obscures it.
    */
   /*
-   * A second of hover before anything appears. A tooltip that shows up the
-   * instant the pointer lands is a tooltip that shows up on the way past a
+   * A second and a bit of hover before anything appears. A tooltip that shows up
+   * the instant the pointer lands is a tooltip that shows up on the way past a
    * control, and the reader has to dismiss one they were not asking for.
    *
-   * The delay is a `transition-delay` on `display`, not an animation and not a
-   * timer: `display` is a discrete property, so the change lands at the end of
-   * the delay, and the open state sets the delay to zero so leaving is instant.
+   * The panel is `display: none` while hidden, and a transition does not run
+   * from a state the engine never laid out - which is why the tooltip used to
+   * appear instantly and with no fade. The delay and the fade are therefore an
+   * animation: a keyframe animation does start when the element becomes
+   * displayed, and `backwards` holds it invisible through the delay. Leaving
+   * stays instant, because hiding is the element simply not being there.
    */
   /*
    * The host carries the panel, so the host is what has to outrank whatever the
@@ -185,8 +188,10 @@
        cover what is under it; what it must not do is go under it. */
     z-index: 100;
     margin-top: 0.375rem;
+    /* Opacity only: a tooltip that also moved or scaled re-sampled its text on
+       every frame, and the software rendering path felt it. */
+    opacity: 0;
     transform: translateX(-50%);
-    transition: display 0s linear 1000ms;
   }
 
   /*
@@ -199,7 +204,17 @@
   [data-tip-host]:hover > [data-tip-panel],
   [data-tip-host]:focus-visible > [data-tip-panel] {
     display: block;
-    transition: display 0s linear 0s;
+    opacity: 1;
+    /* The delay is the animation-delay, and `backwards` keeps the panel at the
+       `from` opacity (invisible) for its whole length. Change the 1200ms here to
+       tune how long the pointer must rest. */
+    animation: tip-in var(--motion-short) var(--ease-decelerate) 1200ms backwards;
+  }
+
+  @keyframes tip-in {
+    from {
+      opacity: 0;
+    }
   }
 
   /* Last, so it wins over the hover rule on equal specificity. */
@@ -221,11 +236,76 @@
     display: none;
   }
 
-  /* Panels: always in the document, shown or hidden and nothing in between. */
+  /*
+   * Panels: always in the document, shown or hidden and nothing in between.
+   * The transition lives in the state rules because a transition is read from
+   * the state being *entered*: opening takes the open rule - the emphasized
+   * curve, a scale from the corner the panel hangs from - and closing takes
+   * the closed rule, faster and accelerating, with `visibility` flipping only
+   * after the fade has landed. Visibility is discrete, so its delay is a timed
+   * cut, and `pointer-events` dies with the first frame of the exit so a row
+   * cannot be clicked while its menu is already leaving.
+   */
+  .menu-panel[data-open='true'] {
+    visibility: visible;
+    transition:
+      opacity var(--motion-medium) var(--ease-emphasized),
+      transform var(--motion-medium) var(--ease-emphasized),
+      visibility 0s;
+  }
+
   .menu-panel[data-open='false'] {
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transform: translateY(-0.375rem);
+    transition:
+      opacity var(--motion-short) var(--ease-accelerate),
+      transform var(--motion-short) var(--ease-accelerate),
+      visibility 0s linear var(--motion-short);
+  }
+
+  /*
+   * Promoted before the first open, so the opening frame does not have to
+   * create the layer. One layer, the panel itself: the rows are painted into
+   * it, not promoted one by one. A dozen small animating layers was the bulk
+   * of the cost on the software rendering path, and dropping the per-row
+   * stagger is what made the menu feel smooth again. Nothing scales either - a
+   * scale re-samples the panel's text every frame, a translate does not.
+   */
+  .menu-panel {
+    will-change: transform, opacity;
+  }
+
+  /*
+   * Nested panels are the exception: they mount and unmount with their row
+   * (`v-if`), so their motion is a keyframe pair under Vue's <Transition>.
+   */
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translate(0.75rem, -0.375rem);
+    }
+  }
+
+  @keyframes panel-out {
+    to {
+      opacity: 0;
+      transform: translate(0.5rem, -0.25rem);
+    }
+  }
+
+  .menu-nested-enter-active {
+    animation: panel-in var(--motion-medium) var(--ease-emphasized);
+  }
+
+  /*
+   * `forwards`: without it the panel snaps back to opacity 1 for the single
+   * frame between the animation ending and Vue removing the node - the flash
+   * seen when a nested list is closed by its own button.
+   */
+  .menu-nested-leave-active {
+    animation: panel-out var(--motion-short) var(--ease-accelerate) forwards;
   }
 
   /*
@@ -337,8 +417,20 @@
 
   /*
    * Motion is decoration, never information. Anyone who asked the system to
-   * reduce motion gets instant state changes instead of smaller ones.
+   * reduce motion gets instant state changes instead of smaller ones - and
+   * instant tooltips, since the hover delay is itself a transition delay.
    */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0s !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
+    }
+  }
 
   :focus-visible {
     outline: 2px solid var(--primary);
@@ -403,9 +495,23 @@
  * hover fill of their own.
  */
 @layer components {
+  /*
+   * The squish: M3 Expressive lets a control shrink a hair under the pointer
+   * and settle back when it lifts. The two directions are read in two rules on
+   * purpose - pressing takes the `:active` rule below (short, accelerating),
+   * lifting takes this resting rule (longer, settling) - which is what makes
+   * the release feel like weight coming back rather than a snap. Scale runs on
+   * the compositor and moves no box.
+   */
   .state-layer {
     position: relative;
     isolation: isolate;
+    transition: transform var(--motion-short) var(--ease-emphasized);
+  }
+
+  .state-layer:active {
+    transform: scale(0.97);
+    transition: transform var(--motion-instant) var(--ease-accelerate);
   }
 
   .state-layer::after {
@@ -417,6 +523,8 @@
     background-color: currentColor;
     opacity: 0;
     pointer-events: none;
+    /* The tint is opacity over a solid, so the fade is compositor work. */
+    transition: opacity var(--motion-instant) var(--ease-standard);
   }
 
   .state-layer:hover::after,
@@ -444,6 +552,150 @@
   .layer-fade {
     will-change: opacity;
     backface-visibility: hidden;
+  }
+
+  /*
+   * The thumb of a switch slides on `translate` - Tailwind v4 moves things
+   * with the standalone `translate` property, so this names that property, not
+   * `transform`. The track's colour snaps; colour is paint, and the slide is
+   * what carries the motion.
+   */
+  .switch-thumb {
+    transition: translate var(--motion-medium) var(--ease-emphasized);
+    will-change: translate;
+  }
+
+  /* The tick of a checkbox draws in with a turn, M3-style: the icon scales up
+     from small and rotates into place while the box under it stays still. */
+  @keyframes check-in {
+    from {
+      opacity: 0;
+      transform: scale(0.4) rotate(-45deg);
+    }
+  }
+
+  .check-in {
+    animation: check-in var(--motion-short) var(--ease-emphasized);
+  }
+
+  /* The box squishes under the finger; the check settles above it. */
+  .checkbox-box {
+    transition: scale var(--motion-instant) var(--ease-emphasized);
+  }
+
+  /*
+   * Dialogs mount and unmount with their `open` prop, so the entrance is a
+   * keyframe that plays once per mount - a scrim fading up and the sheet
+   * arriving from below on the emphasized curve. There is no exit: the node is
+   * unmounted the moment it closes, and a farewell nobody can see is 300ms of
+   * nothing.
+   */
+  @keyframes scrim-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(2rem);
+    }
+  }
+
+  .dialog-scrim {
+    animation: scrim-in var(--motion-medium) var(--ease-standard);
+    will-change: opacity;
+  }
+
+  .dialog-panel {
+    animation: dialog-in var(--motion-slow) var(--ease-emphasized);
+    will-change: transform, opacity;
+  }
+
+  /*
+   * The tab indicator slides between equal segments on `transform` alone - its
+   * width never changes between tabs, the grid guarantees that. The snap class
+   * is the resize path: the geometry is re-measured there, and an indicator
+   * that glides after the window does reads as lag.
+   */
+  .tab-indicator {
+    transition: transform var(--motion-medium) var(--ease-emphasized);
+    will-change: transform;
+  }
+
+  .tab-indicator-snap {
+    transition: none;
+  }
+
+  /*
+   * The sheet of tabbed content: a swap that teleports reads as a glitch, one
+   * that fades reads as a page turning. Out is faster than in - the old sheet
+   * is leaving and nobody is reading it.
+   */
+  @keyframes view-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.25rem);
+    }
+  }
+
+  @keyframes view-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  .view-enter-active {
+    animation: view-in var(--motion-short) var(--ease-decelerate);
+  }
+
+  .view-leave-active {
+    animation: view-out var(--motion-instant) var(--ease-accelerate);
+  }
+
+  /*
+   * The tab label's colour eases in step with the indicator sliding under it:
+   * the text used to flip the instant the tab was chosen, so the highlight
+   * looked like it was catching up instead of arriving with it. The duration
+   * matches the indicator, so both land together. `transform` is named too, so
+   * this class does not swallow the press squish a `.state-layer` row carries.
+   */
+  .tab-label {
+    transition:
+      transform var(--motion-short) var(--ease-emphasized),
+      color var(--motion-medium) var(--ease-standard);
+  }
+
+  /*
+   * The theme switch icon turns as the mode changes: the sun and the moon share
+   * one box and rotate through it, one leaving as the other arrives, instead of
+   * swapping on a single frame.
+   */
+  .theme-icon {
+    transition:
+      rotate var(--motion-medium) var(--ease-emphasized),
+      opacity var(--motion-medium) var(--ease-emphasized);
+  }
+
+  .theme-icon-off {
+    opacity: 0;
+  }
+
+  /*
+   * A loading placeholder waits a moment before it shows: a fetch against the
+   * local server answers inside a frame or two, and a skeleton that flashes for
+   * that frame is exactly what a tab switch must not look like. Held invisible
+   * through the delay by `backwards`, it appears only when the wait is real.
+   */
+  @keyframes skeleton-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .skeleton-delayed {
+    animation: skeleton-in var(--motion-short) var(--ease-standard) 220ms backwards;
   }
 
 }

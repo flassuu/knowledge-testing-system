@@ -30,10 +30,10 @@ const emit = defineEmits<{ close: [] }>()
       aria-modal="true"
       :aria-label="label"
     >
-      <div class="absolute inset-0 bg-scrim" @click="emit('close')" />
+      <div class="dialog-scrim absolute inset-0 bg-scrim" @click="emit('close')" />
 
       <div
-        class="relative flex max-h-[92dvh] w-full flex-col overflow-hidden bg-surface-container shadow-xl sm:rounded-[var(--radius-sheet)] rounded-t-[var(--radius-sheet)]"
+        class="dialog-panel relative flex max-h-[92dvh] w-full flex-col overflow-hidden bg-surface-container shadow-xl sm:rounded-[var(--radius-sheet)] rounded-t-[var(--radius-sheet)]"
         :class="maxWidth ?? 'max-w-sm'"
       >
         <slot />

@@ -9,8 +9,11 @@ import { Check } from '@lucide/vue'
  * the whole row is the target, which is what makes it usable on a phone, and it
  * removes the id that has to stay in step with the markup.
  *
- * Only colour and opacity animate. A box that scaled or slid on every tap was
- * the sharpest twitch in the form.
+ * The state layer is a circle around the box, not the whole row: M3 points at
+ * the control, and a tint that ran under the label would read as the row being
+ * selectable text. `group-hover`/`group-active` drive the circle, so a pointer
+ * anywhere on the row lights exactly the box. The check draws in with a turn
+ * (`check-in`) and the box squishes under the press (`checkbox-box`).
  */
 const props = withDefaults(
   defineProps<{
@@ -35,23 +38,26 @@ function toggle(): void {
     role="checkbox"
     :aria-checked="modelValue"
     :disabled="disabled"
-    class="group inline-flex min-h-11 max-w-full items-center gap-2.5 rounded-[var(--radius-control)] px-1 text-left text-sm disabled:opacity-60"
+    class="group inline-flex min-h-11 max-w-full items-center gap-2.5 rounded-[var(--radius-control)] pl-1 pr-2 text-left text-sm disabled:opacity-60"
     @click="toggle"
   >
-    <span
-      aria-hidden="true"
-      class="flex size-5 shrink-0 items-center justify-center rounded-[4px] border-2"
-      :class="
-        modelValue
-          ? 'border-primary bg-primary text-on-primary'
-          : 'border-outline bg-transparent group-hover:border-on-surface-variant'
-      "
-    >
-      <Check
-        v-if="modelValue"
-        class="size-3.5"
-        :stroke-width="3"
+    <!-- The 40px circular state layer, lit only under the box. -->
+    <span class="relative inline-flex size-10 shrink-0 items-center justify-center">
+      <span
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-0 rounded-full bg-on-surface opacity-0 transition-opacity duration-150 group-hover:opacity-[0.08] group-active:opacity-[0.12]"
       />
+      <span
+        aria-hidden="true"
+        class="checkbox-box relative flex size-5 items-center justify-center rounded-[4px] border-2 group-active:scale-90"
+        :class="
+          modelValue
+            ? 'border-primary bg-primary text-on-primary'
+            : 'border-outline bg-transparent group-hover:border-on-surface-variant'
+        "
+      >
+        <Check v-if="modelValue" class="check-in size-3.5" :stroke-width="3" />
+      </span>
     </span>
     <span class="min-w-0 text-on-surface-variant">{{ label }}</span>
   </button>

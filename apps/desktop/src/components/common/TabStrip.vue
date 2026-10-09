@@ -27,6 +27,14 @@ const emit = defineEmits<{ 'update:modelValue': [value: T] }>()
 const container = ref<HTMLElement | null>(null)
 const indicator = ref({ left: 0, width: 0 })
 
+/**
+ * The indicator snaps, then slides: it starts snapped so the first placement
+ * does not glide out of the corner, a resize keeps it snapped because an
+ * indicator that glides after the window does reads as lag, and a *chosen* tab
+ * is the one case where the slide is the point.
+ */
+const snap = ref(true)
+
 /** A resize changes the geometry; the width follows without a transition. */
 let observer: ResizeObserver | null = null
 
@@ -45,12 +53,19 @@ function measure(): void {
 onMounted(() => {
   requestAnimationFrame(measure)
   if (container.value) {
-    observer = new ResizeObserver(measure)
+    observer = new ResizeObserver(() => {
+      snap.value = true
+      measure()
+    })
     observer.observe(container.value)
   }
 })
-// And it follows the model whenever the active tab changes.
-watch(() => props.modelValue, () => requestAnimationFrame(measure))
+// And it follows the model whenever the active tab changes - and that change
+// is the one that slides.
+watch(() => props.modelValue, () => {
+  snap.value = false
+  requestAnimationFrame(measure)
+})
 
 onBeforeUnmount(() => observer?.disconnect())
 
@@ -79,7 +94,8 @@ const gridStyle = computed(() => ({
   >
     <span
       aria-hidden="true"
-      class="pointer-events-none absolute inset-y-1 rounded-[var(--radius-control)] bg-primary"
+      class="tab-indicator pointer-events-none absolute inset-y-1 rounded-[var(--radius-control)] bg-primary"
+      :class="{ 'tab-indicator-snap': snap }"
       :style="style"
     />
     <button
@@ -94,7 +110,7 @@ const gridStyle = computed(() => ({
       :class="item.value === modelValue ? 'text-on-primary' : 'text-on-surface-variant'"
       @click="select(item.value)"
     >
-      <span class="flex items-center gap-1.5">
+      <span class="tab-label flex items-center gap-1.5">
         <component
           :is="item.icon"
           v-if="item.icon"

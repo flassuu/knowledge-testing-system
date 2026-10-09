@@ -45,12 +45,24 @@ const dark = computed(() => theme.mode === 'dark')
       :class="dark ? 'border-primary bg-primary' : 'border-outline bg-surface-container-highest'"
     >
       <span
-        class="absolute left-[2px] flex size-4 items-center justify-center rounded-full"
+        class="switch-thumb absolute left-[2px] flex size-4 items-center justify-center rounded-full"
         :class="dark ? 'translate-x-4 text-on-primary' : 'translate-x-0 text-on-surface-variant'"
       >
-        <!-- The thumb carries the mode a tap goes to, not the current one. -->
-        <Moon v-if="dark" class="size-3" aria-hidden="true" />
-        <Sun v-else class="size-3" aria-hidden="true" />
+        <!-- The thumb carries the mode a tap goes to, not the current one. Both
+             icons share the box at once and turn through it: the one going
+             rotates and fades out as the one arriving rotates and fades in. -->
+        <span class="relative inline-flex size-3 items-center justify-center">
+          <Moon
+            class="theme-icon absolute size-3"
+            :class="dark ? '' : 'theme-icon-off -rotate-90'"
+            aria-hidden="true"
+          />
+          <Sun
+            class="theme-icon absolute size-3"
+            :class="dark ? 'theme-icon-off rotate-90' : ''"
+            aria-hidden="true"
+          />
+        </span>
       </span>
     </span>
   </button>

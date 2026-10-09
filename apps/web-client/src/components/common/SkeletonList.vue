@@ -20,7 +20,7 @@ const { t } = useI18n()
     which said a list was arriving; the pulse went with the rest of the motion and
     the rows still read as a list of the right shape.
   -->
-  <div role="status">
+  <div role="status" class="skeleton-delayed">
     <span class="sr-only">{{ t('common.loading') }}</span>
     <div v-if="variant === 'cards'" class="space-y-2" aria-hidden="true">
       <AppCard

@@ -48,12 +48,19 @@ onMounted(async () => {
         ]"
       />
 
-      <div class="mt-5">
-        <LiveSessionsTab v-if="activeTab === 'live'" :tests="tests" />
-        <TestsTab v-else-if="activeTab === 'tests'" />
-        <CoursesTab v-else-if="activeTab === 'courses'" />
-        <ClassesTab v-else />
-      </div>
+      <!--
+        `:key` remounts the sheet on a tab change and the transition fades it
+        in and out: a swap that teleports reads as a glitch, one that fades
+        reads as a page turning.
+      -->
+      <Transition mode="out-in" name="view">
+        <div :key="activeTab" class="mt-5">
+          <LiveSessionsTab v-if="activeTab === 'live'" :tests="tests" />
+          <TestsTab v-else-if="activeTab === 'tests'" />
+          <CoursesTab v-else-if="activeTab === 'courses'" />
+          <ClassesTab v-else />
+        </div>
+      </Transition>
 
     </main>
   </div>

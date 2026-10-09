@@ -95,8 +95,9 @@ const classes = computed(() =>
   [
     'inline-flex shrink-0 items-center justify-center gap-2',
     'whitespace-nowrap rounded-[var(--radius-control)] font-semibold',
-    // No scale: an M3 press state is a tint over the label, and that tint is the
-    // `state-layer` overlay below. Nothing on a press is a paint.
+    // The press is the tint of the state layer below plus the hair of scale the
+    // same layer applies while active - both compositor work, so nothing on a
+    // press is a paint.
     'state-layer',
     'disabled:pointer-events-none disabled:opacity-60',
     VARIANTS[props.variant],

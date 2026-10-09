@@ -71,16 +71,23 @@ onMounted(countPending)
         ]"
       />
 
-      <div class="mt-5">
-        <UsersTab
-          v-if="activeTab === 'users'"
-          :focus-status="focusStatus"
-          @changed="countPending"
-        />
-        <ParticipantsTab v-else-if="activeTab === 'participants'" />
-        <SystemTab v-else-if="activeTab === 'system'" />
-        <ServerTab v-else />
-      </div>
+      <!--
+        `:key` remounts the sheet on a tab change and the transition fades it
+        in and out: a swap that teleports reads as a glitch, one that fades
+        reads as a page turning.
+      -->
+      <Transition mode="out-in" name="view">
+        <div :key="activeTab" class="mt-5">
+          <UsersTab
+            v-if="activeTab === 'users'"
+            :focus-status="focusStatus"
+            @changed="countPending"
+          />
+          <ParticipantsTab v-else-if="activeTab === 'participants'" />
+          <SystemTab v-else-if="activeTab === 'system'" />
+          <ServerTab v-else />
+        </div>
+      </Transition>
 
     </main>
   </div>
