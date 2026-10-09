@@ -984,6 +984,36 @@ async function studentPath(session, fixtures, context) {
     };
   `,
   )
+  // The row that opens the list also closes it: one control, two states, and no
+  // second place to reach for.
+  const toggled = await session.run(
+    context,
+    `
+    const panel = document.querySelector('[role=menu][data-open=true]');
+    if (!panel) return { why: 'no open menu' };
+    const row = [...panel.querySelectorAll('[role=menuitem]')].find((r) =>
+      /Language|Мова/.test(r.textContent),
+    );
+    if (!row) return { why: 'no language row' };
+    const rows = () =>
+      [...document.querySelectorAll('[role=menu][data-open=true]')].flatMap((p) =>
+        [...p.querySelectorAll('[role=menuitemradio]')],
+      ).length;
+    const openNow = rows();
+    row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 300));
+    const closedNow = rows();
+    row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 300));
+    return { openNow, closedNow, reopened: rows() };
+  `,
+  )
+  check(
+    'the language row closes its own list',
+    toggled.openNow > 0 && toggled.closedNow === 0 && toggled.reopened > 0,
+    toggled.why ?? `${toggled.openNow} -> ${toggled.closedNow} -> ${toggled.reopened}`,
+  )
+
   check(
     'the locale list opens beside the menu, not inside it',
     languageMenu.opened && languageMenu.locales >= 2 && languageMenu.beside,
