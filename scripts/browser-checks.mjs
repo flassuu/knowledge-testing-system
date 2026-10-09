@@ -887,6 +887,61 @@ async function studentPath(session, fixtures, context) {
     return cs.opacity === '0' ? 'closed (fading)' : 'still visible, opacity ' + cs.opacity;
   `,
   )
+  // A click anywhere else on the page closes it. Escape was checked above, and
+  // Escape is the path nobody uses: a teacher clicks somewhere to get on with it.
+  const dismissed = await session.run(
+    context,
+    `
+    const trigger = [...document.querySelectorAll('[aria-haspopup=menu]')].find((b) =>
+      /Account|Обліковий/.test(b.getAttribute('aria-label') || ''),
+    );
+    if (!trigger) return { why: 'no account trigger' };
+    const panelOf = () => document.querySelector('[role=menu][data-open=true]');
+    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 250));
+    const opened = !!panelOf();
+    // A press on the page background, not a click: the handler listens for
+    // pointerdown, and a synthetic click would leave the gap untested.
+    const where = document.querySelector('main') ?? document.body;
+    where.dispatchEvent(
+      new PointerEvent('pointerdown', { bubbles: true, clientX: 5, clientY: 5 }),
+    );
+    await new Promise((r) => setTimeout(r, 250));
+    return { opened, closedByOutside: !panelOf(), target: where.tagName };
+  `,
+  )
+  check(
+    'account menu: a click outside closes it',
+    dismissed.opened && dismissed.closedByOutside,
+    dismissed.why ?? `opened=${dismissed.opened} closed=${dismissed.closedByOutside} pressed=${dismissed.target}`,
+  )
+
+  // The same for the language control, whose trigger never had `ref="menu.root"`
+  // and so never had a boundary to measure against.
+  const languageDismissed = await session.run(
+    context,
+    `
+    const trigger = [...document.querySelectorAll('[aria-haspopup=menu]')].find((b) =>
+      /Language|Мова/.test(b.getAttribute('aria-label') || ''),
+    );
+    if (!trigger) return { why: 'no language trigger' };
+    const panelOf = () => document.querySelector('[role=menu][data-open=true]');
+    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 250));
+    const opened = !!panelOf();
+    document.querySelector('main').dispatchEvent(
+      new PointerEvent('pointerdown', { bubbles: true, clientX: 5, clientY: 5 }),
+    );
+    await new Promise((r) => setTimeout(r, 250));
+    return { opened, closedByOutside: !panelOf() };
+  `,
+  )
+  check(
+    'language menu: a click outside closes it',
+    languageDismissed.opened && languageDismissed.closedByOutside,
+    languageDismissed.why ?? `opened=${languageDismissed.opened} closed=${languageDismissed.closedByOutside}`,
+  )
+
   check('account menu: Escape closes it', closed === 'closed' || closed === 'closed (fading)', closed)
 
   // Reopened after Escape, so the screenshot below actually shows the menu: the
