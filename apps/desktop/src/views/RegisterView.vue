@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { CircleCheck } from '@lucide/vue'
+import { CircleCheck, Eye, EyeOff } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
 import { register } from '../api/auth'
 import { previewClassKey } from '../api/classrooms'
@@ -27,6 +27,9 @@ const fullName = ref('')
 const username = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+/** One toggle per field: the same show/hide button the sign-in form carries. */
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 const classKey = ref('')
 const errorKey = ref('')
 const submitting = ref(false)
@@ -139,12 +142,6 @@ onMounted(() => {
   <div class="flex min-h-dvh flex-col bg-surface">
     <AppHeader hosted @server="emit('server')" />
     <main class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-10">
-      <div class="mb-6 flex justify-end">
-        <AppButton type="button" @click="back" variant="secondaryMuted" size="sm">
-          {{ t('auth.backToLogin') }}
-        </AppButton>
-      </div>
-
     <section
       v-if="created"
       class="rounded-2xl border border-outline-variant bg-success-container p-6 text-center shadow-sm"
@@ -172,23 +169,12 @@ onMounted(() => {
       </p>
 
       <form class="mt-5 space-y-4" @submit.prevent="submit">
-        <label class="block">
-          <span class="text-xs font-medium text-on-surface-variant">
-            {{ t('auth.fullName') }}
-          </span>
-          <AppInput v-model="fullName" type="text" autocomplete="name" class="mt-1" />
-        </label>
-
-        <label class="block">
-          <span class="text-xs font-medium text-on-surface-variant">
-            {{ t('auth.username') }}
-          </span>
-          <AppInput v-model="username" type="text" autocomplete="username" class="mt-1" />
-        </label>
-
         <!--
           Optional on purpose: a student without a code registers exactly as
           before and waits for an admin. A student with one is in immediately.
+          First in the form: the key decides whether the account is approved at
+          all, so it is the first question - the name and the password read the
+          same either way.
         -->
         <div>
           <label class="block">
@@ -242,16 +228,71 @@ onMounted(() => {
 
         <label class="block">
           <span class="text-xs font-medium text-on-surface-variant">
+            {{ t('auth.username') }}
+          </span>
+          <AppInput v-model="username" type="text" autocomplete="username" class="mt-1" />
+        </label>
+
+        <label class="block">
+          <span class="text-xs font-medium text-on-surface-variant">
+            {{ t('auth.fullName') }}
+          </span>
+          <AppInput v-model="fullName" type="text" autocomplete="name" class="mt-1" />
+        </label>
+
+        <label class="block">
+          <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.password') }}
           </span>
-          <AppInput v-model="password" type="password" autocomplete="new-password" class="mt-1" />
+          <div class="relative mt-1.5">
+            <AppInput
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              autocomplete="new-password"
+              class="pr-12"
+            />
+            <!--
+              A plain button, not AppButton: the ghost variant paints a hover
+              fill, and a fill painted over the field's own box covers the text
+              underneath it. This one sits on the input and has to stay out of
+              its way - the hover state is the icon changing colour. The same
+              toggle the sign-in field carries.
+            -->
+            <button
+              type="button"
+              class="absolute right-0 top-1/2 mr-0.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-[var(--radius-control)] text-on-surface-variant hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+              v-tip="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+              @click="showPassword = !showPassword"
+            >
+              <EyeOff v-if="showPassword" class="size-4" aria-hidden="true" />
+              <Eye v-else class="size-4" aria-hidden="true" />
+            </button>
+          </div>
         </label>
 
         <label class="block">
           <span class="text-xs font-medium text-on-surface-variant">
             {{ t('auth.confirmPassword') }}
           </span>
-          <AppInput v-model="confirmPassword" type="password" autocomplete="new-password" class="mt-1" />
+          <div class="relative mt-1.5">
+            <AppInput
+              v-model="confirmPassword"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              autocomplete="new-password"
+              class="pr-12"
+            />
+            <button
+              type="button"
+              class="absolute right-0 top-1/2 mr-0.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-[var(--radius-control)] text-on-surface-variant hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              :aria-label="showConfirmPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+              v-tip="showConfirmPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+              @click="showConfirmPassword = !showConfirmPassword"
+            >
+              <EyeOff v-if="showConfirmPassword" class="size-4" aria-hidden="true" />
+              <Eye v-else class="size-4" aria-hidden="true" />
+            </button>
+          </div>
         </label>
 
         <p
@@ -264,6 +305,16 @@ onMounted(() => {
 
         <AppButton variant="primary" type="submit" :disabled="submitting" class="w-full">
           {{ submitting ? t('common.loading') : t('auth.register') }}
+        </AppButton>
+
+        <!--
+          Back to sign in: under the primary action, where the eye ends up
+          after the form, instead of floating above the card it belongs to.
+          Same box and label size as the submit button above, only quieter
+          in colour.
+        -->
+        <AppButton type="button" @click="back" variant="secondaryMuted" class="w-full">
+          {{ t('auth.backToLogin') }}
         </AppButton>
       </form>
     </AppCard>
