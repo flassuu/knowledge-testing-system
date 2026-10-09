@@ -154,12 +154,36 @@
    * timer: `display` is a discrete property, so the change lands at the end of
    * the delay, and the open state sets the delay to zero so leaving is instant.
    */
+  /*
+   * The host carries the panel, so the host is what has to outrank whatever the
+   * panel lands on. Every control is `.state-layer`, and `isolation: isolate`
+   * there makes each of them a stacking context of its own - which caps the
+   * panel's `z-index: 100` inside its own button. From outside, the button then
+   * competes with the rows below it by DOM order alone, and the sign-out button
+   * comes before the theme row: the row painted over the tooltip, so the switch
+   * sat on its background while the text showed around the switch. Raising the
+   * host raises its whole context, panel included.
+   *
+   * `position: relative` also makes the host the containing block. The sign-out
+   * button already was one through `.state-layer`, so nothing moves; the name in
+   * the account block was not, and its panel was anchoring to the menu panel
+   * behind it instead of to the name itself.
+   */
+  [data-tip-host] {
+    position: relative;
+    z-index: 1;
+  }
+
   [data-tip-panel] {
     display: none;
     position: absolute;
     left: 50%;
     top: 100%;
-    z-index: 70;
+    /* Above every panel in the app, not just this one. A tooltip opens below its
+       control, and a control at the bottom of a menu has rows underneath it - the
+       sign-out button sits above the language row's flag. The tooltip is meant to
+       cover what is under it; what it must not do is go under it. */
+    z-index: 100;
     margin-top: 0.375rem;
     transform: translateX(-50%);
     transition: display 0s linear 1000ms;
@@ -179,7 +203,21 @@
   }
 
   /* Last, so it wins over the hover rule on equal specificity. */
-  [data-tip-host].tip-off > [data-tip-panel] {
+  /*
+   * Right-aligned to its control, for a control that sits at the right edge.
+   * Centred, a wide label on the avatar - the rightmost control in the header -
+   * runs off the side of the screen, and what the reader sees is a sentence
+   * stopping halfway because the window stopped.
+   */
+  [data-tip-host].tip-end > [data-tip-panel] {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+
+  /* Last, so it wins over the hover rule on equal specificity. */
+  [data-tip-host].tip-off > [data-tip-panel],
+  [data-tip-host].tip-suppress > [data-tip-panel] {
     display: none;
   }
 

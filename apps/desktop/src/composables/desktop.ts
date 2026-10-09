@@ -75,6 +75,52 @@ export async function watchWindowState(): Promise<void> {
   await appWindow.onMoved(save)
 }
 
+const DECORATIONS_KEY = 'desktop.decorations'
+
+/**
+ * Whether the window keeps its system title bar.
+ *
+ * The bar is where minimize, maximize and close live, so turning it off takes
+ * those buttons with it - that is what the setting is for, not a side effect of
+ * it. The choice is stored rather than held in memory because it has to survive
+ * a restart, and it is read here so the menu and the window agree on it.
+ *
+ * Nothing stored means the bar is on: the window opens the way it was built.
+ */
+export function readDecorations(): boolean {
+  try {
+    return localStorage.getItem(DECORATIONS_KEY) !== 'off'
+  } catch {
+    return true
+  }
+}
+
+/** Turns the system title bar on or off and remembers the choice. */
+export async function setDecorations(on: boolean): Promise<void> {
+  try {
+    localStorage.setItem(DECORATIONS_KEY, on ? 'on' : 'off')
+  } catch {
+    // Private mode or a full quota: the choice still applies for this run.
+  }
+  if (!isDesktop()) return
+  try {
+    await getCurrentWindow().setDecorations(on)
+  } catch {
+    // A platform that refuses - Wayland and some tiling compositors do - keeps
+    // its bar. The app must not break over a bar it could not remove.
+  }
+}
+
+/** Applied at startup, so the window opens the way it was left. */
+export async function restoreDecorations(): Promise<void> {
+  if (!isDesktop()) return
+  try {
+    await getCurrentWindow().setDecorations(readDecorations())
+  } catch {
+    // Same as above: a refusal leaves the built-in bar in place.
+  }
+}
+
 function readState(): WindowState | null {
   try {
     const raw = localStorage.getItem(STATE_KEY)

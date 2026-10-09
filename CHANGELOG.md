@@ -38,6 +38,25 @@ around that had an admin standing in front of it for no good reason.
 `apps/server/tests/solo.test.ts` walks the whole path from an empty folder to a
 class in progress, asserting at every step that no admin was created.
 
+### The account menu, polished
+
+The one menu the header opens, in both apps, tidied up.
+
+- **A Settings row in the desktop app** — above Language, holding the one thing
+  the desktop app has and a browser tab does not: whether the window keeps its
+  system title bar. Turning it off takes the minimize, maximize and close
+  buttons with it, because that is where they live. The choice is remembered and
+  applied at the next start, decorations before geometry. The row is not
+  rendered where there is no window to configure, so the desktop frontend opened
+  as a page offers a menu with no dead switch in it.
+- **Tooltips paint above the menu**, not under the row beneath them, and the
+  avatar and the name carry `Full name · username`. A tooltip on text that is
+  already fully on screen stays quiet.
+- **Sign out is a tonal danger button** — grey at rest like the other filled
+  controls, red where the cursor is.
+- **Nested panels line up with the row that opened them**, first row centre to
+  first row centre.
+
 ## [0.5.0] — 2026-10-08
 
 Phase 5 «Deployment», the three ways the system is actually used, made to work
