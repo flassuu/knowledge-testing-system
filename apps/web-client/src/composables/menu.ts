@@ -14,7 +14,6 @@ import { nextTick, onBeforeUnmount, ref, type Ref } from 'vue'
  */
 export interface MenuBehaviour {
   open: Ref<boolean>
-  root: Ref<HTMLElement | null>
   /** Toggle, and put focus on the first item when it opens. */
   toggle: () => void
   close: () => void
@@ -30,9 +29,20 @@ export function menuItems(root: HTMLElement | null): HTMLButtonElement[] {
   return [...root.querySelectorAll<HTMLButtonElement>(`[${MENU_ITEM_ATTR}]`)]
 }
 
-export function useMenu(): MenuBehaviour {
+/**
+ * `root` is the element the menu lives in, and it is passed in rather than
+ * returned for binding.
+ *
+ * The first version returned its own ref and the templates bound it as
+ * `ref="menu.root"`. That does not work: a dotted template ref is resolved
+ * against the setup bindings, and this one never bound, so `root` stayed null and
+ * the click-outside handler returned early every time. A menu that ignores clicks
+ * anywhere else on the page is not something anyone reports - they just stop
+ * opening it - so it survived a while. Handing the ref over makes it impossible
+ * to forget.
+ */
+export function useMenu(root: Ref<HTMLElement | null>): MenuBehaviour {
   const open = ref(false)
-  const root = ref<HTMLElement | null>(null)
 
   function close(): void {
     open.value = false
@@ -41,7 +51,21 @@ export function useMenu(): MenuBehaviour {
   function toggle(): void {
     open.value = !open.value
     if (!open.value) return
-    void nextTick(() => menuItems(root.value)[0]?.focus())
+    void nextTick(() => initialItem()?.focus())
+  }
+
+  /**
+   * Where the arrow keys and an opening menu put focus: the first row, unless it
+   * opts out with `data-menu-item-skip`.
+   *
+   * The account row's sign-out button is such a row. It is first in the document
+   * - it sits in the account block, beside the name - and a menu that focuses its
+   * first row put the keyboard straight on "Sign out", where Enter leaves. It is
+   * still a row: the arrow keys reach it, and Tab closes the menu as before.
+   */
+  function initialItem(): HTMLButtonElement | undefined {
+    const items = menuItems(root.value)
+    return items.find((item) => item.dataset.menuItemSkip !== 'true') ?? items[0]
   }
 
   function onKeydown(event: KeyboardEvent): void {
@@ -59,7 +83,8 @@ export function useMenu(): MenuBehaviour {
   }
 
   function onPointerDown(event: PointerEvent): void {
-    if (open.value && root.value && !root.value.contains(event.target as Node)) close()
+    if (!open.value || !root.value) return
+    if (!root.value.contains(event.target as Node)) close()
   }
 
   // Escape is caught on the window, not on the menu: focus can end up anywhere,
@@ -75,5 +100,5 @@ export function useMenu(): MenuBehaviour {
     window.removeEventListener('keydown', onWindowKeydown)
   })
 
-  return { open, root, toggle, close, onKeydown }
+  return { open, toggle, close, onKeydown }
 }
