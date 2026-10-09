@@ -73,7 +73,7 @@ onMounted(load)
         <button
           type="button"
           @click="emit('open', entry.sessionId)"
-          class="flex w-full flex-wrap items-center justify-between gap-2 rounded-2xl border border-outline-variant bg-surface-container p-3 text-left transition-colors hover:bg-surface-container-high"
+          class="state-layer flex w-full flex-wrap items-center justify-between gap-2 rounded-2xl border border-outline-variant bg-surface-container p-3 text-left"
         >
           <span class="min-w-0 flex-1">
             <span class="block truncate text-sm font-semibold text-on-surface">

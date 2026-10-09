@@ -115,7 +115,7 @@ onMounted(load)
           type="button"
           :aria-expanded="openId === course.id"
           @click="toggle(course)"
-          class="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-surface-container-high"
+          class="state-layer flex w-full items-center gap-3 p-4 text-left"
         >
           <span class="min-w-0 flex-1">
             <span class="block truncate text-sm font-semibold text-on-surface">

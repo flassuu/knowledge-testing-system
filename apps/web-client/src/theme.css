@@ -103,6 +103,134 @@
 
 }
 
+/*
+ * Tooltips and menus: one mechanism, no JavaScript.
+ *
+ * Both used to be built the usual way - `v-if` around the element, a Vue
+ * `<Transition>` with enter and leave classes, and a timer. That is where the
+ * flicker came from, and it was not a timing problem:
+ *
+ *   0 -> 1 -> 0 -> 1 -> 0   hovering a tooltip
+ *
+ * Mounting and unmounting means the element is created and destroyed on every
+ * open. A node created *under a stationary pointer* gets `mouseenter` again the
+ * moment it is in the document, so it opened, the pointer was reported outside
+ * it, it closed, and the next one opened - a loop, at whatever rate the events
+ * arrived. It looked like the animation running twice, and it happened on every
+ * animated surface in the app because they all did it.
+ *
+ * So nothing animated is created or destroyed any more. A tooltip is a child of
+ * its trigger, always. A menu panel is always rendered. What changes is
+ * `opacity`, `transform` and `visibility`, and `visibility` is what takes an
+ * element out of hit-testing and out of the accessibility tree.
+ *
+ * The delay is a `transition-delay` on the closed state rather than a
+ * `setTimeout`: a timer can be cancelled, restarted or fire twice, and CSS
+ * cannot. It delays only the way in, so leaving is instant.
+ */
+
+@layer components {
+  [data-tip-host] {
+    position: relative;
+  }
+
+  [data-tip-panel] {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    z-index: 70;
+    margin-top: 0.375rem;
+    transform: translateX(-50%);
+    opacity: 0;
+    visibility: hidden;
+    will-change: opacity;
+    transition:
+      opacity 0s linear 600ms,
+      visibility 0s linear 600ms;
+  }
+
+  [data-tip-host]:hover > [data-tip-panel],
+  [data-tip-host]:focus-within > [data-tip-panel] {
+    opacity: 1;
+    visibility: visible;
+    transition:
+      opacity var(--motion-instant) var(--ease-standard) 0s,
+      visibility 0s linear 0s;
+  }
+
+  /* Panels: always rendered, so the transition can only ever run once per state
+     change and can never be restarted by a remount. */
+  .menu-panel {
+    transition:
+      opacity var(--motion-short) var(--ease-decelerate),
+      transform var(--motion-short) var(--ease-decelerate),
+      visibility 0s linear var(--motion-short);
+  }
+
+  .menu-panel[data-open='true'] {
+    transition:
+      opacity var(--motion-short) var(--ease-decelerate),
+      transform var(--motion-short) var(--ease-decelerate),
+      visibility 0s linear 0s;
+  }
+
+  .menu-panel[data-open='false'] {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-0.375rem);
+  }
+
+
+  /* Dialogs are mounted by their parent, so their entrance is a keyframe
+     animation rather than a transition: an animation plays once per mount and
+     cannot be restarted by a re-render, while a transition on a node that
+     appears and disappears with its parent is at the mercy of when the styles
+     land. M3 Expressive: the scrim fades, the panel arrives from below with the
+     emphasized curve. */
+  @keyframes dialog-scrim-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes dialog-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(1rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .dialog-scrim {
+    animation: dialog-scrim-in var(--motion-medium) var(--ease-decelerate) both;
+  }
+
+  .dialog-panel {
+    animation: dialog-panel-in var(--motion-medium) var(--ease-emphasized) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-tip-host]:hover > [data-tip-panel],
+    [data-tip-host]:focus-within > [data-tip-panel] {
+      transition: none;
+    }
+    .menu-panel,
+    .menu-panel[data-open='true'] {
+      transition: none;
+    }
+    .dialog-scrim,
+    .dialog-panel {
+      animation: none;
+    }
+  }
+}
+
 /* Exposes the tokens as Tailwind utilities (bg-surface, text-on-surface, …). */
 @theme inline {
   --color-surface: var(--surface);
@@ -300,6 +428,85 @@
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/*
+ * State layer and layer promotion.
+ *
+ * Every hover in the app used to fade `background-color`. A colour is a paint:
+ * the browser has to raster the element again on every frame of the fade, and in
+ * a software-rendered WebKit - which is what the desktop app is, with no GPU to
+ * composite onto - that raster lands on the window surface. So a 120ms hover
+ * got sampled at two or three frames and read as a twitch. It was the same
+ * cost for the account menu, the tab strip, the theme thumb and the tooltips,
+ * because they all animate the same two categories of thing.
+ *
+ * An M3 state layer is a separate overlay at 8% of the content colour, and its
+ * only animated property is opacity. Opacity is the one property a compositor
+ * can do without repainting anything, so the tint now costs one blended quad
+ * instead of a raster pass. `will-change` on the elements that actually move
+ * does the same for them: it asks for a layer of their own, so the window
+ * surface is not re-rastered while they slide.
+ *
+ * The selectors are `:hover` rather than a variant on purpose - the layer
+ * belongs to any control, including the ones inside a menu that never had a
+ * hover fill of their own.
+ */
+@layer components {
+  .state-layer {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .state-layer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background-color: currentColor;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--motion-instant) var(--ease-standard);
+  }
+
+  .state-layer:hover::after,
+  .state-layer:focus-visible::after {
+    opacity: 0.09;
+  }
+
+  .state-layer:active::after {
+    opacity: 0.13;
+  }
+
+  /* A control that cannot be tinted - an icon over an image, a divider - takes
+     the layer and turns it off, rather than being excluded from the mechanism. */
+  .state-layer-plain::after {
+    content: none;
+  }
+
+  /* Promote what moves. Compositor-only for transform and opacity. */
+  .layer-move {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .layer-fade {
+    will-change: opacity;
+    backface-visibility: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .state-layer::after {
+      transition: none;
+    }
+    .layer-move,
+    .layer-fade {
+      will-change: auto;
+      transform: none;
     }
   }
 }

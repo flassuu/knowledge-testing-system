@@ -210,7 +210,7 @@ async function submit(): Promise<void> {
             :class="
               selectedRole === role
                 ? 'border-transparent bg-primary text-on-primary'
-                : 'border-outline-variant text-on-surface-variant hover:border-outline hover:bg-surface-container-high'
+                : 'border-outline-variant text-on-surface-variant hover:border-outline'
             "
             @click="selectRole(role)"
           >

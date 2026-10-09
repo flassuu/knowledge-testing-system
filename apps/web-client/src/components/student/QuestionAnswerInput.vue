@@ -51,12 +51,17 @@ const controlClass =
     <!-- single and multiple choice -->
     <ul v-if="question.type === 'single_choice' || question.type === 'multiple_choice'" class="space-y-1.5">
       <li v-for="option in options" :key="option.key">
+        <!--
+          A state layer, not a faded background: this is the control a student
+          answers with, often quickly, and a colour fade on it repainted the row
+          on every frame of the fade.
+        -->
         <label
-          class="flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors"
+          class="state-layer flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-sm"
           :class="
             response.keys.includes(option.key)
               ? 'bg-primary-container font-semibold text-on-primary-container'
-              : 'bg-surface text-on-surface hover:bg-surface-container-high'
+              : 'bg-surface text-on-surface'
           "
         >
           <input
@@ -80,11 +85,11 @@ const controlClass =
         type="button"
         :aria-pressed="response.boolean === value"
         @click="setBoolean(value)"
-        class="flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition-colors"
+        class="state-layer flex-1 rounded-xl px-3 py-2 text-sm font-semibold"
         :class="
           response.boolean === value
             ? 'bg-primary-container text-on-primary-container'
-            : 'bg-surface text-on-surface hover:bg-surface-container-high'
+            : 'bg-surface text-on-surface'
         "
       >
         {{ value ? t('teacher.editor.trueValue') : t('teacher.editor.falseValue') }}

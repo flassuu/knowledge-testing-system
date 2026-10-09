@@ -17,7 +17,7 @@ const health = getHealthState()
   <div
     v-if="health.status === 'offline'"
     role="alert"
-    class="bg-error px-4 py-2 text-center text-sm font-semibold text-on-error"
+    class="bg-error px-4 py-2 text-center text-sm font-semibold text-on-error shadow-md"
   >
     {{ t('server.offlineBanner') }}
   </div>

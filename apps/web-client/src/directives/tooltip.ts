@@ -24,6 +24,8 @@ const EDGE_GAP = 8
 
 interface TipState {
   node: HTMLElement | null
+  /** Fading out but still in the DOM: reused rather than replaced. */
+  fading: HTMLElement | null
   timer: number | null
   hideTimer: number | null
 }
@@ -33,7 +35,7 @@ const states = new WeakMap<HTMLElement, TipState>()
 function tipFor(el: HTMLElement): TipState {
   let tip = states.get(el)
   if (!tip) {
-    tip = { node: null, timer: null, hideTimer: null }
+    tip = { node: null, fading: null, timer: null, hideTimer: null }
     states.set(el, tip)
   }
   return tip
@@ -68,13 +70,27 @@ function place(el: HTMLElement, node: HTMLElement): void {
 
 function show(el: HTMLElement, text: string): void {
   const tip = tipFor(el)
-  const node = tip.node ?? document.createElement('div')
+  // A node still fading out is reused rather than replaced. `hide` clears
+  // `tip.node` at once but the node lives another 200ms, so leaving and coming
+  // back inside that window built a second box on top of the first - two fades,
+  // one tooltip, and it looked like the animation ran twice.
+  const fading = tip.fading
+  const node = fading ?? document.createElement('div')
+  tip.fading = null
+  if (fading && node.isConnected) {
+    // Already on screen: hold the fade where it is rather than rewinding it, or
+    // the box blinks on every re-entry.
+    node.textContent = text
+    place(el, node)
+    tip.node = node
+    return
+  }
   // The same box the rest of the app draws: a surface fill, an outline border
   // and the on-surface text, at the control radius. The M3 plain tooltip is the
   // inverse surface, which on a dark theme is a near-white box - and a light box
   // in a dark window reads as a hole in the interface, not as a hint.
   node.className = [
-    'pointer-events-none fixed z-[70] max-w-xs rounded-[var(--radius-control)]',
+    'layer-fade pointer-events-none fixed z-[70] max-w-xs rounded-[var(--radius-control)]',
     'border border-outline-variant bg-surface-container-high px-2.5 py-1.5',
     'text-xs leading-snug text-on-surface shadow-lg',
     'opacity-0 transition-opacity duration-[var(--motion-instant)]',
@@ -97,7 +113,12 @@ function hide(el: HTMLElement): void {
   if (!node) return
   tip.node = null
   node.classList.add('opacity-0')
-  window.setTimeout(() => node.remove(), 200)
+  tip.fading = node
+  window.setTimeout(() => {
+    node.remove()
+    const current = tipFor(el).fading
+    if (current === node) tipFor(el).fading = null
+  }, 200)
 }
 
 export const vTip: Directive<HTMLElement, string> = {

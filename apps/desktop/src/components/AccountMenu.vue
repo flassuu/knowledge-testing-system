@@ -78,7 +78,7 @@ function leave(): void {
   <div ref="menu.root" class="relative" @keydown="menu.onKeydown">
     <button
       type="button"
-      class="inline-flex size-[var(--control-md)] shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-on-secondary-container transition-[background-color,color] duration-[var(--motion-short)] ease-[var(--ease-standard)] hover:brightness-105"
+      class="state-layer inline-flex size-[var(--control-md)] shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-on-secondary-container"
       :aria-label="t('menu.account')"
       v-tip="user?.fullName ?? t('menu.account')"
       :aria-expanded="menu.open.value"
@@ -88,17 +88,18 @@ function leave(): void {
       <span aria-hidden="true">{{ initial }}</span>
     </button>
 
-    <Transition
-      enter-active-class="transition-[opacity,transform] duration-[var(--motion-short)] ease-[var(--ease-decelerate)]"
-      enter-from-class="opacity-0 -translate-y-1.5"
-      leave-active-class="transition-opacity duration-[var(--motion-instant)] ease-[var(--ease-accelerate)]"
-      leave-to-class="opacity-0"
-    >
+    <!--
+      Always rendered, like the language control's panel. It used to be `v-if`
+      inside a <Transition>, which mounted it on open: a panel created under a
+      stationary pointer is reported as entered the moment it is in the document,
+      so it opened, the next event closed it, and it opened again. Only opacity,
+      transform and visibility change here.
+    -->
       <div
-        v-if="menu.open.value"
         role="menu"
         :aria-label="t('menu.account')"
-        class="absolute right-0 z-40 mt-1 w-64 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+        class="menu-panel absolute right-0 z-40 mt-1 w-64 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+        :data-open="menu.open.value"
       >
         <!-- Who you are: the reason this menu was opened. -->
         <div class="flex items-center gap-3 px-3 pb-2 pt-2">
@@ -131,9 +132,9 @@ function leave(): void {
           type="button"
           role="menuitem"
           :aria-expanded="languageOpen"
-          class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface transition-colors duration-[var(--motion-instant)] hover:bg-surface-container-high focus:bg-surface-container-high focus:outline-none"
-          @click="languageOpen = !languageOpen"
+          class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
           @mouseenter="languageOpen = true"
+          @click="languageOpen = true"
         >
           <Languages class="size-4 shrink-0" aria-hidden="true" />
           <span class="min-w-0 flex-1 truncate">{{ t('common.language') }}</span>
@@ -159,7 +160,7 @@ function leave(): void {
             type="button"
             role="menuitemradio"
             :aria-checked="locale === code"
-            class="flex w-full items-center gap-3 py-2 pl-8 pr-3 text-left text-sm transition-colors duration-[var(--motion-instant)] hover:bg-surface-container-highest focus:bg-surface-container-highest focus:outline-none"
+            class="state-layer flex w-full items-center gap-3 py-2 pl-8 pr-3 text-left text-sm focus:outline-none"
             :class="locale === code ? 'text-on-surface' : 'text-on-surface-variant'"
             @click="setLocale(code)"
           >
@@ -175,7 +176,7 @@ function leave(): void {
             :data-menu-item="MENU_ITEM_ATTR"
             type="button"
             role="menuitem"
-            class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface transition-colors duration-[var(--motion-instant)] hover:bg-surface-container-high focus:bg-surface-container-high focus:outline-none"
+            class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
             @click="goToServer"
           >
             <Server class="size-4 shrink-0" aria-hidden="true" />
@@ -189,7 +190,7 @@ function leave(): void {
           :data-menu-item="MENU_ITEM_ATTR"
           type="button"
           role="menuitem"
-          class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface transition-colors duration-[var(--motion-instant)] hover:bg-surface-container-high focus:bg-surface-container-high focus:outline-none"
+          class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
           @click="openAbout"
         >
           <Info class="size-4 shrink-0" aria-hidden="true" />
@@ -202,14 +203,13 @@ function leave(): void {
           :data-menu-item="MENU_ITEM_ATTR"
           type="button"
           role="menuitem"
-          class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface transition-colors duration-[var(--motion-instant)] hover:bg-error-container focus:bg-error-container focus:outline-none"
+          class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
           @click="leave"
         >
           <LogOut class="size-4 shrink-0 text-error" aria-hidden="true" />
           <span class="min-w-0 flex-1 truncate">{{ t('auth.signOut') }}</span>
         </button>
       </div>
-    </Transition>
   </div>
 
   <AboutDialog v-if="props.hosted" :open="aboutOpen" @close="aboutOpen = false" />

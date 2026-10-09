@@ -165,7 +165,7 @@ onMounted(load)
             <tr
               v-for="entry in sorted"
               :key="`${entry.courseId}-${entry.studentId}`"
-              class="border-b border-outline-variant last:border-0 transition-colors hover:bg-surface-container-high"
+              class="state-layer border-b border-outline-variant last:border-0"
             >
               <td class="px-3 py-2.5 font-medium text-on-surface">{{ entry.courseTitle }}</td>
               <td class="px-3 py-2.5">

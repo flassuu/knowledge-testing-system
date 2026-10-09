@@ -780,7 +780,11 @@ async function studentPath(session, fixtures, context) {
     if (!trigger) return { opened: false, why: 'no account trigger in the header' };
     trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 400));
-    const panel = document.querySelector('[role=menu]');
+    // The open panel, specifically. Menus are no longer created on open - they
+    // live in the document and are hidden with opacity and visibility - so
+    // picking the first [role=menu] would read the closed one and pass a check
+    // against a panel nobody can see.
+    const panel = document.querySelector('[role=menu][data-open=true]');
     if (!panel) return { opened: false, why: 'the trigger opened nothing' };
     const text = panel.textContent;
     const result = {
@@ -817,7 +821,7 @@ async function studentPath(session, fixtures, context) {
   const locales = await session.run(
     context,
     `
-    const panel = document.querySelector('[role=menu]');
+    const panel = document.querySelector('[role=menu][data-open=true]');
     if (!panel) return { opened: false };
     const row = [...panel.querySelectorAll('[role=menuitem]')].find((r) =>
       /Language|Мова/.test(r.textContent),
@@ -851,7 +855,7 @@ async function studentPath(session, fixtures, context) {
     `
     document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await new Promise((r) => setTimeout(r, 400));
-    const panel = document.querySelector('[role=menu]');
+    const panel = document.querySelector('[role=menu][data-open=true]');
     if (!panel) return 'closed';
     const cs = getComputedStyle(panel);
     return cs.opacity === '0' ? 'closed (fading)' : 'still visible, opacity ' + cs.opacity;
@@ -874,7 +878,7 @@ async function studentPath(session, fixtures, context) {
     // keep it open: the click is on the trigger, which is inside the root.
     trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 400));
-    const panel = document.querySelector('[role=menu]');
+    const panel = document.querySelector('[role=menu][data-open=true]');
     if (!panel) return 'the trigger opened nothing';
     return 'open: ' + panel.textContent.replace(/\\s+/g, ' ').trim().slice(0, 120);
   `,
@@ -897,13 +901,16 @@ async function studentPath(session, fixtures, context) {
     if (!trigger) return { opened: false, why: 'no language button in the header' };
     trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 400));
-    const panels = [...document.querySelectorAll('[role=menu]')];
-    const localeRows = panels.flatMap((p) => [...p.querySelectorAll('[role=menuitemradio]')]);
+    // Only the open panel: a closed one is still laid out, so measuring every
+    // panel in the document would test a box the reader cannot see.
+    const panel = document.querySelector('[role=menu][data-open=true]');
+    if (!panel) return { opened: false, why: 'the language trigger opened nothing' };
+    const localeRows = [...panel.querySelectorAll('[role=menuitemradio]')];
     return {
-      opened: panels.length > 0,
+      opened: true,
       locales: localeRows.length,
       names: localeRows.map((r) => r.textContent.trim().replace(/\\s+/g, ' ')).join(' | '),
-      withinEdge: panels.every((p) => p.getBoundingClientRect().right <= window.innerWidth + 1),
+      withinEdge: panel.getBoundingClientRect().right <= window.innerWidth + 1,
     };
   `,
   )

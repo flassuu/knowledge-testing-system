@@ -70,17 +70,18 @@ function leave(): void {
       <span aria-hidden="true">{{ initial }}</span>
     </button>
 
-    <Transition
-      enter-active-class="transition-[opacity,transform] duration-[var(--motion-short)] ease-[var(--ease-decelerate)]"
-      enter-from-class="opacity-0 -translate-y-1.5"
-      leave-active-class="transition-opacity duration-[var(--motion-instant)] ease-[var(--ease-accelerate)]"
-      leave-to-class="opacity-0"
-    >
+    <!--
+      Always rendered, like the language control's panel. It used to be `v-if`
+      inside a <Transition>, which mounted it on open: a panel created under a
+      stationary pointer is reported as entered the moment it is in the document,
+      so it opened, the next event closed it, and it opened again. Only opacity,
+      transform and visibility change here.
+    -->
       <div
-        v-if="menu.open.value"
         role="menu"
         :aria-label="t('menu.account')"
-        class="absolute right-0 z-40 mt-1 w-64 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+        class="menu-panel absolute right-0 z-40 mt-1 w-64 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+        :data-open="menu.open.value"
       >
         <!-- Who you are: the reason this menu was opened. -->
         <div class="flex items-center gap-3 px-3 pb-2 pt-2">
@@ -165,6 +166,5 @@ function leave(): void {
           <span class="min-w-0 flex-1 truncate">{{ t('auth.signOut') }}</span>
         </button>
       </div>
-    </Transition>
   </div>
 </template>

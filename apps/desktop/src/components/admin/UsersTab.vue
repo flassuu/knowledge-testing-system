@@ -378,7 +378,7 @@ watch(
             <tr
               v-for="user in sorted"
               :key="user.id"
-              class="border-b border-outline-variant last:border-0 transition-colors hover:bg-surface-container-high"
+              class="state-layer border-b border-outline-variant last:border-0"
             >
               <td v-if="pendingUsers.length" class="px-3 py-2.5">
                 <input

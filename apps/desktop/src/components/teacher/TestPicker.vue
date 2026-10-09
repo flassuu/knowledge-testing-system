@@ -58,7 +58,7 @@ const filtered = computed(() => {
         <button
           type="button"
           :disabled="busy"
-          class="flex w-full items-center justify-between gap-2 rounded-xl bg-surface px-3 py-2 text-left transition-opacity hover:bg-surface-container-highest disabled:opacity-60"
+          class="state-layer flex w-full items-center justify-between gap-2 rounded-xl bg-surface px-3 py-2 text-left disabled:opacity-60"
           @click="emit('select', test.id)"
         >
           <span class="min-w-0 flex-1">

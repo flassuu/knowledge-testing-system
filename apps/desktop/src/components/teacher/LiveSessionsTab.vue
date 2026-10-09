@@ -276,11 +276,11 @@ onMounted(() => {
           <button
             type="button"
             @click="selectedId = session.id"
-            class="inline-flex h-[var(--control-md)] items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-xs font-semibold transition-[background-color,color] duration-[var(--motion-short)] ease-[var(--ease-standard)]"
+            class="state-layer inline-flex h-[var(--control-md)] items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-xs font-semibold"
             :class="
               selectedId === session.id
                 ? 'bg-primary text-on-primary'
-                : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
+                : 'bg-surface-container-high text-on-surface-variant'
             "
           >
             <span class="size-2 rounded-full" :class="statusChip[session.status]" />

@@ -262,7 +262,7 @@ onMounted(load)
         {{ t('teacher.courses.noMaterials') }}
       </p>
       <label
-        class="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:bg-surface-container-high"
+        class="state-layer mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-outline bg-surface px-3 py-1.5 text-xs font-semibold text-on-surface-variant"
       >
         <Upload class="size-3.5" aria-hidden="true" />
         {{ t('teacher.courses.upload') }}

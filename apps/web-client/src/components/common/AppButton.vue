@@ -56,20 +56,17 @@ const VARIANTS: Record<Variant, string> = {
   ghostDanger: 'text-error',
 }
 
-/** Hover is a variant modifier, because the tone differs per variant. */
-const HOVERS: Record<Variant, string> = {
-  primary: 'hover:opacity-90',
-  success: 'hover:opacity-90',
-  warning: 'hover:opacity-90',
-  danger: 'hover:opacity-90',
-  secondary: 'hover:bg-surface-container-high',
-  secondaryMuted: 'hover:bg-surface-container-high',
-  secondaryPlain: 'hover:bg-surface-container-high',
-  dangerSecondary: 'hover:bg-error-container',
-  ghost: 'hover:bg-surface-container-high',
-  ghostDanger: 'hover:bg-error-container',
-}
-
+/*
+ * Hover is a state layer, not a background colour.
+ *
+ * The tints a variant used to fade are gone: fading a colour repaints the
+ * control on every frame of the fade, and in a software-rendered webview that
+ * is the whole reason hovers felt like they stuttered. `state-layer` puts a
+ * 9% overlay of the button's own colour on top and animates only opacity, which
+ * the compositor does without repainting. `dangerSecondary` and `ghostDanger`
+ * keep a red tint - the danger has to read as danger on hover, and a tint of the
+ * content colour already is that colour.
+ */
 const SIZES: Record<Size, string> = {
   sm: 'h-[var(--control-sm)] px-3 text-xs',
   md: 'h-[var(--control-md)] px-3.5 text-sm',
@@ -92,12 +89,10 @@ const classes = computed(() =>
   [
     'inline-flex shrink-0 items-center justify-center gap-2',
     'whitespace-nowrap rounded-[var(--radius-control)] font-semibold',
-    // Only opacity and colour: an M3 press state is a tint over the label, not a
-    // scale. The button used to shrink by 3% on every press, which animated
-    // `transform` on nearly every control on every click.
-    'transition-[opacity,background-color,color] duration-[var(--motion-short)] ease-[var(--ease-standard)]',
+    // No scale: an M3 press state is a tint over the label, and that tint is the
+    // `state-layer` overlay below. Nothing on a press is a paint.
+    'state-layer transition-opacity duration-[var(--motion-instant)] ease-[var(--ease-standard)]',
     'disabled:pointer-events-none disabled:opacity-60',
-    HOVERS[props.variant],
     VARIANTS[props.variant],
     sizeClasses(),
     props.block ? 'w-full' : '',

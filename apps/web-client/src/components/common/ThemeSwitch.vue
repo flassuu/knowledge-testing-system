@@ -30,7 +30,7 @@ const dark = computed(() => theme.mode === 'dark')
     :aria-checked="dark"
     :aria-label="t('theme.darkMode')"
     v-tip="dark ? t('theme.switchToLight') : t('theme.switchToDark')"
-    class="inline-flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left transition-colors duration-[var(--motion-short)] hover:bg-surface-container-high focus:bg-surface-container-high focus:outline-none"
+    class="state-layer flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left focus:outline-none"
     @click="setTheme(dark ? 'light' : 'dark')"
   >
     <span class="min-w-0 flex-1 text-sm text-on-surface">{{ t('theme.darkMode') }}</span>
@@ -41,7 +41,7 @@ const dark = computed(() => theme.mode === 'dark')
       :class="dark ? 'border-primary bg-primary' : 'border-outline bg-surface-container-highest'"
     >
       <span
-        class="absolute left-[2px] flex size-4 items-center justify-center rounded-full transition-transform duration-[var(--motion-medium)] ease-[var(--ease-emphasized)] motion-reduce:transition-none"
+        class="layer-move absolute left-[2px] flex size-4 items-center justify-center rounded-full transition-transform duration-[var(--motion-medium)] ease-[var(--ease-emphasized)] motion-reduce:transition-none"
         :class="dark ? 'translate-x-4 text-on-primary' : 'translate-x-0 text-on-surface-variant'"
       >
         <!-- The thumb carries the mode a tap goes to, not the current one. -->

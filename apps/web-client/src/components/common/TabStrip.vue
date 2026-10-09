@@ -79,7 +79,7 @@ const gridStyle = computed(() => ({
   >
     <span
       aria-hidden="true"
-      class="pointer-events-none absolute inset-y-1 rounded-[var(--radius-control)] bg-primary transition-transform duration-[var(--motion-medium)] ease-[var(--ease-emphasized)] motion-reduce:transition-none"
+      class="layer-move pointer-events-none absolute inset-y-1 rounded-[var(--radius-control)] bg-primary transition-transform duration-[var(--motion-medium)] ease-[var(--ease-emphasized)] motion-reduce:transition-none"
       :style="style"
     />
     <button
@@ -90,12 +90,8 @@ const gridStyle = computed(() => ({
       :data-active="item.value === modelValue"
       :aria-selected="item.value === modelValue"
       :tabindex="item.value === modelValue ? 0 : -1"
-      class="relative z-1 inline-flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-control)] px-2 py-2 text-center transition-colors duration-[var(--motion-short)] ease-[var(--ease-standard)]"
-      :class="
-        item.value === modelValue
-          ? 'text-on-primary'
-          : 'text-on-surface-variant hover:bg-surface-container-high'
-      "
+      class="state-layer relative z-1 inline-flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-control)] px-2 py-2 text-center"
+      :class="item.value === modelValue ? 'text-on-primary' : 'text-on-surface-variant'"
       @click="select(item.value)"
     >
       <span class="flex items-center gap-1.5">
