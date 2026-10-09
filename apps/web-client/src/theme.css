@@ -190,6 +190,21 @@
     transform: translateY(-0.375rem);
   }
 
+  /*
+   * A nested panel opens beside its menu where there is room for it, and below it
+   * where there is not. A 208px list beside a 256px menu needs 464px of screen:
+   * on a 390px phone there is nothing left of the menu, and a list that hangs
+   * off the edge of the screen is worse than one that opens downwards.
+   */
+  @media (max-width: 30rem) {
+    .menu-nested {
+      right: 0;
+      top: 100%;
+      margin-top: 0.375rem;
+      margin-right: 0;
+    }
+  }
+
 }
 
 /* Exposes the tokens as Tailwind utilities (bg-surface, text-on-surface, …). */
