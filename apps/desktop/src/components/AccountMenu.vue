@@ -121,7 +121,15 @@ function leave(): void {
 </script>
 
 <template>
-  <div ref="root" class="relative" @keydown="menu.onKeydown">
+  <!--
+    Deliberately not `relative`: the panel below anchors to the header - the
+    nearest positioned ancestor, the sticky bar - not to this button. The menu
+    is a card floating at the window corner with equal insets from the top bar
+    and from the screen edge, and it is the header block's 12px margin
+    (AppHeader) that puts the avatar over the sign-out button; a `relative`
+    here would glue the panel back to the button and undo both.
+  -->
+  <div ref="root" @keydown="menu.onKeydown">
     <button
       type="button"
       class="state-layer inline-flex size-[var(--control-md)] shrink-0 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container"
@@ -142,11 +150,17 @@ function leave(): void {
       Always rendered: a menu created on open is a menu the pointer can re-enter
       by arriving on the node that just appeared. Only opacity and visibility
       change here.
+
+      Anchored to the header, not to the button (the root above carries no
+      `relative`): the insets repeat the header's own `px-3 sm:px-4`, so the
+      card recedes from the screen edge by as much as it hangs below the bar -
+      12px on a narrow window, 16px from `sm` up. `top` counts from the
+      header's top edge: the 56px bar plus the same inset.
     -->
     <div
       role="menu"
       :aria-label="user ? t('menu.account') : t('menu.settings')"
-      class="menu-panel absolute right-0 z-40 mt-1 w-64 origin-top-right rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+      class="menu-panel absolute right-3 top-[68px] z-40 w-64 origin-top-right rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg sm:right-4 sm:top-[72px]"
       :data-open="menu.open.value"
     >
       <!-- Who you are: the reason an account menu is opened, and where signing

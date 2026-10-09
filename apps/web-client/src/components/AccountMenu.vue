@@ -5,11 +5,11 @@ import { ChevronLeft, Info, Languages, LogOut, User } from '@lucide/vue'
 import { useAuth } from '../stores/auth'
 import { MENU_ITEM_ATTR, useMenu } from '../composables/menu'
 import { syncDocumentLocale, type Locale } from '../i18n'
-import AboutDialog from './common/AboutDialog.vue'
 import AppButton from './common/AppButton.vue'
 import FlagIcon from './common/FlagIcon.vue'
 import LocaleList from './common/LocaleList.vue'
 import ThemeSwitch from './common/ThemeSwitch.vue'
+import AboutDialog from './common/AboutDialog.vue'
 
 /**
  * One menu for everything that is not a status: the server, the language, the
@@ -19,9 +19,8 @@ import ThemeSwitch from './common/ThemeSwitch.vue'
  * language, the server and signing out - and the sign-in screen had no account to
  * open it with, so a second menu was written for exactly the settings rows, and
  * the header grew a third control to reach them. Two menus over one list is one
- * list to forget: the settings copy had no signing out, and the theme switch had
- * nowhere to live at all before it - a student arriving from a class QR, signed
- * out, could not change the theme.
+ * list to forget: the settings copy did not have signing out, and the account
+ * copy did not have the server until this commit.
  *
  * The difference between signed in and signed out is one block - the name - and
  * that is the only difference. The avatar is there either way, because it is the
@@ -32,7 +31,6 @@ import ThemeSwitch from './common/ThemeSwitch.vue'
  * it down the panel - a list that moves the thing it belongs to is harder to read
  * than one that floats beside it.
  */
-
 const { t, locale } = useI18n()
 const { user, signOut } = useAuth()
 
@@ -40,9 +38,9 @@ const { user, signOut } = useAuth()
 const root = ref<HTMLElement | null>(null)
 const menu = useMenu(root)
 
+const aboutOpen = ref(false)
 /** The locale panel: opened by its row, not a second menu. */
 const languageOpen = ref(false)
-const aboutOpen = ref(false)
 
 const roleLabel = computed(() => t(`role.${user.value?.role ?? 'student'}`))
 
@@ -57,11 +55,6 @@ watch(menu.open, (open) => {
   if (!open) languageOpen.value = false
 })
 
-function openAbout(): void {
-  menu.close()
-  aboutOpen.value = true
-}
-
 function setLocale(next: Locale): void {
   locale.value = next
   syncDocumentLocale(next)
@@ -70,6 +63,10 @@ function setLocale(next: Locale): void {
   menu.close()
 }
 
+function openAbout(): void {
+  menu.close()
+  aboutOpen.value = true
+}
 
 function leave(): void {
   menu.close()
@@ -83,12 +80,21 @@ function leave(): void {
 </script>
 
 <template>
-  <div ref="root" class="relative" @keydown="menu.onKeydown">
+  <!--
+    Deliberately not `relative`: the panel below anchors to the header - the
+    nearest positioned ancestor, the sticky bar - not to this button. The menu
+    is a card floating at the screen corner with equal insets from the top bar
+    and from the screen edge, and it is the header block's 12px margin
+    (AppHeader) that puts the avatar over the sign-out button; a `relative`
+    here would glue the panel back to the button and undo both.
+  -->
+  <div ref="root" @keydown="menu.onKeydown">
     <button
       type="button"
       class="state-layer inline-flex size-[var(--control-md)] shrink-0 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container"
-      :class="{ 'tip-off': menu.open.value }"
+      :class="{ 'tip-end': true, 'tip-off': menu.open.value }"
       :aria-label="user ? t('menu.account') : t('menu.settings')"
+      v-tip="user ? `${user.fullName} · ${user.username}` : t('menu.settings')"
       :aria-expanded="menu.open.value"
       aria-haspopup="menu"
       @click="menu.toggle"
@@ -103,11 +109,17 @@ function leave(): void {
       Always rendered: a menu created on open is a menu the pointer can re-enter
       by arriving on the node that just appeared. Only opacity and visibility
       change here.
+
+      Anchored to the header, not to the button (the root above carries no
+      `relative`): the insets repeat the header's own `px-3 sm:px-4`, so the
+      card recedes from the screen edge by as much as it hangs below the bar -
+      12px on a phone-narrow screen, 16px from `sm` up. `top` counts from the
+      header's top edge: the 56px bar plus the same inset.
     -->
     <div
       role="menu"
       :aria-label="user ? t('menu.account') : t('menu.settings')"
-      class="menu-panel absolute right-0 z-40 mt-1 w-64 origin-top-right rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+      class="menu-panel absolute right-3 top-[68px] z-40 w-64 origin-top-right rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg sm:right-4 sm:top-[72px]"
       :data-open="menu.open.value"
     >
       <!-- Who you are: the reason an account menu is opened, and where signing
@@ -121,7 +133,16 @@ function leave(): void {
           {{ initial }}
         </span>
         <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-medium text-on-surface">
+          <!--
+            `onlyIfTruncated`: the column is one line wide and the name is not.
+            On a wide window it fits, and a tooltip repeating text that is already
+            whole is noise - so this one measures and stays quiet unless it has
+            something the column could not show.
+          -->
+          <p
+            class="truncate text-sm font-medium text-on-surface"
+            v-tip="{ label: `${user.fullName} · ${user.username}`, onlyIfTruncated: true }"
+          >
             {{ user.fullName }}
           </p>
           <p class="truncate text-xs text-on-surface-variant">
@@ -136,7 +157,7 @@ function leave(): void {
         <AppButton
           :data-menu-item="MENU_ITEM_ATTR"
           data-menu-item-skip
-          variant="ghostDanger"
+          variant="dangerTonal"
           icon
           :aria-label="t('auth.signOut')"
           v-tip="t('auth.signOut')"
@@ -148,6 +169,16 @@ function leave(): void {
 
       <div v-if="user" class="my-1 h-px bg-outline-variant" role="separator" />
 
+      <div :data-menu-item="MENU_ITEM_ATTR" role="none">
+        <ThemeSwitch />
+      </div>
+
+      <!--
+        `min-h-10`: a row whose tallest child is a 24px switch is 40px and a row
+        of icon + text is 36px - four pixels the eye reads as a row out of line.
+        The height is stated rather than left to whatever the row happens to
+        contain, so a row added later does not silently pick its own.
+      -->
       <!--
         The locale list hangs off *this row*, not off the panel: positioned against
         the panel it opened level with the account block, which is two rows above
@@ -159,7 +190,7 @@ function leave(): void {
           type="button"
           role="menuitem"
           :aria-expanded="languageOpen"
-          class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
+          class="state-layer flex w-full min-h-10 items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
           @click="languageOpen = !languageOpen"
         >
           <!--
@@ -177,16 +208,22 @@ function leave(): void {
           v-if="languageOpen"
           role="menu"
           :aria-label="t('common.language')"
-          class="menu-panel menu-nested absolute right-full top-0 z-40 mr-2 w-52 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+          class="menu-panel menu-nested absolute right-full top-[-5px] z-40 mr-2 w-52 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
           data-open="true"
         >
           <LocaleList @pick="setLocale" />
         </div>
       </div>
 
-      <div :data-menu-item="MENU_ITEM_ATTR" role="none">
-        <ThemeSwitch />
-      </div>
+
+      <!--
+        Not gated on hosting: what this app is and which version it is does not
+        depend on whether the machine happens to be running the server. It was
+        `hosted`-only, which is why it was missing from the sign-in screen on the
+        phone client and from anywhere the teacher had not signed in yet.
+      -->
+
+      <div class="my-1 h-px bg-outline-variant" role="separator" />
 
       <div class="my-1 h-px bg-outline-variant" role="separator" />
 
@@ -194,7 +231,7 @@ function leave(): void {
         :data-menu-item="MENU_ITEM_ATTR"
         type="button"
         role="menuitem"
-        class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
+        class="state-layer flex w-full min-h-10 items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
         @click="openAbout"
       >
         <Info class="size-4 shrink-0" aria-hidden="true" />

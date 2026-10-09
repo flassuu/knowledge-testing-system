@@ -50,7 +50,15 @@ const roleLabel = computed(() => t(`role.${user.value?.role ?? 'student'}`))
       <!-- The empty space is the drag handle; the controls keep their own boxes. -->
       <div class="min-w-4 flex-1 self-stretch" data-tauri-drag-region />
 
-      <div class="flex shrink-0 items-center gap-2">
+      <!--
+        `mr-3`: the block recedes 12px from the padding edge, and that 12px is
+        what lines the avatar up with the sign-out button. The opened panel hangs
+        off the header at the padding inset (see AccountMenu), so its sign-out
+        button ends 12px left of the panel's right edge - exactly where this
+        margin puts the avatar's right edge. Both are 40px, so centre meets
+        centre and edge meets edge.
+      -->
+      <div class="mr-3 flex shrink-0 items-center gap-2">
         <ServerStatus />
         <!--
           One menu either way: the settings before signing in, the account

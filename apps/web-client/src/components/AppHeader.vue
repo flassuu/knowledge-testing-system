@@ -38,7 +38,14 @@ const roleLabel = computed(() => t(`role.${user.value?.role ?? 'student'}`))
         {{ roleLabel }}
       </span>
 
-      <div class="ml-auto flex shrink-0 items-center gap-2">
+      <!--
+        `mr-3`: the same 12px recess the desktop header gives this block. The
+        opened panel hangs off the header at the padding inset (see AccountMenu),
+        so its sign-out button ends 12px left of the panel's right edge -
+        exactly where this margin puts the avatar's right edge; both are 40px,
+        so centre meets centre.
+      -->
+      <div class="ml-auto mr-3 flex shrink-0 items-center gap-2">
         <ServerStatus />
         <!--
           One menu either way: the settings before signing in, the account
