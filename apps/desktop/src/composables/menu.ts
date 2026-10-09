@@ -3,8 +3,8 @@ import { nextTick, onBeforeUnmount, ref, type Ref } from 'vue'
 /**
  * The behaviour every drop-down menu in the app has to get right.
  *
- * It was written out once inside LanguageSwitcher, and the second menu that
- * needed it would have been a second copy — a copy that quietly misses the
+ * It was written out once inside a single menu component, and the second menu
+ * that needed it would have been a second copy — a copy that quietly misses the
  * Escape handler, and then the menu people stop opening. Extracted before the
  * second user, not after.
  *
