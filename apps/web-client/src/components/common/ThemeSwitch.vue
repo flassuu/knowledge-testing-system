@@ -29,7 +29,6 @@ const dark = computed(() => theme.mode === 'dark')
     role="switch"
     :aria-checked="dark"
     :aria-label="t('theme.darkMode')"
-    v-tip="dark ? t('theme.switchToLight') : t('theme.switchToDark')"
     class="state-layer flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left focus:outline-none"
     @click="setTheme(dark ? 'light' : 'dark')"
   >

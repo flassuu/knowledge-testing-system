@@ -8,6 +8,7 @@ import { supportedLocales, syncDocumentLocale, type Locale } from '../i18n'
 import FlagIcon from './common/FlagIcon.vue'
 import ThemeSwitch from './common/ThemeSwitch.vue'
 import AboutDialog from './common/AboutDialog.vue'
+import AppButton from './common/AppButton.vue'
 
 /**
  * The account, and the settings that are not worth a row of buttons.
@@ -26,7 +27,11 @@ const emit = defineEmits<{ server: [] }>()
 
 const { t, locale } = useI18n()
 const { user, signOut } = useAuth()
-const menu = useMenu()
+/** Bound with `ref="root"` on the wrapper, so click-outside has a boundary. */
+/** The menu wrapper. A ref object, because that is what a template ref wants;
+ *  `useMenu` reads its `.value` to decide what counts as "inside". */
+const root = ref<HTMLElement | null>(null)
+const menu = useMenu(root)
 
 const aboutOpen = ref(false)
 /** The language sub-panel: opened by its row, not a second menu. */
@@ -75,10 +80,11 @@ function leave(): void {
 </script>
 
 <template>
-  <div ref="menu.root" class="relative" @keydown="menu.onKeydown">
+  <div ref="root" class="relative" @keydown="menu.onKeydown">
     <button
       type="button"
       class="state-layer inline-flex size-[var(--control-md)] shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-on-secondary-container"
+      :class="{ 'tip-off': menu.open.value }"
       :aria-label="t('menu.account')"
       v-tip="user?.fullName ?? t('menu.account')"
       :aria-expanded="menu.open.value"
@@ -98,10 +104,22 @@ function leave(): void {
       <div
         role="menu"
         :aria-label="t('menu.account')"
-        class="menu-panel absolute right-0 z-40 mt-1 w-64 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+        class="menu-panel absolute right-0 z-40 mt-1 w-64 origin-top-right rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
         :data-open="menu.open.value"
       >
-        <!-- Who you are: the reason this menu was opened. -->
+        <!--
+          No `overflow-hidden` here. It was there for the rounded corners, and it
+          also clipped the sign-out tooltip, which opens above the panel and is
+          therefore outside them. The rows carry their own radius, so nothing
+          needs clipping any more.
+        -->
+        <!--
+          Who you are: the reason this menu was opened, and where signing out
+          lives. Leaving was a row at the bottom, past the language list and the
+          server entry - the farthest thing in the menu from the account it acts
+          on. A square button at the end of this row puts it beside the name it
+          belongs to.
+        -->
         <div class="flex items-center gap-3 px-3 pb-2 pt-2">
           <span
             aria-hidden="true"
@@ -109,7 +127,7 @@ function leave(): void {
           >
             {{ initial }}
           </span>
-          <div class="min-w-0">
+          <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-medium text-on-surface">
               {{ user?.fullName }}
             </p>
@@ -117,6 +135,22 @@ function leave(): void {
               {{ user?.username }} · {{ roleLabel }}
             </p>
           </div>
+          <!--
+            `data-menu-item-skip`: the arrow keys reach this row, but it is not
+            where the menu puts the keyboard when it opens. A menu that focuses
+            its first row would put Enter one keystroke from signing out.
+          -->
+          <AppButton
+            :data-menu-item="MENU_ITEM_ATTR"
+            data-menu-item-skip
+            variant="ghostDanger"
+            icon
+            :aria-label="t('auth.signOut')"
+            v-tip="t('auth.signOut')"
+            @click="leave"
+          >
+            <LogOut class="size-4" aria-hidden="true" />
+          </AppButton>
         </div>
         <div class="my-1 h-px bg-outline-variant" role="separator" />
 
@@ -197,18 +231,6 @@ function leave(): void {
           <span class="min-w-0 flex-1 truncate">{{ t('common.about.title') }}</span>
         </button>
 
-        <div class="my-1 h-px bg-outline-variant" role="separator" />
-
-        <button
-          :data-menu-item="MENU_ITEM_ATTR"
-          type="button"
-          role="menuitem"
-          class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
-          @click="leave"
-        >
-          <LogOut class="size-4 shrink-0 text-error" aria-hidden="true" />
-          <span class="min-w-0 flex-1 truncate">{{ t('auth.signOut') }}</span>
-        </button>
       </div>
   </div>
 
