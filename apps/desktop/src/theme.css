@@ -134,101 +134,35 @@
     position: relative;
   }
 
+  /*
+   * `display: none` rather than a transparent, invisible panel. A panel that is
+   * laid out but not shown still counts towards the scroll width of the page,
+   * and a tooltip centred on a control near the right edge pushed the whole
+   * document 2px sideways - the audit caught it on every screen at every width.
+   * There is no fade to preserve here, so the panel is simply not there.
+   */
   [data-tip-panel] {
+    display: none;
     position: absolute;
     left: 50%;
     top: 100%;
     z-index: 70;
     margin-top: 0.375rem;
     transform: translateX(-50%);
-    opacity: 0;
-    visibility: hidden;
-    will-change: opacity;
-    transition:
-      opacity 0s linear 600ms,
-      visibility 0s linear 600ms;
   }
 
   [data-tip-host]:hover > [data-tip-panel],
   [data-tip-host]:focus-within > [data-tip-panel] {
-    opacity: 1;
-    visibility: visible;
-    transition:
-      opacity var(--motion-instant) var(--ease-standard) 0s,
-      visibility 0s linear 0s;
+    display: block;
   }
 
-  /* Panels: always rendered, so the transition can only ever run once per state
-     change and can never be restarted by a remount. */
-  .menu-panel {
-    transition:
-      opacity var(--motion-short) var(--ease-decelerate),
-      transform var(--motion-short) var(--ease-decelerate),
-      visibility 0s linear var(--motion-short);
-  }
-
-  .menu-panel[data-open='true'] {
-    transition:
-      opacity var(--motion-short) var(--ease-decelerate),
-      transform var(--motion-short) var(--ease-decelerate),
-      visibility 0s linear 0s;
-  }
-
+  /* Panels: always in the document, shown or hidden and nothing in between. */
   .menu-panel[data-open='false'] {
     opacity: 0;
     visibility: hidden;
     transform: translateY(-0.375rem);
   }
 
-
-  /* Dialogs are mounted by their parent, so their entrance is a keyframe
-     animation rather than a transition: an animation plays once per mount and
-     cannot be restarted by a re-render, while a transition on a node that
-     appears and disappears with its parent is at the mercy of when the styles
-     land. M3 Expressive: the scrim fades, the panel arrives from below with the
-     emphasized curve. */
-  @keyframes dialog-scrim-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes dialog-panel-in {
-    from {
-      opacity: 0;
-      transform: translateY(1rem);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .dialog-scrim {
-    animation: dialog-scrim-in var(--motion-medium) var(--ease-decelerate) both;
-  }
-
-  .dialog-panel {
-    animation: dialog-panel-in var(--motion-medium) var(--ease-emphasized) both;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    [data-tip-host]:hover > [data-tip-panel],
-    [data-tip-host]:focus-within > [data-tip-panel] {
-      transition: none;
-    }
-    .menu-panel,
-    .menu-panel[data-open='true'] {
-      transition: none;
-    }
-    .dialog-scrim,
-    .dialog-panel {
-      animation: none;
-    }
-  }
 }
 
 /* Exposes the tokens as Tailwind utilities (bg-surface, text-on-surface, …). */
@@ -325,16 +259,6 @@
    * Motion is decoration, never information. Anyone who asked the system to
    * reduce motion gets instant state changes instead of smaller ones.
    */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
-  }
 
   :focus-visible {
     outline: 2px solid var(--primary);
@@ -374,62 +298,6 @@
     }
   }
 
-  /*
-   * Theme switch. Browsers with the View Transition API get a cross-fade of the
-   * whole page; everywhere else the theme composable sets .theme-switching for a
-   * single frame so per-element colour transitions do not all fire at once and
-   * strobe the screen.
-   */
-  html.theme-switching,
-  html.theme-switching *,
-  html.theme-switching *::before,
-  html.theme-switching *::after {
-    transition: none !important;
-  }
-
-  @keyframes theme-fade-out {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0.85;
-    }
-  }
-
-  @keyframes theme-fade-in {
-    from {
-      opacity: 0.85;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  ::view-transition-old(root) {
-    animation: theme-fade-out 120ms ease both;
-  }
-
-  ::view-transition-new(root) {
-    animation: theme-fade-in 160ms ease both;
-  }
-
-  /* The cross-fade is decorative: drop it when the reader asked for less motion. */
-  @media (prefers-reduced-motion: reduce) {
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-      animation: none;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
 }
 
 /*
@@ -469,7 +337,6 @@
     background-color: currentColor;
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--motion-instant) var(--ease-standard);
   }
 
   .state-layer:hover::after,
@@ -499,14 +366,4 @@
     backface-visibility: hidden;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .state-layer::after {
-      transition: none;
-    }
-    .layer-move,
-    .layer-fade {
-      will-change: auto;
-      transform: none;
-    }
-  }
 }

@@ -42,7 +42,7 @@ const classes = computed(() =>
     // Interactive cards lift a little: M3 Expressive uses motion to point at
     // the thing that responds, and the spring makes the return feel physical.
     props.interactive
-      ? 'state-layer cursor-pointer duration-[var(--motion-short)] ease-[var(--ease-standard)] hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none'
+      ? 'state-layer cursor-pointer'
       : '',
     props.class ?? '',
   ]

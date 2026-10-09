@@ -141,7 +141,7 @@ function leave(): void {
           <span class="flex shrink-0 items-center gap-1.5 text-xs text-on-surface-variant">
             <FlagIcon :code="locale as 'en' | 'uk'" class="h-3 w-4" />
             <ChevronRight
-              class="size-3.5 transition-transform duration-[var(--motion-short)]"
+              class="size-3.5"
               :class="languageOpen ? 'rotate-90' : ''"
               aria-hidden="true"
             />

@@ -489,7 +489,7 @@ onBeforeUnmount(() => {
             <li v-for="address in suggestions" :key="address">
               <button
                 type="button"
-                class="state-layer rounded-full bg-surface-container-high px-2 py-0.5 font-mono text-[11px] text-on-surface-variant "
+                class="state-layer rounded-full bg-surface-container-high px-2 py-0.5 font-mono text-[11px] text-on-surface-variant"
                 :aria-pressed="publicAddressDraft === address"
                 @click="publicAddressDraft = address"
               >

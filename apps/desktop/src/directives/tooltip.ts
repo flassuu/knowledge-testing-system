@@ -34,7 +34,10 @@ export const vTip: Directive<HTMLElement, string> = {
 
     const panel = document.createElement('span')
     panel.className = [
-      'pointer-events-none block w-max max-w-56 rounded-[var(--radius-control)]',
+      // No `block` here: it would sit in the utilities layer above the
+      // components layer and win over the `display: none` that keeps a hidden
+      // tooltip out of the page's scroll width.
+      'pointer-events-none w-max max-w-56 rounded-[var(--radius-control)]',
       'border border-outline-variant bg-surface-container-high px-2.5 py-1.5',
       'text-xs leading-snug text-on-surface shadow-lg',
     ].join(' ')

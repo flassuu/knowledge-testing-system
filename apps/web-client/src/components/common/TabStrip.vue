@@ -79,7 +79,7 @@ const gridStyle = computed(() => ({
   >
     <span
       aria-hidden="true"
-      class="layer-move pointer-events-none absolute inset-y-1 rounded-[var(--radius-control)] bg-primary transition-transform duration-[var(--motion-medium)] ease-[var(--ease-emphasized)] motion-reduce:transition-none"
+      class="pointer-events-none absolute inset-y-1 rounded-[var(--radius-control)] bg-primary"
       :style="style"
     />
     <button

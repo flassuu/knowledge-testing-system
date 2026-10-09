@@ -60,7 +60,7 @@ function leave(): void {
   <div ref="menu.root" class="relative" @keydown="menu.onKeydown">
     <button
       type="button"
-      class="inline-flex size-[var(--control-md)] shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-on-secondary-container transition-[background-color,color] duration-[var(--motion-short)] ease-[var(--ease-standard)] hover:brightness-105"
+      class="inline-flex size-[var(--control-md)] shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-on-secondary-container hover:brightness-105"
       :aria-label="t('menu.account')"
       v-tip="user?.fullName ?? t('menu.account')"
       :aria-expanded="menu.open.value"
@@ -114,7 +114,7 @@ function leave(): void {
           type="button"
           role="menuitem"
           :aria-expanded="languageOpen"
-          class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface transition-colors duration-[var(--motion-instant)] hover:bg-surface-container-high focus:bg-surface-container-high focus:outline-none"
+          class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface hover:bg-surface-container-high focus:bg-surface-container-high focus:outline-none"
           @click="languageOpen = !languageOpen"
           @mouseenter="languageOpen = true"
         >
@@ -123,7 +123,7 @@ function leave(): void {
           <span class="flex shrink-0 items-center gap-1.5 text-xs text-on-surface-variant">
             <FlagIcon :code="locale as 'en' | 'uk'" class="h-3 w-4" />
             <ChevronRight
-              class="size-3.5 transition-transform duration-[var(--motion-short)]"
+              class="size-3.5"
               :class="languageOpen ? 'rotate-90' : ''"
               aria-hidden="true"
             />
@@ -142,7 +142,7 @@ function leave(): void {
             type="button"
             role="menuitemradio"
             :aria-checked="locale === code"
-            class="flex w-full items-center gap-3 py-2 pl-8 pr-3 text-left text-sm transition-colors duration-[var(--motion-instant)] hover:bg-surface-container-highest focus:bg-surface-container-highest focus:outline-none"
+            class="flex w-full items-center gap-3 py-2 pl-8 pr-3 text-left text-sm hover:bg-surface-container-highest focus:bg-surface-container-highest focus:outline-none"
             :class="locale === code ? 'text-on-surface' : 'text-on-surface-variant'"
             @click="setLocale(code)"
           >
@@ -159,7 +159,7 @@ function leave(): void {
           :data-menu-item="MENU_ITEM_ATTR"
           type="button"
           role="menuitem"
-          class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface transition-colors duration-[var(--motion-instant)] hover:bg-error-container focus:bg-error-container focus:outline-none"
+          class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface hover:bg-error-container focus:bg-error-container focus:outline-none"
           @click="leave"
         >
           <LogOut class="size-4 shrink-0 text-error" aria-hidden="true" />

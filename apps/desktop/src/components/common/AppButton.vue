@@ -91,7 +91,7 @@ const classes = computed(() =>
     'whitespace-nowrap rounded-[var(--radius-control)] font-semibold',
     // No scale: an M3 press state is a tint over the label, and that tint is the
     // `state-layer` overlay below. Nothing on a press is a paint.
-    'state-layer transition-opacity duration-[var(--motion-instant)] ease-[var(--ease-standard)]',
+    'state-layer',
     'disabled:pointer-events-none disabled:opacity-60',
     VARIANTS[props.variant],
     sizeClasses(),

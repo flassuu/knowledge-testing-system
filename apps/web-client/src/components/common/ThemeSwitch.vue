@@ -14,7 +14,7 @@ import { getThemeState, setTheme } from '../../composables/theme'
  * so the switch itself carries the current one.
  *
  * The thumb moves by `translateX`, not by `left`. It used to animate `left`
- * under `transition-all`, which re-ran layout on every frame of the one control
+ * on an animatable-everything shorthand, which re-ran layout on every frame of the one control
  * whose position is the whole point of it.
  */
 const { t } = useI18n()
@@ -37,11 +37,11 @@ const dark = computed(() => theme.mode === 'dark')
 
     <!-- The track: 40x24 per M3, with a 20px thumb on a 2px inset. -->
     <span
-      class="relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--motion-short)] ease-[var(--ease-standard)]"
+      class="relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border-2"
       :class="dark ? 'border-primary bg-primary' : 'border-outline bg-surface-container-highest'"
     >
       <span
-        class="layer-move absolute left-[2px] flex size-4 items-center justify-center rounded-full transition-transform duration-[var(--motion-medium)] ease-[var(--ease-emphasized)] motion-reduce:transition-none"
+        class="absolute left-[2px] flex size-4 items-center justify-center rounded-full"
         :class="dark ? 'translate-x-4 text-on-primary' : 'translate-x-0 text-on-surface-variant'"
       >
         <!-- The thumb carries the mode a tap goes to, not the current one. -->

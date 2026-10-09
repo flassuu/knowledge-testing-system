@@ -17,7 +17,7 @@ const health = getHealthState()
   <button
     type="button"
     :aria-label="t('server.recheckHint')"
-    class="inline-flex h-[var(--control-md)] shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 text-xs font-medium transition-colors duration-[var(--motion-short)]"
+    class="inline-flex h-[var(--control-md)] shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 text-xs font-medium"
     :class="
       health.status === 'checking'
         ? 'bg-surface-container-high text-on-surface-variant'
@@ -34,7 +34,7 @@ const health = getHealthState()
       <!-- Checking reads as motion, not as a third colour nobody has a word for. -->
       <span
         v-if="health.status === 'checking'"
-        class="size-3 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
+        class="size-3 rounded-full border-2 border-current border-t-transparent"
       />
       <Server v-else-if="health.status === 'online'" class="size-3.5" />
       <WifiOff v-else class="size-3.5" />

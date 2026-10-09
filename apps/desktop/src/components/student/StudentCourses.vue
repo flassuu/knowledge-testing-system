@@ -129,7 +129,7 @@ onMounted(load)
             </span>
           </span>
           <ChevronDown
-            class="size-4 shrink-0 text-on-surface-variant transition-transform"
+            class="size-4 shrink-0 text-on-surface-variant"
             :class="openId === course.id ? 'rotate-180' : ''"
             aria-hidden="true"
           />

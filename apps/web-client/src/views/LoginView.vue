@@ -206,7 +206,7 @@ async function submit(): Promise<void> {
             :key="role"
             type="button"
             :aria-pressed="selectedRole === role"
-            class="flex min-w-0 flex-col items-center gap-1.5 rounded-[var(--radius-control)] border px-1 py-3 text-xs font-semibold transition-colors duration-[var(--motion-short)] ease-[var(--ease-standard)]"
+            class="flex min-w-0 flex-col items-center gap-1.5 rounded-[var(--radius-control)] border px-1 py-3 text-xs font-semibold"
             :class="
               selectedRole === role
                 ? 'border-transparent bg-primary text-on-primary'
@@ -253,7 +253,7 @@ async function submit(): Promise<void> {
               -->
               <button
                 type="button"
-                class="absolute right-0 top-1/2 mr-0.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-[var(--radius-control)] text-on-surface-variant transition-colors duration-[var(--motion-short)] ease-[var(--ease-standard)] hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                class="absolute right-0 top-1/2 mr-0.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-[var(--radius-control)] text-on-surface-variant hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
                 v-tip="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
                 @click="showPassword = !showPassword"

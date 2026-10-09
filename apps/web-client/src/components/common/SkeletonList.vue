@@ -16,9 +16,9 @@ const { t } = useI18n()
 
 <template>
   <!--
-    The skeleton breathes rather than blinks: each row is one step behind the
-    previous one, so a list that is arriving looks like it has a direction.
-    Stagger is capped at six rows - beyond that it would read as sluggish.
+    A still placeholder. It used to breathe, each row a step behind the one above,
+    which said a list was arriving; the pulse went with the rest of the motion and
+    the rows still read as a list of the right shape.
   -->
   <div role="status">
     <span class="sr-only">{{ t('common.loading') }}</span>
@@ -26,8 +26,6 @@ const { t } = useI18n()
       <AppCard
         v-for="row in rows"
         :key="row"
-        class="skeleton-row"
-        :style="{ animationDelay: `${Math.min(row - 1, 5) * 90}ms` }"
       >
         <div class="h-3 w-2/5 rounded-full bg-surface-container-highest" />
         <div class="mt-2.5 h-2.5 w-3/5 rounded-full bg-surface-container-highest" />
@@ -41,8 +39,7 @@ const { t } = useI18n()
       <div
         v-for="row in rows"
         :key="row"
-        class="skeleton-row flex items-center gap-4 border-b border-outline-variant px-4 py-3 last:border-0"
-        :style="{ animationDelay: `${Math.min(row - 1, 5) * 90}ms` }"
+        class="flex items-center gap-4 border-b border-outline-variant px-4 py-3 last:border-0"
       >
         <div
           v-for="column in columns"
@@ -54,19 +51,3 @@ const { t } = useI18n()
     </div>
   </div>
 </template>
-
-<style scoped>
-.skeleton-row {
-  animation: skeleton 1.4s var(--ease-standard) infinite;
-}
-
-@keyframes skeleton {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-</style>

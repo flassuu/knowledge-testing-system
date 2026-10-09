@@ -127,8 +127,8 @@ onMounted(() => {
 
       <div v-if="loading" class="mt-6 space-y-3" role="status">
         <span class="sr-only">{{ t('common.loading') }}</span>
-        <div class="h-4 w-1/2 animate-pulse rounded-full bg-surface-container-highest" aria-hidden="true" />
-        <div class="h-3 w-3/4 animate-pulse rounded-full bg-surface-container-highest" aria-hidden="true" />
+        <div class="h-4 w-1/2 rounded-full bg-surface-container-highest" aria-hidden="true" />
+        <div class="h-3 w-3/4 rounded-full bg-surface-container-highest" aria-hidden="true" />
       </div>
 
       <template v-else-if="result">

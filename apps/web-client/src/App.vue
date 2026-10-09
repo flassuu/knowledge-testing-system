@@ -56,9 +56,9 @@ const screen = computed<Screen>(() => {
   <div v-if="screen === 'loading'" class="flex min-h-dvh items-center justify-center p-6">
     <div role="status" class="w-full max-w-xs space-y-3">
       <span class="sr-only">{{ t('common.loading') }}</span>
-      <div class="h-4 w-1/2 animate-pulse rounded-full bg-surface-container-highest" aria-hidden="true" />
-      <div class="h-3 w-3/4 animate-pulse rounded-full bg-surface-container-highest" aria-hidden="true" />
-      <div class="h-3 w-2/3 animate-pulse rounded-full bg-surface-container-highest" aria-hidden="true" />
+      <div class="h-4 w-1/2 rounded-full bg-surface-container-highest" aria-hidden="true" />
+      <div class="h-3 w-3/4 rounded-full bg-surface-container-highest" aria-hidden="true" />
+      <div class="h-3 w-2/3 rounded-full bg-surface-container-highest" aria-hidden="true" />
     </div>
   </div>
 

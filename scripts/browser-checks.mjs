@@ -363,7 +363,33 @@ const AUDIT = `
   };
 
   if (app.scrollWidth > box.width + 1) {
-    found.push('the page scrolls sideways: ' + app.scrollWidth + 'px in ' + Math.round(box.width) + 'px');
+    // Name the widest offenders. "The page scrolls sideways by 2px" says the
+    // symptom and nothing about which element to look at, and a 2px overflow is
+    // exactly the kind that costs an hour to find by eye.
+    let detail = '';
+    const culprits = [...app.querySelectorAll('*')]
+      .map((el) => ({ el, r: el.getBoundingClientRect() }))
+      .filter((c) => c.r.width > 0 && c.r.right > box.right + 1)
+      .sort((a, b) => b.r.right - a.r.right)
+      .slice(0, 3)
+      .map((c) => {
+        const style = getComputedStyle(c.el);
+        return (
+          '<' +
+          c.el.tagName.toLowerCase() +
+          ' class="' +
+          (c.el.className.baseVal !== undefined ? c.el.className.baseVal : c.el.className || '').slice(0, 40) +
+          '"> +' +
+          Math.round(c.r.right - box.right) +
+          'px position:' +
+          style.position +
+          (style.visibility === 'hidden' ? ' visibility:hidden' : '')
+        );
+      });
+    if (culprits.length) detail = ' widest: ' + culprits.join('; ');
+    found.push(
+      'the page scrolls sideways: ' + app.scrollWidth + 'px in ' + Math.round(box.width) + 'px' + detail,
+    );
   }
   for (const el of app.querySelectorAll('*')) {
     if (!visible(el) || el.scrollWidth > el.clientWidth + 1) continue;

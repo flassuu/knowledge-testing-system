@@ -35,12 +35,12 @@ function toggle(): void {
     role="checkbox"
     :aria-checked="modelValue"
     :disabled="disabled"
-    class="group inline-flex min-h-11 max-w-full items-center gap-2.5 rounded-[var(--radius-control)] px-1 text-left text-sm transition-colors duration-[var(--motion-short)] ease-[var(--ease-standard)] disabled:opacity-60"
+    class="group inline-flex min-h-11 max-w-full items-center gap-2.5 rounded-[var(--radius-control)] px-1 text-left text-sm disabled:opacity-60"
     @click="toggle"
   >
     <span
       aria-hidden="true"
-      class="flex size-5 shrink-0 items-center justify-center rounded-[4px] border-2 transition-colors duration-[var(--motion-short)] ease-[var(--ease-standard)]"
+      class="flex size-5 shrink-0 items-center justify-center rounded-[4px] border-2"
       :class="
         modelValue
           ? 'border-primary bg-primary text-on-primary'
