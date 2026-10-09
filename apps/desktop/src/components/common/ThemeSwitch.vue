@@ -12,6 +12,10 @@ import { getThemeState, setTheme } from '../../composables/theme'
  * on position, and the sun on the thumb is the mode a tap goes back to. That
  * inversion is the M3 pattern - the thumb carries the icon of the *other* state,
  * so the switch itself carries the current one.
+ *
+ * The thumb moves by `translateX`, not by `left`. It used to animate `left`
+ * under `transition-all`, which re-ran layout on every frame of the one control
+ * whose position is the whole point of it.
  */
 const { t } = useI18n()
 const theme = getThemeState()
@@ -25,20 +29,20 @@ const dark = computed(() => theme.mode === 'dark')
     role="switch"
     :aria-checked="dark"
     :aria-label="t('theme.darkMode')"
-    :title="dark ? t('theme.switchToLight') : t('theme.switchToDark')"
-    class="inline-flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left transition-colors duration-[var(--motion-instant)] hover:bg-surface-container-high focus:bg-surface-container-high focus:outline-none"
+    v-tip="dark ? t('theme.switchToLight') : t('theme.switchToDark')"
+    class="inline-flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left transition-colors duration-[var(--motion-short)] hover:bg-surface-container-high focus:bg-surface-container-high focus:outline-none"
     @click="setTheme(dark ? 'light' : 'dark')"
   >
     <span class="min-w-0 flex-1 text-sm text-on-surface">{{ t('theme.darkMode') }}</span>
 
     <!-- The track: 40x24 per M3, with a 20px thumb on a 2px inset. -->
     <span
-      class="relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--motion-medium)] ease-[var(--ease-standard)]"
+      class="relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--motion-short)] ease-[var(--ease-standard)]"
       :class="dark ? 'border-primary bg-primary' : 'border-outline bg-surface-container-highest'"
     >
       <span
-        class="absolute flex size-4 items-center justify-center rounded-full transition-all duration-[var(--motion-medium)] ease-[var(--ease-emphasized)]"
-        :class="dark ? 'left-[18px] text-on-primary' : 'left-[2px] text-on-surface-variant'"
+        class="absolute left-[2px] flex size-4 items-center justify-center rounded-full transition-transform duration-[var(--motion-medium)] ease-[var(--ease-emphasized)] motion-reduce:transition-none"
+        :class="dark ? 'translate-x-4 text-on-primary' : 'translate-x-0 text-on-surface-variant'"
       >
         <!-- The thumb carries the mode a tap goes to, not the current one. -->
         <Moon v-if="dark" class="size-3" aria-hidden="true" />

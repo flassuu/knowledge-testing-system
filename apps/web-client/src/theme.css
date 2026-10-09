@@ -158,37 +158,34 @@
 }
 
 /*
- * Motion. Material 3 Expressive is spring-first; the web gets the same shapes as
- * CSS easing and duration tokens (a spring's overshoot is approximated by
- * `linear()`, which every current engine supports). Durations stay in the
- * 100-400ms band: expressive, not slow.
+ * Motion. Material 3 Expressive is spring-first, and two things about a spring
+ * do not survive the trip to this window.
+ *
+ * A spring overshoots and comes back. Rendered in a software-composited WebKit
+ * that overshoot reads as a twitch rather than as life, and every control in the
+ * app carried it: the tab indicator, the theme thumb, the menus. So
+ * `--ease-emphasized` is now the same decelerating shape without the
+ * overshoot, and the durations are long enough for a frame to land in.
+ *
+ * The second rule is the one that matters most: everything animated animates
+ * `transform` or `opacity`, never anything else. Those two run on the
+ * compositor. `width`, `left`, `box-shadow` and colours are layout and paint,
+ * and each frame of those re-runs a pass over the whole page - which is what
+ * made the menus, the theme switch and the tab strip stutter. The tab
+ * indicator slides with `translateX` alone; the theme thumb moves with
+ * `translateX` alone, because it used to animate `left`.
  */
 :root {
-  --motion-instant: 90ms;
-  --motion-short: 150ms;
-  --motion-medium: 240ms;
-  --motion-slow: 400ms;
+  --motion-instant: 120ms;
+  --motion-short: 180ms;
+  --motion-medium: 260ms;
+  --motion-slow: 320ms;
 
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
   --ease-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
-  /* M3 "emphasized" spring, sampled into linear() so it keeps its overshoot. */
-  --ease-emphasized: linear(
-    0,
-    0.006,
-    0.025 2.843,
-    0.1 0.279,
-    0.437 0.633,
-    0.648 0.72,
-    0.752 0.79,
-    0.8 0.817,
-    0.839 0.868,
-    0.894 0.928,
-    0.939 0.965,
-    0.976 0.986,
-    0.994 0.998,
-    1
-  );
+  /* Emphasized: fast out, long settle, no overshoot. See the note above. */
+  --ease-emphasized: cubic-bezier(0.16, 0.84, 0.24, 1);
 }
 
 @layer base {

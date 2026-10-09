@@ -66,7 +66,7 @@ const roleLabel = computed(() => t(`role.${user.value?.role ?? 'student'}`))
           variant="ghost"
           icon
           :aria-label="t('desktop.server.title')"
-          :title="t('desktop.server.title')"
+          v-tip="t('desktop.server.title')"
           @click="emit('server')"
         >
           <Server class="size-4" aria-hidden="true" />

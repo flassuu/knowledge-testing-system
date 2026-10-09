@@ -59,9 +59,9 @@ function setLocale(next: Locale): void {
 
     <Transition
       enter-active-class="transition-[opacity,transform] duration-[var(--motion-short)] ease-[var(--ease-decelerate)]"
-      enter-from-class="opacity-0 scale-95 -translate-y-1"
-      leave-active-class="transition-[opacity,transform] duration-[var(--motion-instant)] ease-[var(--ease-accelerate)]"
-      leave-to-class="opacity-0 scale-95"
+      enter-from-class="opacity-0 -translate-y-1.5"
+      leave-active-class="transition-opacity duration-[var(--motion-instant)] ease-[var(--ease-accelerate)]"
+      leave-to-class="opacity-0"
     >
       <div
         v-if="menu.open.value"

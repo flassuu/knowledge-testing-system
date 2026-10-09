@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends string">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 /**
  * A row of tabs with equal segments.
@@ -7,8 +7,14 @@ import { computed, onMounted, ref, watch } from 'vue'
  * M3 gives every segment the same width inside its group, and that is also what
  * keeps this row still when the locale changes: "Tests" and "Тести" are not the
  * same length, and a tab bar that resizes under the reader is the single most
- * visible sign of an unfinished interface. The indicator slides between segments
- * with the emphasized spring rather than jumping.
+ * visible sign of an unfinished interface.
+ *
+ * The indicator only ever moves. It slid by animating `transform` *and* `width`,
+ * and a width change is a layout pass: every frame re-measured the row and
+ * everything below it, which is why switching tabs stuttered. The grid already
+ * makes every segment the same width, so the width is measured once and never
+ * animated - a resize re-measures it without a transition, which is the one
+ * case where an instant change is the right one.
  */
 const props = defineProps<{
   modelValue: T
@@ -20,6 +26,9 @@ const emit = defineEmits<{ 'update:modelValue': [value: T] }>()
 
 const container = ref<HTMLElement | null>(null)
 const indicator = ref({ left: 0, width: 0 })
+
+/** A resize changes the geometry; the width follows without a transition. */
+let observer: ResizeObserver | null = null
 
 /** Indicator geometry in the container's own pixels, so nothing skews it. */
 function measure(): void {
@@ -33,9 +42,17 @@ function measure(): void {
 }
 
 // The first measure happens before the element has a box, so it waits a frame.
-onMounted(() => requestAnimationFrame(measure))
+onMounted(() => {
+  requestAnimationFrame(measure)
+  if (container.value) {
+    observer = new ResizeObserver(measure)
+    observer.observe(container.value)
+  }
+})
 // And it follows the model whenever the active tab changes.
 watch(() => props.modelValue, () => requestAnimationFrame(measure))
+
+onBeforeUnmount(() => observer?.disconnect())
 
 const style = computed(() => ({
   transform: `translateX(${indicator.value.left}px)`,
@@ -62,7 +79,7 @@ const gridStyle = computed(() => ({
   >
     <span
       aria-hidden="true"
-      class="pointer-events-none absolute inset-y-1 rounded-[var(--radius-control)] bg-primary transition-[transform,width] duration-[var(--motion-medium)] ease-[var(--ease-emphasized)] motion-reduce:transition-none"
+      class="pointer-events-none absolute inset-y-1 rounded-[var(--radius-control)] bg-primary transition-transform duration-[var(--motion-medium)] ease-[var(--ease-emphasized)] motion-reduce:transition-none"
       :style="style"
     />
     <button

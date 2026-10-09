@@ -92,9 +92,10 @@ const classes = computed(() =>
   [
     'inline-flex shrink-0 items-center justify-center gap-2',
     'whitespace-nowrap rounded-[var(--radius-control)] font-semibold',
-    'transition-[opacity,background-color,color,transform] duration-[var(--motion-short)] ease-[var(--ease-standard)]',
-    // M3 press state: the button gives a little, then springs back.
-    'active:scale-[0.97] motion-reduce:active:scale-100',
+    // Only opacity and colour: an M3 press state is a tint over the label, not a
+    // scale. The button used to shrink by 3% on every press, which animated
+    // `transform` on nearly every control on every click.
+    'transition-[opacity,background-color,color] duration-[var(--motion-short)] ease-[var(--ease-standard)]',
     'disabled:pointer-events-none disabled:opacity-60',
     HOVERS[props.variant],
     VARIANTS[props.variant],
