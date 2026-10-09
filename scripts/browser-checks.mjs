@@ -554,7 +554,11 @@ async function happyPaths(session, fixtures) {
   await openTheQr(session, context)
 
   const withoutAddress = await readAddressState(session, context)
-  check('teacher: warns when no public address is set', withoutAddress.warning)
+  check(
+    'teacher: warns when no public address is set',
+    withoutAddress.warning,
+    `address on screen: ${withoutAddress.address ?? 'none'}`,
+  )
   await session.screenshot(context, join(SHOTS, 'teacher-live-no-address.png'))
 
   // Teacher: the class key is on screen.
@@ -688,19 +692,37 @@ async function happyPaths(session, fixtures) {
   return context
 }
 
-/** Selects the running session and expands its QR, the way a teacher does. */
+/**
+ * Selects the running session and expands its QR, the way a teacher does.
+ *
+ * This used to sleep 1500ms, click, then sleep 700ms and read. Both sleeps were
+ * guesses, and the second one was short often enough that the panel had not
+ * rendered yet: the address read back as `none`, which is the same value the
+ * check reports when the warning is genuinely missing. Two runs out of four
+ * disagreed and neither could say why.
+ *
+ * So it waits for the thing it is about. The panel is up when the address line
+ * or the warning is in the DOM, and the loop says which one it saw.
+ */
 async function openTheQr(session, context) {
-  await session.run(
+  const state = await session.run(
     context,
     `
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const chip = [...document.querySelectorAll('button')].find((b) => /Browser check/.test(b.textContent));
     if (chip) chip.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    await new Promise((r) => setTimeout(r, 1500));
-    const qr = [...document.querySelectorAll('button')].find((b) => /Show QR code/.test(b.textContent.trim()));
-    if (qr) qr.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    await new Promise((r) => setTimeout(r, 700));
+
+    const qr = () => [...document.querySelectorAll('button')].find((b) => /Show QR code/.test(b.textContent.trim()));
+    for (let i = 0; i < 40 && !qr(); i += 1) await sleep(100);
+    if (qr()) qr().dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    const shown = () =>
+      [...document.querySelectorAll('p')].some((p) => /cannot open this address|Address in the QR code/.test(p.textContent));
+    for (let i = 0; i < 60 && !shown(); i += 1) await sleep(100);
+    return shown() ? 'panel-open' : 'panel-still-closed';
   `,
   )
+  if (state !== 'panel-open') throw new Error(`the QR panel did not open: ${state}`)
 }
 
 /** The two things the Live tab says about the address, read as a pair. */
@@ -932,14 +954,26 @@ async function studentPath(session, fixtures, context) {
     context,
     `
     const text = document.body.textContent;
+    const roles = [...document.querySelectorAll('[aria-pressed]')]
+      .map((b) => (b.getAttribute('aria-pressed') === 'true' ? 'on:' : 'off:') + b.textContent.trim())
+      .join('|');
     return {
-      // The role picker is gone: it sent nothing to the server and one of its
-      // three buttons said "Admin".
-      noRoleChoice: !/Pick your role|Оберіть роль/.test(text),
-      noAdminWord: !/\bAdmin\b|Адміністратор/.test(text),
+      // Two roles, and one of them is selected before anything is typed. The role
+      // sends nothing to the server - login takes a username and a password - but
+      // it decides which of the two ways into this app is being offered, and the
+      // field below it remembers a different name for each.
+      roleCount: roles ? roles.split('|').length : 0,
+      roles,
+      // The admin role is not one of them. It was removed in 0.5.1 and a button
+      // claiming otherwise is how a student comes to believe the system is about
+      // administrators.
+      noAdminRole: !/\bAdmin\b|Адміністратор/.test(roles),
       hasUsername: !!document.querySelector('input[autocomplete=username]'),
       hasPassword: !!document.querySelector('input[type=password]'),
       submitButtons: [...document.querySelectorAll('button[type=submit]')].length,
+      // "Keep me signed in", which is what stops the password being typed twice.
+      hasRemember: !!document.querySelector('[role=checkbox]'),
+      rememberLabel: document.querySelector('[role=checkbox]')?.textContent.trim() ?? '',
       // No account menu to somebody who is not signed in. Both the account button
       // and the language button are menus, so the check asks for the account one by
       // its own label rather than counting menus.
@@ -955,14 +989,128 @@ async function studentPath(session, fixtures, context) {
     };
   `,
   )
-  check('login: no role picker', login.noRoleChoice)
-  check('login: never mentions an administrator', login.noAdminWord)
+  check('login: two roles, one already chosen', login.roleCount === 2 && login.roles.startsWith('on:'), login.roles)
+  check('login: no administrator role', login.noAdminRole)
   check('login: asks for a username and a password', login.hasUsername && login.hasPassword)
   check('login: one submit button', login.submitButtons === 1, `${login.submitButtons} found`)
+  check('login: offers to keep the session', login.hasRemember && login.rememberLabel.length > 0)
+  check('login: the student tab offers an account', /Create account|Створити акаунт/.test(await roleCardText(session, context, 0)))
+  check('login: the teacher tab points at an administrator', /administrator|адміністратор/i.test(await roleCardText(session, context, 1)))
   check('login: no account menu when signed out', login.noAccountButton)
   check('login: the language button is still there', login.hasLanguageButton)
   check('login: no untranslated keys', !login.keys)
   await session.screenshot(context, join(SHOTS, 'login-signed-out.png'))
+
+  // Each role keeps its own name in the field. Typed rather than seeded, because
+  // a seeded name only proves the restore path and the tab swap is the part that
+  // can carry a teacher name onto the student tab.
+  // One step per call, with the frame in between: three clicks inside a single
+  // script all run before Vue has re-rendered, so the field still holds the old
+  // role's name and the check reports a bug that is not there.
+  const pickRole = (index) =>
+    session.run(
+      context,
+      `
+      const button = [...document.querySelectorAll('[aria-pressed]')][${index}];
+      if (button.getAttribute('aria-pressed') !== 'true') button.click();
+      return true;
+    `,
+    )
+  const typeName = (value) =>
+    session.run(
+      context,
+      `
+      const el = document.querySelector('input[autocomplete=username]');
+      el.value = ${JSON.stringify(value)};
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      return true;
+    `,
+    )
+  const readName = () =>
+    session.run(context, `return document.querySelector('input[autocomplete=username]').value;`)
+
+  await pickRole(0)
+  await typeName('draft_student')
+  await pickRole(1)
+  await sleep(200)
+  const drafts = { onTeacher: await readName() }
+  await pickRole(0)
+  await sleep(200)
+  drafts.backOnStudent = await readName()
+  // The fill on a tab and the line under the form both read the selected role,
+  // so they cannot drift apart - unless something else starts answering for the
+  // role, which reading both together catches.
+  const pairing = await session.run(
+    context,
+    `
+    const roles = [...document.querySelectorAll('[aria-pressed]')];
+    const selected = roles.findIndex((b) => b.getAttribute('aria-pressed') === 'true');
+    const footer = document.querySelector('form').parentElement.textContent;
+    return {
+      selected,
+      label: roles[selected] ? roles[selected].textContent.trim() : 'none',
+      teacher: /administrator|адміністратор/i.test(footer),
+    };
+  `,
+  )
+  check(
+    'login: the filled tab matches the line under the form',
+    pairing.teacher === (pairing.selected === 1),
+    `tab ${pairing.selected} (${pairing.label}), teacher line: ${pairing.teacher}`,
+  )
+
+  check(
+    'login: the tabs keep a name each',
+    drafts.onTeacher !== 'draft_student' && drafts.backOnStudent === 'draft_student',
+    `teacher saw ${JSON.stringify(drafts.onTeacher)}, student got ${JSON.stringify(drafts.backOnStudent)}`,
+  )
+
+  // The remembered session signs in by itself. Written into localStorage the way
+  // the checkbox writes it, then a real navigation: if this ever regresses to "the
+  // fields are filled in" it passes, and that is not the feature.
+  await session.run(
+    context,
+    `
+    localStorage.setItem('auth.remember', ${JSON.stringify(
+      JSON.stringify({ role: 'teacher', username: 'teacher', password: TEACHER_PASSWORD }),
+    )});
+    localStorage.removeItem('auth.token');
+    return true;
+  `,
+  )
+  navigations += 1
+  await session.goto(context, `${BASE}/?check=${navigations}`)
+  const auto = await settle(session, context, 'tabs')
+  check('login: a remembered session signs in by itself', auto === 'ready', `settle: ${auto}`)
+  await session.screenshot(context, join(SHOTS, 'login-remembered.png'))
+}
+
+/**
+ * The text under the form for one role, read after clicking that role's button.
+ *
+ * The two roles offer different ways in - a student can make an account, a
+ * teacher cannot - so the line under the form is part of the role's meaning and
+ * is checked per role rather than once.
+ */
+async function roleCardText(session, context, index) {
+  await session.run(
+    context,
+    `
+    const buttons = [...document.querySelectorAll('[aria-pressed]')];
+    const button = buttons[${index}];
+    if (!button) return '';
+    if (button.getAttribute('aria-pressed') !== 'true') button.click();
+    return true;
+  `,
+  )
+  await sleep(150)
+  return session.run(
+    context,
+    `
+    const card = document.querySelector('[role=checkbox]').closest('section,div.card') || document.body;
+    return card.textContent;
+  `,
+  )
 }
 
 
