@@ -20,7 +20,7 @@ const uk: typeof en = {
     recheckHint: 'Стан сервера — натисніть, щоб перевірити',
   },
   theme: {
-    darkMode: 'Темна тема',
+    darkMode: 'Перемкнути тему',
     switchToLight: 'Перемкнути на світлу тему',
     switchToDark: 'Перемкнути на темну тему',
   },
@@ -518,6 +518,7 @@ const uk: typeof en = {
   },
   menu: {
     account: 'Обліковий запис',
+    settings: 'Налаштування',
   },
   common: {
     language: 'Мова',
@@ -538,6 +539,14 @@ const uk: typeof en = {
     cancel: 'Скасувати',
     confirm: 'Підтвердити',
     close: 'Закрити',
+    about: {
+      title: 'Про програму',
+      tagline: 'Тестування в класі по вашій мережі, без інтернету.',
+      version: 'Версія',
+      versionUnknown: 'невідомо',
+      server: 'Сервер',
+      offline: 'Працює повністю в локальній мережі. Нічого не залишає клас.',
+    },
     dismiss: 'Закрити',
     save: 'Зберегти',
     refresh: 'Оновити',

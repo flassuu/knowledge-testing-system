@@ -72,7 +72,7 @@ export default {
     recheckHint: 'Server status — click to re-check',
   },
   theme: {
-    darkMode: 'Dark theme',
+    darkMode: 'Switch mode',
     switchToLight: 'Switch to light theme',
     switchToDark: 'Switch to dark theme',
   },
@@ -570,6 +570,7 @@ export default {
   },
   menu: {
     account: 'Account',
+    settings: 'Settings',
   },
   common: {
     language: 'Language',

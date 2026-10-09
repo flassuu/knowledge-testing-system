@@ -18,7 +18,7 @@ export default {
     recheckHint: 'Server status — click to re-check',
   },
   theme: {
-    darkMode: 'Dark theme',
+    darkMode: 'Switch mode',
     switchToLight: 'Switch to light theme',
     switchToDark: 'Switch to dark theme',
   },
@@ -517,6 +517,7 @@ export default {
   },
   menu: {
     account: 'Account',
+    settings: 'Settings',
   },
   common: {
     language: 'Language',
@@ -537,6 +538,14 @@ export default {
     cancel: 'Cancel',
     confirm: 'Confirm',
     close: 'Close',
+    about: {
+      title: 'About',
+      tagline: 'Classroom testing over a local network, with no internet.',
+      version: 'Version',
+      versionUnknown: 'unknown',
+      server: 'Server',
+      offline: 'Works entirely on the local network. Nothing leaves the room.',
+    },
     dismiss: 'Dismiss',
     save: 'Save',
     refresh: 'Refresh',

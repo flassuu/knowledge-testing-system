@@ -74,7 +74,7 @@ const uk: typeof en = {
     recheckHint: 'Стан сервера — натисніть, щоб перевірити',
   },
   theme: {
-    darkMode: 'Темна тема',
+    darkMode: 'Перемкнути тему',
     switchToLight: 'Перемкнути на світлу тему',
     switchToDark: 'Перемкнути на темну тему',
   },
@@ -571,6 +571,7 @@ const uk: typeof en = {
   },
   menu: {
     account: 'Обліковий запис',
+    settings: 'Налаштування',
   },
   common: {
     language: 'Мова',

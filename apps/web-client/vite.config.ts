@@ -7,6 +7,11 @@ const API_TARGET = process.env.VITE_API_TARGET ?? 'http://localhost:3300'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
+  // The About dialog has no Tauri to ask for a version in a browser, so the
+  // version of the build is compiled in.
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '0.5.0'),
+  },
   // Relative base so the server can serve the build from any path.
   base: './',
   server: {
