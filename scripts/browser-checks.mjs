@@ -855,10 +855,14 @@ async function studentPath(session, fixtures, context) {
     if (!row) return { opened: false, why: 'no language row' };
     row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 300));
+    // The list is a panel of its own beside the menu, so counting inside the
+    // account panel counts nothing.
+    const lists = [...document.querySelectorAll('[role=menu][data-open=true]')];
+    const rows = lists.flatMap((p) => [...p.querySelectorAll('[role=menuitemradio]')]);
     return {
       opened: true,
-      locales: panel.querySelectorAll('[role=menuitemradio]').length,
-      hasAmerican: /English/.test(panel.textContent),
+      locales: rows.length,
+      hasAmerican: /English/.test(rows.map((r) => r.textContent).join(' ')),
     };
   `,
   )
@@ -916,32 +920,6 @@ async function studentPath(session, fixtures, context) {
     dismissed.why ?? `opened=${dismissed.opened} closed=${dismissed.closedByOutside} pressed=${dismissed.target}`,
   )
 
-  // The same for the language control, whose trigger never had `ref="menu.root"`
-  // and so never had a boundary to measure against.
-  const languageDismissed = await session.run(
-    context,
-    `
-    const trigger = [...document.querySelectorAll('[aria-haspopup=menu]')].find((b) =>
-      /Language|Мова/.test(b.getAttribute('aria-label') || ''),
-    );
-    if (!trigger) return { why: 'no language trigger' };
-    const panelOf = () => document.querySelector('[role=menu][data-open=true]');
-    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    await new Promise((r) => setTimeout(r, 250));
-    const opened = !!panelOf();
-    document.querySelector('main').dispatchEvent(
-      new PointerEvent('pointerdown', { bubbles: true, clientX: 5, clientY: 5 }),
-    );
-    await new Promise((r) => setTimeout(r, 250));
-    return { opened, closedByOutside: !panelOf() };
-  `,
-  )
-  check(
-    'language menu: a click outside closes it',
-    languageDismissed.opened && languageDismissed.closedByOutside,
-    languageDismissed.why ?? `opened=${languageDismissed.opened} closed=${languageDismissed.closedByOutside}`,
-  )
-
   check('account menu: Escape closes it', closed === 'closed' || closed === 'closed (fading)', closed)
 
   // Reopened after Escape, so the screenshot below actually shows the menu: the
@@ -967,40 +945,52 @@ async function studentPath(session, fixtures, context) {
   check('account menu: reopens after Escape', reopened.startsWith('open'), reopened)
   await session.screenshot(context, join(SHOTS, 'account-menu-open.png'))
 
-  // The language menu opens on hover as well as on click, so it is checked by
-  // click here: a BiDi client has no pointer, and a check that could only pass
-  // with a real mouse would not run in CI at all.
+  // The locale list is a panel of its own, opening to the left of the menu rather
+  // than in place inside it. It used to hang off a button in the header.
+  // Beside the menu needs room: a 208px list beside a 256px menu is 464px of
+  // screen. This is checked at a desktop width, where that is what happens; the
+  // 390px audit below covers the narrow case, where it opens downwards instead.
+  await session.setViewport(context, 1100, 900)
   const languageMenu = await session.run(
     context,
     `
-    // Close whatever is open, then use the header's language button.
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await new Promise((r) => setTimeout(r, 250));
     const trigger = [...document.querySelectorAll('[aria-haspopup=menu]')].find((b) =>
-      /Language|Мова/.test(b.getAttribute('aria-label') || ''),
+      /Account|Обліковий|Settings|Налаштування/.test(b.getAttribute('aria-label') || ''),
     );
-    if (!trigger) return { opened: false, why: 'no language button in the header' };
+    if (!trigger) return { opened: false, why: 'no menu trigger in the header' };
     trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 400));
-    // Only the open panel: a closed one is still laid out, so measuring every
-    // panel in the document would test a box the reader cannot see.
     const panel = document.querySelector('[role=menu][data-open=true]');
-    if (!panel) return { opened: false, why: 'the language trigger opened nothing' };
-    const localeRows = [...panel.querySelectorAll('[role=menuitemradio]')];
+    if (!panel) return { opened: false, why: 'the trigger opened nothing' };
+    const row = [...panel.querySelectorAll('[role=menuitem]')].find((r) =>
+      /Language|Мова/.test(r.textContent),
+    );
+    if (!row) return { opened: false, why: 'no language row' };
+    row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 400));
+    const lists = [...document.querySelectorAll('[role=menu][data-open=true]')];
+    const localeRows = lists.flatMap((p) => [...p.querySelectorAll('[role=menuitemradio]')]);
+    if (!localeRows.length) return { opened: false, why: 'the language row opened no list' };
+    const box = localeRows[0].closest('[role=menu]').getBoundingClientRect();
+    const menuBox = panel.getBoundingClientRect();
     return {
       opened: true,
       locales: localeRows.length,
       names: localeRows.map((r) => r.textContent.trim().replace(/\\s+/g, ' ')).join(' | '),
-      withinEdge: panel.getBoundingClientRect().right <= window.innerWidth + 1,
+      withinEdge: box.left >= -1 && box.right <= window.innerWidth + 1,
+      beside: box.right <= menuBox.left + 1,
     };
   `,
   )
   check(
-    'the header language button opens a list of locales',
-    languageMenu.opened && languageMenu.locales >= 2,
-    languageMenu.why ?? `${languageMenu.locales} rows: ${languageMenu.names}`,
+    'the locale list opens beside the menu, not inside it',
+    languageMenu.opened && languageMenu.locales >= 2 && languageMenu.beside,
+    languageMenu.why ?? `${languageMenu.locales} rows: ${languageMenu.names} beside=${languageMenu.beside}`,
   )
-  check('the language menu stays inside the screen', languageMenu.withinEdge)
+  check('the locale list stays inside the screen', languageMenu.withinEdge)
+  await session.setViewport(context, 390, 844)
 
   // The capture shows the menu closed even though it is in the DOM and the
   // checks read it: `browsingContext.captureScreenshot` composites the page
@@ -1068,10 +1058,10 @@ async function studentPath(session, fixtures, context) {
       noAccountButton: ![...document.querySelectorAll('[aria-haspopup=menu]')].some((b) =>
         /Account|Обліковий/.test(b.getAttribute('aria-label') || ''),
       ),
-      // The language button must still be there: that is where a student changes
-      // the language before signing in, and it is easy to lose while tidying up.
-      hasLanguageButton: [...document.querySelectorAll('[aria-haspopup=menu]')].some((b) =>
-        /Language|Мова/.test(b.getAttribute('aria-label') || ''),
+      // Signed out there is no account, but there are still settings: the theme,
+      // the language and the server. The header opens them with one button.
+      hasSettingsMenu: [...document.querySelectorAll('[aria-haspopup=menu]')].some((b) =>
+        /Settings|Налаштування/.test(b.getAttribute('aria-label') || ''),
       ),
       keys: /\b(auth|common|menu|student|teacher)\\.[a-z]+\\b/.test(text),
     };
@@ -1085,7 +1075,7 @@ async function studentPath(session, fixtures, context) {
   check('login: the student tab offers an account', /Create account|Створити акаунт/.test(await roleCardText(session, context, 0)))
   check('login: the teacher tab points at an administrator', /administrator|адміністратор/i.test(await roleCardText(session, context, 1)))
   check('login: no account menu when signed out', login.noAccountButton)
-  check('login: the language button is still there', login.hasLanguageButton)
+  check('login: the settings menu is there instead', login.hasSettingsMenu)
   check('login: no untranslated keys', !login.keys)
   await session.screenshot(context, join(SHOTS, 'login-signed-out.png'))
 
