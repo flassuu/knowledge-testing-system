@@ -571,6 +571,7 @@ export default {
   menu: {
     account: 'Account',
     settings: 'Settings',
+    titleBar: 'Window title bar',
   },
   common: {
     language: 'Language',

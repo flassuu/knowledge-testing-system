@@ -34,6 +34,7 @@ type Variant =
   | 'secondaryMuted'
   | 'secondaryPlain'
   | 'dangerSecondary'
+  | 'dangerTonal'
   | 'ghost'
   | 'ghostDanger'
 
@@ -52,6 +53,11 @@ const VARIANTS: Record<Variant, string> = {
   // Quiet outline for dense rows, where a full-strength border would shout.
   secondaryPlain: 'border border-outline-variant bg-surface text-on-surface-variant',
   dangerSecondary: 'border border-outline-variant text-on-error-container',
+  // Grey at rest, like any other filled field. The red is the icon, and the same
+  // red is what the state layer tints with - so the hover is where it warms up.
+  // The outline is the quiet one, the same `border-outline-variant` the other
+  // dense controls carry.
+  dangerTonal: 'border border-outline-variant bg-surface-container-highest text-error',
   ghost: 'text-on-surface-variant',
   ghostDanger: 'text-error',
 }
@@ -63,9 +69,9 @@ const VARIANTS: Record<Variant, string> = {
  * control on every frame of the fade, and in a software-rendered webview that
  * is the whole reason hovers felt like they stuttered. `state-layer` puts a
  * 9% overlay of the button's own colour on top and animates only opacity, which
- * the compositor does without repainting. `dangerSecondary` and `ghostDanger`
- * keep a red tint - the danger has to read as danger on hover, and a tint of the
- * content colour already is that colour.
+ * the compositor does without repainting. `dangerSecondary`, `dangerTonal` and
+ * `ghostDanger` keep a red tint - the danger has to read as danger on hover, and
+ * a tint of the content colour already is that colour.
  */
 const SIZES: Record<Size, string> = {
   sm: 'h-[var(--control-sm)] px-3 text-xs',

@@ -27,17 +27,53 @@ import type { Directive } from 'vue'
  * the same reason. A `setTimeout` can be cancelled, restarted or land twice
  * under load; a transition delay is evaluated once per state change.
  */
-export const vTip: Directive<HTMLElement, string> = {
+
+/**
+ * A label, or a label with one condition on it.
+ *
+ * `onlyIfTruncated` is for a piece of text that is *already* on screen and is
+ * only cut off sometimes: the name in the account block fits on a wide window and
+ * does not on a narrow one. A tooltip that repeats the text when the text is
+ * already whole is noise, so this one measures first and says nothing unless it
+ * has something to add.
+ */
+export interface TipValue {
+  label: string
+  onlyIfTruncated?: boolean
+}
+
+function readLabel(value: string | TipValue | undefined): string | null {
+  if (typeof value === 'string') return value || null
+  if (value && typeof value.label === 'string' && value.label) return value.label
+  return null
+}
+
+/** True when the element's own text does not fit on one line. */
+function isTruncated(el: HTMLElement): boolean {
+  return el.scrollWidth > el.clientWidth + 1
+}
+
+export const vTip: Directive<HTMLElement, string | TipValue> = {
   mounted(el, binding) {
-    const label = binding.value
+    const label = readLabel(binding.value)
     if (!label) return
+
+    // The condition is not something CSS can answer. One listener, one class, and
+    // nothing added to the document: it cannot flicker, because it neither mounts
+    // nor unmounts anything.
+    if (typeof binding.value === 'object' && binding.value.onlyIfTruncated) {
+      el.addEventListener('mouseenter', () => {
+        el.classList.toggle('tip-suppress', !isTruncated(el))
+      })
+      el.addEventListener('mouseleave', () => el.classList.remove('tip-suppress'))
+    }
 
     const panel = document.createElement('span')
     panel.className = [
       // No `block` here: it would sit in the utilities layer above the
       // components layer and win over the `display: none` that keeps a hidden
       // tooltip out of the page's scroll width.
-      'pointer-events-none w-max max-w-56 rounded-[var(--radius-control)]',
+      'pointer-events-none w-max max-w-[min(18rem,90vw)] rounded-[var(--radius-control)]',
       'border border-outline-variant bg-surface-container-high px-2.5 py-1.5',
       'text-xs leading-snug text-on-surface shadow-lg',
     ].join(' ')
@@ -52,6 +88,7 @@ export const vTip: Directive<HTMLElement, string> = {
   // written once and lives in the trigger's DOM, so it is restated here.
   updated(el, binding) {
     const panel = el.querySelector<HTMLElement>('[data-tip-panel]')
-    if (panel && typeof binding.value === 'string') panel.textContent = binding.value
+    const label = readLabel(binding.value)
+    if (panel && label) panel.textContent = label
   },
 }

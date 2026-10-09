@@ -572,6 +572,7 @@ const uk: typeof en = {
   menu: {
     account: 'Обліковий запис',
     settings: 'Налаштування',
+    titleBar: 'Смуга заголовка вікна',
   },
   common: {
     language: 'Мова',

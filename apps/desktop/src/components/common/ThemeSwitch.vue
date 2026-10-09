@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Moon, Sun } from '@lucide/vue'
+import { Moon, Sun, SunMoon } from '@lucide/vue'
 import { getThemeState, setTheme } from '../../composables/theme'
 
 /**
@@ -29,9 +29,14 @@ const dark = computed(() => theme.mode === 'dark')
     role="switch"
     :aria-checked="dark"
     :aria-label="t('theme.darkMode')"
-    class="state-layer flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left focus:outline-none"
+    class="state-layer flex w-full items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left focus:outline-none"
     @click="setTheme(dark ? 'light' : 'dark')"
   >
+    <!--
+      An icon for the row like every other row in the menu, and the track pushed
+      to the right edge so it lines up with the flag above it.
+    -->
+    <SunMoon class="size-4 shrink-0 text-on-surface-variant" aria-hidden="true" />
     <span class="min-w-0 flex-1 text-sm text-on-surface">{{ t('theme.darkMode') }}</span>
 
     <!-- The track: 40x24 per M3, with a 20px thumb on a 2px inset. -->

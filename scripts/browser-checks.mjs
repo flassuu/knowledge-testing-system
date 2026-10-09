@@ -1008,6 +1008,147 @@ async function studentPath(session, fixtures, context) {
     return { openNow, closedNow, reopened: rows() };
   `,
   )
+  // The theme switch's track lines up with the flag above it. Both are the last
+  // thing in their row, so both should end at the row's content edge - and the
+  // track did not, because a `<button>` is an intrinsic-sizing element: `display:
+  // flex` arranges its children but does not make the button fill its parent, so
+  // it stopped 37px short.
+  const alignment = await session.run(
+    context,
+    `
+    const panel = document.querySelector('[role=menu][data-open=true]');
+    if (!panel) return { why: 'no menu' };
+    const rows = [...panel.querySelectorAll('[role=menuitem], [role=none]')];
+    const langRow = rows.find((r) => /Language|Мова/.test(r.textContent || ''));
+    const switchBtn = panel.querySelector('[role=switch]');
+    const flag = langRow ? langRow.querySelector('span[role=img]') : null;
+    const track = switchBtn ? switchBtn.parentElement.querySelector('span.rounded-full') : null;
+    if (!flag || !track) return { why: 'no flag or no track' };
+    const right = (el) => Math.round(el.getBoundingClientRect().right);
+    return { flagRight: right(flag), trackRight: right(track) };
+  `,
+  )
+  check(
+    'the theme switch lines up with the flag',
+    alignment.flagRight === alignment.trackRight,
+    alignment.why ?? `flag ends at ${alignment.flagRight}, track at ${alignment.trackRight}`,
+  )
+
+  // The sign-out tooltip opens below its button. Only that is asserted: the row
+  // was given no reserved height, so the tooltip does land on the theme row, and
+  // `clears` is reported rather than required. It is the number to watch if the
+  // tooltip ever looks like it is fighting the control underneath it.
+  const signOutTip = await session.run(
+    context,
+    `
+    const panel = document.querySelector('[role=menu][data-open=true]');
+    const button = panel && [...panel.querySelectorAll('button')].find((b) =>
+      /Sign out|Вийти/i.test(b.getAttribute('aria-label') || ''),
+    );
+    if (!button) return { why: 'no sign-out button' };
+    const tip = button.querySelector('[data-tip-panel]');
+    // It is hidden until the pointer arrives, and a box that is not laid out
+    // measures as nothing. Shown for the measurement, put back after: this
+    // harness has no pointer, and the geometry is the thing being checked.
+    tip.style.display = 'block';
+    const themeRow = [...panel.querySelectorAll('[role=menuitem], [role=none]')].find(
+      (r) => r.querySelector('[role=switch]'),
+    );
+    const tipBox = tip.getBoundingClientRect();
+    const buttonBox = button.getBoundingClientRect();
+    const themeBox = themeRow ? themeRow.getBoundingClientRect() : null;
+    // Stacking, not geometry: the panel can sit exactly where it should and
+    // still be painted *under* the control it overlaps, because every
+    // state-layer is a stacking context and the theme row comes later in the
+    // DOM. Sampled with the real hit-test stack inside the overlap, which is the
+    // only way to see paint order rather than boxes.
+    const track = panel.querySelector('[role=switch]');
+    const overlapBox = (a, b) => {
+      const left = Math.max(a.left, b.left);
+      const right = Math.min(a.right, b.right);
+      const top = Math.max(a.top, b.top);
+      const bottom = Math.min(a.bottom, b.bottom);
+      return right > left && bottom > top ? { x: (left + right) / 2, y: (top + bottom) / 2 } : null;
+    };
+    let above = null;
+    let onTop = '';
+    // The switch itself first - that is what was painted over the tooltip - and
+    // the row behind it if the two boxes happen not to meet at this width.
+    const sample =
+      (track && overlapBox(tipBox, track.getBoundingClientRect())) ||
+      (themeBox && overlapBox(tipBox, themeBox));
+    if (sample) {
+      // The panel is pointer-events: none so it never eats a click, and that
+      // also takes it out of hit-testing. Turn it on for the sample only.
+      tip.style.pointerEvents = 'auto';
+      const stack = document.elementsFromPoint(sample.x, sample.y);
+      tip.style.pointerEvents = '';
+      const first = stack[0];
+      above = first === tip;
+      onTop = first
+        ? first.tagName.toLowerCase() + '.' + (first.className || '(no class)')
+        : 'nothing';
+    }
+    tip.style.display = '';
+    return {
+      why: tipBox.height === 0 ? 'the tooltip is not laid out' : undefined,
+      below: tipBox.top >= buttonBox.bottom,
+      clears: themeBox ? Math.round(tipBox.bottom - themeBox.top) : null,
+      above,
+      onTop,
+      rowsBeforeTheme: [...panel.querySelectorAll('[role=menuitem], [role=none]')]
+        .findIndex((r) => r.querySelector('[role=switch]')) === 0,
+    };
+  `,
+  )
+  check(
+    'the sign-out tooltip opens below its button',
+    signOutTip.below,
+    signOutTip.why ?? `overlaps the theme row by ${signOutTip.clears}px`,
+  )
+  // Paint order over the switch it overlaps. Requiring `true` rather than "not
+  // false": a sample that found nothing would otherwise pass by saying nothing,
+  // and `clears > 0` says there was something to find.
+  check(
+    'the sign-out tooltip paints above the switch it overlaps',
+    signOutTip.above === true || signOutTip.clears <= 0,
+    signOutTip.why ??
+      `above=${signOutTip.above}, on top: ${signOutTip.onTop}, overlaps the row by ${signOutTip.clears}px`,
+  )
+  // The theme switch is the first row of the menu; the language list second.
+  check('the theme switch comes before the language row', signOutTip.rowsBeforeTheme)
+
+  // The avatar is the rightmost control in the header, so a tooltip centred on
+  // it runs off the side of the screen and the name stops halfway. Measured at
+  // the phone width, where there is least room for it to be wrong.
+  const nameTip = await session.run(
+    context,
+    `
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await new Promise((r) => setTimeout(r, 250));
+    const trigger = [...document.querySelectorAll('[aria-haspopup=menu]')].find((b) =>
+      /Account|Обліковий/.test(b.getAttribute('aria-label') || ''),
+    );
+    if (!trigger) return { why: 'no account trigger' };
+    const tip = trigger.querySelector('[data-tip-panel]');
+    if (!tip) return { why: 'no tooltip' };
+    tip.style.display = 'block';
+    const box = tip.getBoundingClientRect();
+    const text = tip.textContent.trim();
+    tip.style.display = '';
+    return {
+      why: box.width === 0 ? 'the tooltip is not laid out' : undefined,
+      overflow: Math.round(box.right - window.innerWidth),
+      carriesUsername: /browsercheck_s/.test(text),
+    };
+  `,
+  )
+  check(
+    'the avatar tooltip carries the username and stays on screen',
+    nameTip.overflow <= 0 && nameTip.carriesUsername,
+    nameTip.why ?? `${nameTip.overflow}px past the right edge`,
+  )
+
   check(
     'the language row closes its own list',
     toggled.openNow > 0 && toggled.closedNow === 0 && toggled.reopened > 0,
