@@ -521,7 +521,7 @@ onMounted(() => {
               variant="secondaryPlain"
               size="sm"
               :aria-label="t('teacher.classes.newKey')"
-              :title="t('teacher.classes.newKey')"
+              v-tip="t('teacher.classes.newKey')"
               @click="newKey(classroom)"
             >
               <KeyRound class="size-3.5" aria-hidden="true" />
@@ -532,7 +532,7 @@ onMounted(() => {
               size="sm"
               :disabled="classroom.membersCount > 0"
               :aria-label="t('teacher.classes.revoke')"
-              :title="
+              v-tip="
                 classroom.membersCount > 0
                   ? t('teacher.classes.revokeBlocked')
                   : t('teacher.classes.revoke')

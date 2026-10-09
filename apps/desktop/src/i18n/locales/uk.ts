@@ -79,6 +79,10 @@ const uk: typeof en = {
     switchToDark: 'Перемкнути на темну тему',
   },
   auth: {
+    chooseRole: 'Вхід',
+    chooseRoleHint: 'Як студент або як викладач.',
+    rememberMe: 'Не виходити з системи на цьому пристрої',
+    teacherAccountHint: 'Облікові записи викладачів створює адміністратор.',
     signInHint: 'Ім’я, яке дав учитель, або назва класу.',
     username: 'Ім\'я користувача',
     password: 'Пароль',
@@ -90,7 +94,6 @@ const uk: typeof en = {
     signOut: 'Вийти',
     register: 'Створити акаунт',
     needAccount: 'Ще немає акаунта?',
-    accountHint: 'Створює адміністратор.',
     classKey: 'Ключ класу',
     classKeyOptional: 'необовʼязково',
     classKeyFound: 'Ви приєднуєтеся до',
