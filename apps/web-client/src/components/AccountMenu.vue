@@ -160,14 +160,18 @@ function leave(): void {
           role="menuitem"
           :aria-expanded="languageOpen"
           class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
-          @click="languageOpen = true"
+          @click="languageOpen = !languageOpen"
         >
-          <Languages class="size-4 shrink-0" aria-hidden="true" />
+          <!--
+            The row's icon becomes the arrow while its list is open, in the slot
+            the icon was in: the list goes that way, so the control says so where
+            the eye already is. A second chevron on the far right gave a row about
+            the language two directions on it.
+          -->
+          <ChevronLeft v-if="languageOpen" class="size-4 shrink-0" aria-hidden="true" />
+          <Languages v-else class="size-4 shrink-0" aria-hidden="true" />
           <span class="min-w-0 flex-1 truncate">{{ t('common.language') }}</span>
-          <span class="flex shrink-0 items-center gap-1.5 text-xs text-on-surface-variant">
-            <FlagIcon :code="locale as 'en' | 'uk'" class="size-4" />
-            <ChevronLeft class="size-3.5" aria-hidden="true" />
-          </span>
+          <FlagIcon :code="locale as 'en' | 'uk'" class="size-4 shrink-0" />
         </button>
         <div
           v-if="languageOpen"
