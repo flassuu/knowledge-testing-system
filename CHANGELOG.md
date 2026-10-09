@@ -57,6 +57,26 @@ The one menu the header opens, in both apps, tidied up.
 - **Nested panels line up with the row that opened them**, first row centre to
   first row centre.
 
+### The header, settled
+
+- **The account menu floats at the window corner** — it hangs below the top bar
+  by the same inset it keeps from the screen edge (16px, 12px on narrow
+  windows), instead of touching the bar. The avatar sits exactly over the
+  sign-out button of the opened panel: the header block recedes 12px, and both
+  controls are 40px, so centre meets centre.
+- **The server pill keeps the icon and the state word**; the word "Server"
+  moved into a hover tooltip that spells the state out in full.
+
+### The sign-up form, straightened
+
+- **The class key is asked first** — it decides whether the account is approved
+  at all, and it is checked before anything below it is typed. Username sits
+  above Full name.
+- **Password and confirm password carry the same reveal toggle the sign-in
+  field has** — one per field, an eye icon, a tooltip on hover.
+- **Back to sign in sits under Create account**, the same size as it, instead
+  of floating above the card.
+
 ## [0.5.0] — 2026-10-08
 
 Phase 5 «Deployment», the three ways the system is actually used, made to work
