@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ServerStatus from './ServerStatus.vue'
-import LanguageSwitcher from './LanguageSwitcher.vue'
 import AccountMenu from './AccountMenu.vue'
 import BrandMark from './BrandMark.vue'
 import OfflineBanner from './common/OfflineBanner.vue'
@@ -41,10 +40,12 @@ const roleLabel = computed(() => t(`role.${user.value?.role ?? 'student'}`))
 
       <div class="ml-auto flex shrink-0 items-center gap-2">
         <ServerStatus />
-        <LanguageSwitcher />
-        <!-- Only somebody signed in has an account to show, and the button opens
-             the theme, the language and signing out. -->
-        <AccountMenu v-if="user" />
+        <!--
+          One menu either way: the settings before signing in, the account
+          afterwards. Signed out it drops the name and keeps the avatar, because
+          the avatar is the button that opens it.
+        -->
+        <AccountMenu />
       </div>
     </div>
     <OfflineBanner />

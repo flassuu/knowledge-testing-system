@@ -1,54 +1,62 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Check, ChevronRight, Info, Languages, LogOut, Server } from '@lucide/vue'
+import { ChevronLeft, Info, Languages, LogOut, Server, User } from '@lucide/vue'
 import { useAuth } from '../stores/auth'
 import { MENU_ITEM_ATTR, useMenu } from '../composables/menu'
-import { supportedLocales, syncDocumentLocale, type Locale } from '../i18n'
+import { syncDocumentLocale, type Locale } from '../i18n'
+import AppButton from './common/AppButton.vue'
 import FlagIcon from './common/FlagIcon.vue'
+import LocaleList from './common/LocaleList.vue'
 import ThemeSwitch from './common/ThemeSwitch.vue'
 import AboutDialog from './common/AboutDialog.vue'
-import AppButton from './common/AppButton.vue'
 
 /**
- * The account, and the settings that are not worth a row of buttons.
+ * One menu for everything that is not a status: the server, the language, the
+ * theme, About, and the account itself.
  *
- * The header used to hold nine controls side by side: status, name, theme,
- * language, server, about, sign out. At the 800px minimum window width that is
- * already wrapping, and it was still growing. Everything except the status
- * belongs on demand instead — the header then keeps one fixed box whatever the
- * locale or the theme, which is the only reason it can be this simple.
+ * There were two. The account menu, opened by the avatar, held the theme, the
+ * language, the server and signing out - and the sign-in screen had no account to
+ * open it with, so a second menu was written for exactly the settings rows, and
+ * the header grew a third control to reach them. Two menus over one list is one
+ * list to forget: the settings copy did not have signing out, and the account
+ * copy did not have the server until this commit.
  *
- * The account block is at the top and not behind another click because "who am I
- * signed in as" is the question that makes somebody open this at all.
+ * The difference between signed in and signed out is one block - the name - and
+ * that is the only difference. The avatar is there either way, because it is the
+ * button that opens the menu, and a menu with no button is a menu nobody finds.
+ *
+ * The locale list opens to the *left* as a panel of its own, the way a nested
+ * menu opens beside its parent. It used to open in place, pushing the rows under
+ * it down the panel - a list that moves the thing it belongs to is harder to read
+ * than one that floats beside it.
  */
 const props = defineProps<{ /** Desktop only: the app hosts the server. */ hosted?: boolean }>()
 const emit = defineEmits<{ server: [] }>()
 
 const { t, locale } = useI18n()
 const { user, signOut } = useAuth()
-/** Bound with `ref="root"` on the wrapper, so click-outside has a boundary. */
-/** The menu wrapper. A ref object, because that is what a template ref wants;
- *  `useMenu` reads its `.value` to decide what counts as "inside". */
+
+/** The menu wrapper, bound with `ref="root"`: click-outside needs a boundary. */
 const root = ref<HTMLElement | null>(null)
 const menu = useMenu(root)
 
 const aboutOpen = ref(false)
-/** The language sub-panel: opened by its row, not a second menu. */
+/** The locale panel: opened by its row, not a second menu. */
 const languageOpen = ref(false)
 
 const roleLabel = computed(() => t(`role.${user.value?.role ?? 'student'}`))
 
-/** The first letter of the name, or of the username — never empty. */
+/** The first letter of the name, or of the username - never empty. */
 const initial = computed(() => {
   const source = user.value?.fullName?.trim() || user.value?.username || '?'
   return [...source][0]?.toUpperCase() ?? '?'
 })
 
-const LOCALE_NAMES: Record<Locale, string> = {
-  en: 'English',
-  uk: 'Українська',
-}
+/** A locale list left open behind a closed menu is a list nobody can dismiss. */
+watch(menu.open, (open) => {
+  if (!open) languageOpen.value = false
+})
 
 function setLocale(next: Locale): void {
   locale.value = next
@@ -83,156 +91,141 @@ function leave(): void {
   <div ref="root" class="relative" @keydown="menu.onKeydown">
     <button
       type="button"
-      class="state-layer inline-flex size-[var(--control-md)] shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-on-secondary-container"
+      class="state-layer inline-flex size-[var(--control-md)] shrink-0 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container"
       :class="{ 'tip-off': menu.open.value }"
-      :aria-label="t('menu.account')"
-      v-tip="user?.fullName ?? t('menu.account')"
+      :aria-label="user ? t('menu.account') : t('menu.settings')"
       :aria-expanded="menu.open.value"
       aria-haspopup="menu"
       @click="menu.toggle"
     >
-      <span aria-hidden="true">{{ initial }}</span>
+      <!-- Signed out there is no name to take a letter from, so it is the
+           standard silhouette rather than a question mark. -->
+      <span v-if="user" class="text-sm font-semibold" aria-hidden="true">{{ initial }}</span>
+      <User v-else class="size-4" aria-hidden="true" />
     </button>
 
     <!--
-      Always rendered, like the language control's panel. It used to be `v-if`
-      inside a <Transition>, which mounted it on open: a panel created under a
-      stationary pointer is reported as entered the moment it is in the document,
-      so it opened, the next event closed it, and it opened again. Only opacity,
-      transform and visibility change here.
+      Always rendered: a menu created on open is a menu the pointer can re-enter
+      by arriving on the node that just appeared. Only opacity and visibility
+      change here.
     -->
-      <div
-        role="menu"
-        :aria-label="t('menu.account')"
-        class="menu-panel absolute right-0 z-40 mt-1 w-64 origin-top-right rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
-        :data-open="menu.open.value"
-      >
-        <!--
-          No `overflow-hidden` here. It was there for the rounded corners, and it
-          also clipped the sign-out tooltip, which opens above the panel and is
-          therefore outside them. The rows carry their own radius, so nothing
-          needs clipping any more.
-        -->
-        <!--
-          Who you are: the reason this menu was opened, and where signing out
-          lives. Leaving was a row at the bottom, past the language list and the
-          server entry - the farthest thing in the menu from the account it acts
-          on. A square button at the end of this row puts it beside the name it
-          belongs to.
-        -->
-        <div class="flex items-center gap-3 px-3 pb-2 pt-2">
-          <span
-            aria-hidden="true"
-            class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-on-secondary-container"
-          >
-            {{ initial }}
-          </span>
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-medium text-on-surface">
-              {{ user?.fullName }}
-            </p>
-            <p class="truncate text-xs text-on-surface-variant">
-              {{ user?.username }} · {{ roleLabel }}
-            </p>
-          </div>
-          <!--
-            `data-menu-item-skip`: the arrow keys reach this row, but it is not
-            where the menu puts the keyboard when it opens. A menu that focuses
-            its first row would put Enter one keystroke from signing out.
-          -->
-          <AppButton
-            :data-menu-item="MENU_ITEM_ATTR"
-            data-menu-item-skip
-            variant="ghostDanger"
-            icon
-            :aria-label="t('auth.signOut')"
-            v-tip="t('auth.signOut')"
-            @click="leave"
-          >
-            <LogOut class="size-4" aria-hidden="true" />
-          </AppButton>
+    <div
+      role="menu"
+      :aria-label="user ? t('menu.account') : t('menu.settings')"
+      class="menu-panel absolute right-0 z-40 mt-1 w-64 origin-top-right rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+      :data-open="menu.open.value"
+    >
+      <!-- Who you are: the reason an account menu is opened, and where signing
+           out lives. Past the language list and the server entry was a row about
+           leaving, several steps from the account it acts on. -->
+      <div v-if="user" class="flex items-center gap-3 px-3 pb-2 pt-2">
+        <span
+          aria-hidden="true"
+          class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-on-secondary-container"
+        >
+          {{ initial }}
+        </span>
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-medium text-on-surface">
+            {{ user.fullName }}
+          </p>
+          <p class="truncate text-xs text-on-surface-variant">
+            {{ user.username }} · {{ roleLabel }}
+          </p>
         </div>
-        <div class="my-1 h-px bg-outline-variant" role="separator" />
+        <!--
+          `data-menu-item-skip`: the arrow keys reach this row, but it is not
+          where the menu puts the keyboard when it opens. A menu that focuses its
+          first row would put Enter one keystroke from signing out.
+        -->
+        <AppButton
+          :data-menu-item="MENU_ITEM_ATTR"
+          data-menu-item-skip
+          variant="ghostDanger"
+          icon
+          :aria-label="t('auth.signOut')"
+          v-tip="t('auth.signOut')"
+          @click="leave"
+        >
+          <LogOut class="size-4" aria-hidden="true" />
+        </AppButton>
+      </div>
 
-        <div :data-menu-item="MENU_ITEM_ATTR" role="none">
-          <ThemeSwitch />
-        </div>
+      <div v-if="user" class="my-1 h-px bg-outline-variant" role="separator" />
 
-        <!-- Language is a row that opens its own list, the way a nested menu
-             does everywhere else: a locale needs a name in its own script, so
-             there is always more to it than a switch position. -->
+      <!--
+        The locale list hangs off *this row*, not off the panel: positioned against
+        the panel it opened level with the account block, which is two rows above
+        the control that opened it. Against the row it opens level with the row.
+      -->
+      <div class="relative">
         <button
           :data-menu-item="MENU_ITEM_ATTR"
           type="button"
           role="menuitem"
           :aria-expanded="languageOpen"
           class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
-          @mouseenter="languageOpen = true"
           @click="languageOpen = true"
         >
           <Languages class="size-4 shrink-0" aria-hidden="true" />
           <span class="min-w-0 flex-1 truncate">{{ t('common.language') }}</span>
           <span class="flex shrink-0 items-center gap-1.5 text-xs text-on-surface-variant">
-            <FlagIcon :code="locale as 'en' | 'uk'" class="h-3 w-4" />
-            <ChevronRight
-              class="size-3.5"
-              :class="languageOpen ? 'rotate-90' : ''"
-              aria-hidden="true"
-            />
+            <FlagIcon :code="locale as 'en' | 'uk'" class="size-4" />
+            <ChevronLeft class="size-3.5" aria-hidden="true" />
           </span>
         </button>
         <div
           v-if="languageOpen"
-          class="bg-surface-container-high/60 py-1"
-          role="group"
+          role="menu"
           :aria-label="t('common.language')"
+          class="menu-panel menu-nested absolute right-full top-0 z-40 mr-2 w-52 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+          data-open="true"
         >
-          <button
-            v-for="code in supportedLocales"
-            :key="code"
-            :data-menu-item="MENU_ITEM_ATTR"
-            type="button"
-            role="menuitemradio"
-            :aria-checked="locale === code"
-            class="state-layer flex w-full items-center gap-3 py-2 pl-8 pr-3 text-left text-sm focus:outline-none"
-            :class="locale === code ? 'text-on-surface' : 'text-on-surface-variant'"
-            @click="setLocale(code)"
-          >
-            <FlagIcon :code="code" class="h-3 w-4 shrink-0" />
-            <span class="min-w-0 flex-1 truncate">{{ LOCALE_NAMES[code] }}</span>
-            <Check v-if="locale === code" class="size-4 shrink-0" aria-hidden="true" />
-          </button>
+          <LocaleList @pick="setLocale" />
         </div>
-
-        <template v-if="props.hosted">
-          <div class="my-1 h-px bg-outline-variant" role="separator" />
-          <button
-            :data-menu-item="MENU_ITEM_ATTR"
-            type="button"
-            role="menuitem"
-            class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
-            @click="goToServer"
-          >
-            <Server class="size-4 shrink-0" aria-hidden="true" />
-            <span class="min-w-0 flex-1 truncate">{{ t('desktop.server.title') }}</span>
-          </button>
-        </template>
-
-        <div class="my-1 h-px bg-outline-variant" role="separator" />
-
-        <button
-          :data-menu-item="MENU_ITEM_ATTR"
-          type="button"
-          role="menuitem"
-          class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
-          @click="openAbout"
-        >
-          <Info class="size-4 shrink-0" aria-hidden="true" />
-          <span class="min-w-0 flex-1 truncate">{{ t('common.about.title') }}</span>
-        </button>
-
       </div>
+
+      <div :data-menu-item="MENU_ITEM_ATTR" role="none">
+        <ThemeSwitch />
+      </div>
+
+      <!--
+        Not gated on hosting: what this app is and which version it is does not
+        depend on whether the machine happens to be running the server. It was
+        `hosted`-only, which is why it was missing from the sign-in screen on the
+        phone client and from anywhere the teacher had not signed in yet.
+      -->
+      <template v-if="props.hosted">
+        <div class="my-1 h-px bg-outline-variant" role="separator" />
+      <button
+        v-if="props.hosted"
+        :data-menu-item="MENU_ITEM_ATTR"
+        type="button"
+        role="menuitem"
+        class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
+        @click="goToServer"
+      >
+        <Server class="size-4 shrink-0" aria-hidden="true" />
+        <span class="min-w-0 flex-1 truncate">{{ t('desktop.server.title') }}</span>
+      </button>
+
+      </template>
+
+      <div class="my-1 h-px bg-outline-variant" role="separator" />
+
+      <button
+        :data-menu-item="MENU_ITEM_ATTR"
+        type="button"
+        role="menuitem"
+        class="state-layer flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-on-surface focus:outline-none"
+        @click="openAbout"
+      >
+        <Info class="size-4 shrink-0" aria-hidden="true" />
+        <span class="min-w-0 flex-1 truncate">{{ t('common.about.title') }}</span>
+      </button>
+
+    </div>
   </div>
 
-  <AboutDialog v-if="props.hosted" :open="aboutOpen" @close="aboutOpen = false" />
+  <AboutDialog :open="aboutOpen" @close="aboutOpen = false" />
 </template>

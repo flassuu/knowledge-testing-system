@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Server } from '@lucide/vue'
 import ServerStatus from './ServerStatus.vue'
-import LanguageSwitcher from './LanguageSwitcher.vue'
 import AccountMenu from './AccountMenu.vue'
-import AppButton from './common/AppButton.vue'
 import BrandMark from './BrandMark.vue'
 import OfflineBanner from './common/OfflineBanner.vue'
 import { useAuth } from '../stores/auth'
@@ -55,22 +52,13 @@ const roleLabel = computed(() => t(`role.${user.value?.role ?? 'student'}`))
 
       <div class="flex shrink-0 items-center gap-2">
         <ServerStatus />
-        <LanguageSwitcher />
-        <!-- Only somebody signed in has an account to show, and the button opens
-             the theme, the language and signing out. -->
-        <AccountMenu v-if="user" :hosted="props.hosted" @server="emit('server')" />
-        <!-- Starting the server is a thing the teacher does here before signing
-             in, so it stays a control of its own rather than a menu row. -->
-        <AppButton
-          v-if="props.hosted"
-          variant="ghost"
-          icon
-          :aria-label="t('desktop.server.title')"
-          v-tip="t('desktop.server.title')"
-          @click="emit('server')"
-        >
-          <Server class="size-4" aria-hidden="true" />
-        </AppButton>
+        <!--
+          One menu either way: the settings before signing in, the account
+          afterwards. Signed out it drops the name and keeps the avatar, because
+          the avatar is the button that opens it.
+        -->
+        <AccountMenu :hosted="props.hosted" @server="emit('server')" />
+
       </div>
     </div>
     <OfflineBanner />
