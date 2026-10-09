@@ -187,7 +187,7 @@ onMounted(() => {
           icon
           size="sm"
           :aria-label="paused ? t('admin.server.resume') : t('admin.server.pause')"
-          :title="paused ? t('admin.server.resume') : t('admin.server.pause')"
+          v-tip="paused ? t('admin.server.resume') : t('admin.server.pause')"
           @click="paused = !paused"
         >
           <Play v-if="paused" class="size-4" aria-hidden="true" />
@@ -198,7 +198,7 @@ onMounted(() => {
           icon
           size="sm"
           :aria-label="t('admin.server.clear')"
-          :title="t('admin.server.clear')"
+          v-tip="t('admin.server.clear')"
           @click="stream.clear()"
         >
           <Trash2 class="size-4" aria-hidden="true" />
