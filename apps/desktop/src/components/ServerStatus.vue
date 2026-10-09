@@ -26,7 +26,7 @@ const statusTip = computed(() => `${t('server.label')}: ${t(`server.${health.sta
     type="button"
     :aria-label="t('server.recheckHint')"
     v-tip="statusTip"
-    class="inline-flex h-[var(--control-md)] shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 text-xs font-medium tip-end"
+    class="state-layer inline-flex h-[var(--control-md)] shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 text-xs font-medium tip-end"
     :class="
       health.status === 'checking'
         ? 'bg-surface-container-high text-on-surface-variant'

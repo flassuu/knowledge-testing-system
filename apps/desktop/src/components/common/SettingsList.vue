@@ -47,7 +47,7 @@ async function toggleTitleBar(): Promise<void> {
       :class="decorated ? 'border-primary bg-primary' : 'border-outline bg-surface-container-highest'"
     >
       <span
-        class="absolute left-[2px] size-4 rounded-full"
+        class="switch-thumb absolute left-[2px] size-4 rounded-full"
         :class="decorated ? 'translate-x-4 bg-on-primary' : 'translate-x-0 bg-outline'"
       />
     </span>

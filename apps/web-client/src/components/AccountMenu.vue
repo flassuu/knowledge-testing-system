@@ -204,15 +204,17 @@ function leave(): void {
           <span class="min-w-0 flex-1 truncate">{{ t('common.language') }}</span>
           <FlagIcon :code="locale as 'en' | 'uk'" class="size-4 shrink-0" />
         </button>
-        <div
-          v-if="languageOpen"
-          role="menu"
-          :aria-label="t('common.language')"
-          class="menu-panel menu-nested absolute right-full top-[-5px] z-40 mr-2 w-52 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
-          data-open="true"
-        >
-          <LocaleList @pick="setLocale" />
-        </div>
+        <Transition name="menu-nested">
+          <div
+            v-if="languageOpen"
+            role="menu"
+            :aria-label="t('common.language')"
+            class="menu-panel menu-nested absolute right-full top-[-5px] z-40 mr-2 w-52 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+            data-open="true"
+          >
+            <LocaleList @pick="setLocale" />
+          </div>
+        </Transition>
       </div>
 
 

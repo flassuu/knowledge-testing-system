@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { BookOpen, Eye, EyeOff, GraduationCap } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
@@ -80,6 +80,45 @@ const username = computed({
 const isTeacher = computed(() => selectedRole.value === 'teacher')
 
 /**
+ * The role indicator is measured, not guessed. The sliding fill is positioned in
+ * the container's own pixels, so it lands on the active cell exactly, and a
+ * resize re-measures it - the same shape the tab strips use, and for the same
+ * reason: a fill positioned with a percentage in a transform is re-sampled as it
+ * moves, which the software rendering path shows as a stutter.
+ */
+const roleBar = ref<HTMLElement | null>(null)
+const roleIndicator = ref({ left: 0, width: 0 })
+/** Snaps for the first placement and for resizes; slides only for a choice. */
+const roleSnap = ref(true)
+
+function measureRole(): void {
+  const root = roleBar.value
+  if (!root) return
+  const active = root.querySelector<HTMLElement>('[data-active="true"]')
+  if (!active) return
+  const rootBox = root.getBoundingClientRect()
+  const box = active.getBoundingClientRect()
+  roleIndicator.value = { left: box.left - rootBox.left, width: box.width }
+}
+
+let roleObserver: ResizeObserver | null = null
+
+onMounted(() => {
+  requestAnimationFrame(measureRole)
+  if (roleBar.value) {
+    roleObserver = new ResizeObserver(() => {
+      roleSnap.value = true
+      measureRole()
+    })
+    roleObserver.observe(roleBar.value)
+  }
+})
+
+onBeforeUnmount(() => roleObserver?.disconnect())
+
+watch(selectedRole, () => requestAnimationFrame(measureRole))
+
+/**
  * The stored name for one role.
  *
  * Per role, not one shared name: the two roles are two people on one machine as
@@ -93,6 +132,7 @@ function usernameKey(role: PickableRole): string {
 
 function selectRole(role: PickableRole): void {
   if (selectedRole.value === role) return
+  roleSnap.value = false
   selectedRole.value = role
   localStorage.setItem(LAST_ROLE_KEY, role)
   // The field above now reads the other role's draft through the computed, so a
@@ -200,18 +240,33 @@ async function submit(): Promise<void> {
         <!-- Two segments, equal width, so the row does not move when the locale
              changes. Colour is the only thing that animates: the fill crossfades,
              nothing slides, and nothing scales under the pointer. -->
-        <div class="mt-5 grid grid-cols-2 gap-2">
+        <!--
+          A segmented control with the same measured, sliding indicator the tab
+          strips use: one fill travels between the two roles instead of each cell
+          repainting its own, so a switch reads as a single piece of motion that
+          lands exactly on the cell it selects.
+        -->
+        <div
+          ref="roleBar"
+          class="relative mt-5 grid grid-cols-2 gap-1 rounded-[var(--radius-card)] border border-outline-variant bg-surface-container p-1"
+        >
+          <span
+            aria-hidden="true"
+            class="tab-indicator pointer-events-none absolute inset-y-1 rounded-[var(--radius-control)] bg-primary"
+            :class="{ 'tab-indicator-snap': roleSnap }"
+            :style="{
+              transform: `translateX(${roleIndicator.left}px)`,
+              width: `${roleIndicator.width}px`,
+            }"
+          />
           <button
             v-for="{ role, icon } in ROLES"
             :key="role"
             type="button"
+            :data-active="selectedRole === role"
             :aria-pressed="selectedRole === role"
-            class="flex min-w-0 flex-col items-center gap-1.5 rounded-[var(--radius-control)] border px-1 py-3 text-xs font-semibold"
-            :class="
-              selectedRole === role
-                ? 'border-transparent bg-primary text-on-primary'
-                : 'border-outline-variant text-on-surface-variant hover:border-outline'
-            "
+            class="state-layer tab-label relative z-1 flex min-w-0 flex-col items-center gap-1.5 rounded-[var(--radius-control)] px-1 py-3 text-xs font-semibold"
+            :class="selectedRole === role ? 'text-on-primary' : 'text-on-surface-variant'"
             @click="selectRole(role)"
           >
             <component :is="icon" class="size-5 shrink-0" aria-hidden="true" />

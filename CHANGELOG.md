@@ -77,6 +77,87 @@ The one menu the header opens, in both apps, tidied up.
 - **Back to sign in sits under Create account**, the same size as it, instead
   of floating above the card.
 
+### Motion
+
+The stylesheets carried motion tokens for a long time; almost nothing used
+them, so every state change snapped. All of it runs on the compositor —
+`transform` and `opacity` only, as the paint rule requires.
+
+- **Hover and press are animated.** The state-layer tint fades in 120ms, and a
+  control squishes a hair under the pointer and settles back on lift — pressing
+  takes a short accelerating curve, lifting a longer settling one, which is
+  what makes the release read as weight rather than a snap.
+- **Menus open on the emphasized curve** — fade, a scale from the corner they
+  hang from, and the rows arriving in a 25ms-step stagger. Closing is faster
+  and accelerating, and rows stop accepting clicks the frame the exit starts.
+  Nested panels animate in and out under a `<Transition>`, with their own rows
+  staggered.
+- **Tooltips fade, and wait their second.** The hover delay had drifted into
+  the wrong rule — the one for the state being left — so a tooltip appeared
+  instantly and lingered a second after the pointer left. The delay now sits in
+  the state being entered: a second of rest before it shows, a quick fade when
+  it goes.
+- **Dialogs arrive from below** — scrim fade and an emphasized panel entrance,
+  the keyframes the dialog shell's comment always promised but the stylesheet
+  never had.
+- **Switch thumbs slide** on `translate` (260ms, emphasized); the checkbox tick
+  pops in; the role segments on the sign-in screen and the server pill gained
+  the state layer.
+- **`prefers-reduced-motion` is honoured** — the override the base-layer
+  comment promised but the stylesheet never had: durations collapse to
+  nothing, delays to zero.
+- **Everything animated carries its layer from birth.** In the desktop's
+  software-composited webview an unpromoted fade or scale re-rasters the whole
+  window surface every frame, and the motion read as flicker and jerk. The
+  menu panel and its rows, the state-layer tint and press, tooltips, dialogs
+  and the theme thumb are promoted up front (`will-change`), so a frame costs
+  a blend instead of a raster.
+- **Tabs slide.** The tab indicator takes the emphasized curve when a tab is
+  chosen, and snaps — no slide — for the first placement and for window
+  resizes, where a glide would read as lag. The tabbed sheet itself fades in
+  and out instead of teleporting.
+- **Fixed: the whole window flickered as anything repainted.** The cause was
+  not the animation code — a frame-by-frame trace in a real browser showed the
+  opacity curve moving cleanly, with no restart. It is a known WebKitGTK fault:
+  its DMA-BUF renderer asks some Linux GPU drivers (NVIDIA above all) for
+  buffer formats they do not provide, and every repaint shows a torn frame.
+  The desktop entry point now sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` before
+  the webview is created — the workaround the Tauri docs prescribe — unless the
+  environment already carries a value, so a working setup can keep the fast
+  path.
+- **The menu motion was slimmed for the software rendering path.** The per-row
+  stagger ran a dozen animations at once, and the panel scaled — which
+  re-samples its text every frame. Both are gone, leaving one promoted layer
+  that fades and slides. Nested lists also stopped flashing on close: their
+  exit keyframe was snapping back to full opacity for the frame before Vue
+  removed the node.
+- **Tab labels ease into their colour** in step with the indicator sliding
+  under them, so the highlight arrives with the text instead of behind it.
+- **The theme switch's sun and moon turn through each other** rather than
+  swapping on a single frame.
+- **Loading placeholders wait before they appear.** A fetch against the local
+  server answers within a frame or two, and a skeleton that flashed for that
+  frame interrupted every tab switch; the placeholder now stays invisible
+  through a short delay and shows only when the wait is real.
+- **The role picker on the sign-in screen became a segmented control** with the
+  same sliding indicator the tab strips use — one fill travels between Student
+  and Teacher instead of each cell repainting its own.
+- **Tooltips wait, then fade.** The panel is `display: none` while hidden, and a
+  transition does not run out of a state the engine never laid out — which is
+  why the tooltip appeared instantly, without its fade. The rest (now 1.2s) and
+  the fade are a keyframe animation instead, which does start when the element
+  becomes visible; the delay is held by `backwards`.
+- **Nested menus (Settings, Language) slide in two directions at once** — in
+  from the right and down from above — instead of only downward.
+- **The "Keep me signed in" checkbox got its M3 interaction.** The check draws
+  in with a turn, the box squishes under the press, and the state layer is a
+  circle around the box alone — hovering the row lights the box, never the
+  label.
+- **The role segments on the sign-in screen slide on a measured offset** rather
+  than a percentage transform — the same px path the tab strips use. A fill
+  positioned with a percentage in a transform is re-sampled as it moves, and
+  the software renderer shows that as a stutter.
+
 ## [0.5.0] — 2026-10-08
 
 Phase 5 «Deployment», the three ways the system is actually used, made to work
