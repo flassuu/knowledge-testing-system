@@ -47,6 +47,11 @@ function setLocale(next: Locale): void {
 
 function leave(): void {
   menu.close()
+  // Signing out is the one moment where "keep me signed in" must stop applying.
+  // The credential is kept so the next launch can sign in without typing, and
+  // somebody who signs out to hand the device to the next person would otherwise
+  // find the next person already inside.
+  localStorage.removeItem('auth.remember')
   void signOut()
 }
 </script>
@@ -55,9 +60,9 @@ function leave(): void {
   <div ref="menu.root" class="relative" @keydown="menu.onKeydown">
     <button
       type="button"
-      class="inline-flex size-[var(--control-md)] shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-on-secondary-container transition-transform duration-[var(--motion-short)] ease-[var(--ease-standard)] hover:brightness-105 active:scale-95 motion-reduce:active:scale-100"
+      class="inline-flex size-[var(--control-md)] shrink-0 items-center justify-center rounded-full bg-secondary-container text-sm font-semibold text-on-secondary-container transition-[background-color,color] duration-[var(--motion-short)] ease-[var(--ease-standard)] hover:brightness-105"
       :aria-label="t('menu.account')"
-      :title="user?.fullName ?? t('menu.account')"
+      v-tip="user?.fullName ?? t('menu.account')"
       :aria-expanded="menu.open.value"
       aria-haspopup="menu"
       @click="menu.toggle"
@@ -67,9 +72,9 @@ function leave(): void {
 
     <Transition
       enter-active-class="transition-[opacity,transform] duration-[var(--motion-short)] ease-[var(--ease-decelerate)]"
-      enter-from-class="opacity-0 scale-95 -translate-y-1"
-      leave-active-class="transition-[opacity,transform] duration-[var(--motion-instant)] ease-[var(--ease-accelerate)]"
-      leave-to-class="opacity-0 scale-95"
+      enter-from-class="opacity-0 -translate-y-1.5"
+      leave-active-class="transition-opacity duration-[var(--motion-instant)] ease-[var(--ease-accelerate)]"
+      leave-to-class="opacity-0"
     >
       <div
         v-if="menu.open.value"

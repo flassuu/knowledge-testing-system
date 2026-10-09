@@ -32,7 +32,7 @@ const emit = defineEmits<{ enter: [] }>()
 const classes = computed(() =>
   [
     'w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm text-on-surface',
-    'transition-colors placeholder:text-on-surface-variant',
+    'transition-colors placeholder:text-on-surface-variant/45',
     'focus:border-primary disabled:opacity-60',
     props.class ?? '',
   ]

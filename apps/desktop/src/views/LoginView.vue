@@ -1,45 +1,119 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Eye, EyeOff } from '@lucide/vue'
+import { BookOpen, Eye, EyeOff, GraduationCap } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
 import { useAuth } from '../stores/auth'
 import { ApiError } from '../api/client'
+import type { UserRole } from '../api/types'
 import AppButton from '../components/common/AppButton.vue'
 import AppCard from '../components/common/AppCard.vue'
+import AppCheckbox from '../components/common/AppCheckbox.vue'
 import AppInput from '../components/common/AppInput.vue'
 
 /**
- * Sign in with a name and a password. Nothing else.
+ * Sign in as a student or as a teacher.
  *
- * This screen used to ask which role you were before you typed anything. That
- * control sent nothing to the server - `POST /api/auth/login` takes a username and
- * a password and rejects any other field - so the three buttons were decoration
- * that looked like a choice. Worse, one of them said "Admin", which is how a
- * student comes to believe the system is about administrators.
+ * The role control came out in 0.5.1 and it should not have. It sent nothing to
+ * the server — `POST /api/auth/login` takes a username and a password and
+ * rejects any other field — but it was not decoration either: it changed the
+ * placeholder, and it decided which of the two ways into this app is being
+ * described. A student arriving from a class QR needs to see that signing up is
+ * one tap away; a teacher needs to see that accounts are made for them. Those
+ * are different screens sharing a form, and the role is what tells them apart.
  *
- * The account carries its own role and the screen after sign-in follows it. So
- * the honest form is two fields, and it also fits a phone without shrinking.
+ * So the role is back, minus the administrator: there is no admin in 0.5.1, and
+ * one button claiming otherwise is how a student comes to believe the system is
+ * about administrators.
+ *
+ * "Remember me" stores the password and signs in by itself next time. The token
+ * is already persistent, so what it really buys is the way back in after signing
+ * out and after a restart — without it you land here and type again. The
+ * plaintext password is the price, and it is stated in the label rather than
+ * buried: this is an offline tool on a classroom network, and the alternative
+ * would be a way to sign in that the teacher has to remember.
  */
 const emit = defineEmits<{ register: []; server: [] }>()
 
 const { t } = useI18n()
 const { signIn } = useAuth()
 
-const username = ref('')
+type PickableRole = Extract<UserRole, 'student' | 'teacher'>
+
+const ROLES: Array<{ role: PickableRole; icon: typeof GraduationCap }> = [
+  { role: 'student', icon: GraduationCap },
+  { role: 'teacher', icon: BookOpen },
+]
+
+/** One stored name per role: a teacher and a student share this screen. */
+const LAST_USERNAME_PREFIX = 'auth.lastUsername'
+const LAST_ROLE_KEY = 'auth.lastRole'
+const REMEMBER_KEY = 'auth.remember'
+
+interface Remembered {
+  role: PickableRole
+  username: string
+  password: string
+}
+
+const selectedRole = ref<PickableRole>('student')
+/** One draft name per role, so a tab swap never loses what was typed. */
+const names = reactive<Record<PickableRole, string>>({ student: '', teacher: '' })
 const password = ref('')
+const remember = ref(false)
 const showPassword = ref(false)
 const errorKey = ref('')
 const submitting = ref(false)
 
-const LAST_USERNAME_KEY = 'auth.lastUsername'
+const usernamePlaceholder = computed(() =>
+  selectedRole.value === 'teacher' ? 'teacher' : 'student',
+)
 
-onMounted(() => {
-  // Restore the last successful sign-in so a returning user only types a
-  // password. A first run pre-fills nothing: the seeded name is on the card.
-  const savedUsername = localStorage.getItem(LAST_USERNAME_KEY)
-  if (savedUsername) username.value = savedUsername
+/** Bound to the field, and to whichever role is on screen. */
+const username = computed({
+  get: () => names[selectedRole.value],
+  set: (value: string) => {
+    names[selectedRole.value] = value
+  },
 })
+
+const isTeacher = computed(() => selectedRole.value === 'teacher')
+
+/**
+ * The stored name for one role.
+ *
+ * Per role, not one shared name: the two roles are two people on one machine as
+ * often as not - a teacher checking a student's account on their own phone -
+ * and a single field that carried the last name across both would put the wrong
+ * one in front of the wrong person.
+ */
+function usernameKey(role: PickableRole): string {
+  return `${LAST_USERNAME_PREFIX}.${role}`
+}
+
+function selectRole(role: PickableRole): void {
+  if (selectedRole.value === role) return
+  selectedRole.value = role
+  localStorage.setItem(LAST_ROLE_KEY, role)
+  // The field above now reads the other role's draft through the computed, so a
+  // teacher name cannot follow the reader onto the student tab. The error goes
+  // with it: it described the name that was just typed over.
+  errorKey.value = ''
+}
+
+function readRemembered(): Remembered | null {
+  const raw = localStorage.getItem(REMEMBER_KEY)
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw) as Partial<Remembered>
+    if (!parsed.username || !parsed.password) return null
+    const role: PickableRole = parsed.role === 'teacher' ? 'teacher' : 'student'
+    return { role, username: parsed.username, password: parsed.password }
+  } catch {
+    // A stored value that is not ours — an older build, or a hand-edited one.
+    return null
+  }
+}
 
 function errorMessage(key: string): string {
   switch (key) {
@@ -56,13 +130,53 @@ function errorMessage(key: string): string {
   }
 }
 
-async function submit() {
+onMounted(async () => {
+  const savedRole = localStorage.getItem(LAST_ROLE_KEY)
+  if (savedRole === 'teacher' || savedRole === 'student') selectedRole.value = savedRole
+
+  const remembered = readRemembered()
+  if (remembered) {
+    selectedRole.value = remembered.role
+    names[remembered.role] = remembered.username
+    password.value = remembered.password
+    remember.value = true
+    // The whole point of the box: no typing, no click. A failure lands on the
+    // filled-in form with no message — a wrong password here is not something
+    // the reader did wrong, and saying so would just be noise on launch.
+    try {
+      await signIn(remembered.username, remembered.password)
+      return
+    } catch {
+      password.value = ''
+      remember.value = false
+      localStorage.removeItem(REMEMBER_KEY)
+    }
+  }
+
+  const saved = localStorage.getItem(usernameKey(selectedRole.value)) ?? ''
+  names[selectedRole.value] =
+    saved || (isTeacher.value ? 'teacher' : '')
+})
+
+async function submit(): Promise<void> {
   errorKey.value = ''
+  const name = username.value.trim()
   submitting.value = true
   try {
-    await signIn(username.value.trim(), password.value)
-    // Only persist on success so typos never overwrite the saved username.
-    localStorage.setItem(LAST_USERNAME_KEY, username.value.trim())
+    await signIn(name, password.value)
+    // Only persisted on success, so a typo never overwrites a good name.
+    localStorage.setItem(usernameKey(selectedRole.value), name)
+    localStorage.setItem(LAST_ROLE_KEY, selectedRole.value)
+    if (remember.value) {
+      const payload: Remembered = {
+        role: selectedRole.value,
+        username: name,
+        password: password.value,
+      }
+      localStorage.setItem(REMEMBER_KEY, JSON.stringify(payload))
+    } else {
+      localStorage.removeItem(REMEMBER_KEY)
+    }
   } catch (error) {
     errorKey.value = error instanceof ApiError ? error.code : ''
   } finally {
@@ -75,86 +189,122 @@ async function submit() {
   <div class="flex min-h-dvh flex-col bg-surface">
     <AppHeader hosted @server="emit('server')" />
     <main class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 pb-10">
-    <div class="flex flex-1 flex-col justify-center py-4">
-    <AppCard as="section" padding="lg" class="shadow-sm">
-      <h2 class="text-lg font-semibold text-balance text-on-surface">
-        {{ t('auth.signIn') }}
-      </h2>
-      <p class="mt-1 text-sm text-balance text-on-surface-variant">
-        {{ t('auth.signInHint') }}
-      </p>
-
-      <form class="mt-5 space-y-4" @submit.prevent="submit">
-        <label class="block">
-          <span class="text-xs font-medium text-on-surface-variant">
-            {{ t('auth.username') }}
-          </span>
-          <AppInput
-            v-model="username"
-            type="text"
-            autocomplete="username"
-            placeholder="teacher"
-            class="mt-1"
-          />
-        </label>
-
-        <label class="block">
-          <span class="text-xs font-medium text-on-surface-variant">
-            {{ t('auth.password') }}
-          </span>
-          <div class="relative mt-1.5">
-            <AppInput
-              v-model="password"
-              :type="showPassword ? 'text' : 'password'"
-              autocomplete="current-password"
-              placeholder="••••••••"
-              class="pr-12"
-            />
-            <AppButton
-              variant="ghost"
-              icon
-              class="absolute inset-y-0 right-0 my-0.5 mr-0.5"
-              :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
-              :title="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
-              @click="showPassword = !showPassword"
-            >
-              <EyeOff v-if="showPassword" class="size-4" aria-hidden="true" />
-              <Eye v-else class="size-4" aria-hidden="true" />
-            </AppButton>
-          </div>
-        </label>
-
-        <p
-          v-if="errorKey"
-          role="alert"
-          class="rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container"
-        >
-          {{ errorMessage(errorKey) }}
+      <AppCard as="section" padding="lg" class="shadow-sm">
+        <h2 class="text-lg font-semibold text-balance text-on-surface">
+          {{ t('auth.chooseRole') }}
+        </h2>
+        <p class="mt-1 text-sm text-balance text-on-surface-variant">
+          {{ t('auth.chooseRoleHint') }}
         </p>
 
-        <AppButton variant="primary" size="lg" type="submit" class="mt-1 w-full" :disabled="submitting">
-          {{ submitting ? t('common.loading') : t('auth.signIn') }}
-        </AppButton>
-      </form>
+        <!-- Two segments, equal width, so the row does not move when the locale
+             changes. Colour is the only thing that animates: the fill crossfades,
+             nothing slides, and nothing scales under the pointer. -->
+        <div class="mt-5 grid grid-cols-2 gap-2">
+          <button
+            v-for="{ role, icon } in ROLES"
+            :key="role"
+            type="button"
+            :aria-pressed="selectedRole === role"
+            class="flex min-w-0 flex-col items-center gap-1.5 rounded-[var(--radius-control)] border px-1 py-3 text-xs font-semibold transition-colors duration-[var(--motion-short)] ease-[var(--ease-standard)]"
+            :class="
+              selectedRole === role
+                ? 'border-transparent bg-primary text-on-primary'
+                : 'border-outline-variant text-on-surface-variant hover:border-outline hover:bg-surface-container-high'
+            "
+            @click="selectRole(role)"
+          >
+            <component :is="icon" class="size-5 shrink-0" aria-hidden="true" />
+            <span class="max-w-full truncate">{{ t(`role.${role}`) }}</span>
+          </button>
+        </div>
 
-      <!-- Students arrive here from a class QR, so signing up is one tap and is
-           offered plainly. Staff accounts are made by someone else: a console
-           `admin` command, or the desktop app's first-start password. -->
-      <div
-        class="mt-4 flex min-h-11 items-center justify-center border-t border-outline-variant pt-4 text-center text-sm"
-      >
-        <span class="text-on-surface-variant">{{ t('auth.needAccount') }}</span>
-        <button
-          type="button"
-          class="ml-1 font-semibold text-on-surface underline underline-offset-2"
-          @click="emit('register')"
+        <form class="mt-5 space-y-4" @submit.prevent="submit">
+          <label class="block">
+            <span class="text-xs font-medium text-on-surface-variant">
+              {{ t('auth.username') }}
+            </span>
+            <AppInput
+              v-model="username"
+              type="text"
+              autocomplete="username"
+              :placeholder="usernamePlaceholder"
+              class="mt-1"
+            />
+          </label>
+
+          <label class="block">
+            <span class="text-xs font-medium text-on-surface-variant">
+              {{ t('auth.password') }}
+            </span>
+            <div class="relative mt-1.5">
+              <AppInput
+                v-model="password"
+                :type="showPassword ? 'text' : 'password'"
+                autocomplete="current-password"
+                placeholder="••••••••"
+                class="pr-12"
+              />
+              <!--
+                A plain button, not AppButton: the ghost variant paints a hover
+                fill, and a fill painted over the field's own box covers the text
+                underneath it. This one sits on the input and has to stay out of
+                its way - the hover state is the icon changing colour.
+              -->
+              <button
+                type="button"
+                class="absolute right-0 top-1/2 mr-0.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-[var(--radius-control)] text-on-surface-variant transition-colors duration-[var(--motion-short)] ease-[var(--ease-standard)] hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+                v-tip="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+                @click="showPassword = !showPassword"
+              >
+                <EyeOff v-if="showPassword" class="size-4" aria-hidden="true" />
+                <Eye v-else class="size-4" aria-hidden="true" />
+              </button>
+            </div>
+          </label>
+
+          <AppCheckbox v-model="remember" :label="t('auth.rememberMe')" />
+
+          <p
+            v-if="errorKey"
+            role="alert"
+            class="rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container"
+          >
+            {{ errorMessage(errorKey) }}
+          </p>
+
+          <AppButton
+            variant="primary"
+            size="lg"
+            type="submit"
+            class="mt-1 w-full"
+            :disabled="submitting"
+          >
+            {{ submitting ? t('common.loading') : t('auth.signIn') }}
+          </AppButton>
+        </form>
+
+        <!-- What the role decides. A student can make an account in one tap from
+             a class QR; a teacher cannot, and is told who makes one. -->
+        <div
+          class="mt-4 flex min-h-11 items-center justify-center border-t border-outline-variant pt-4 text-center text-sm"
         >
-          {{ t('auth.register') }}
-        </button>
-      </div>
-    </AppCard>
-
-    </div>
+          <template v-if="isTeacher">
+            <span class="text-on-surface-variant">{{ t('auth.teacherAccountHint') }}</span>
+          </template>
+          <template v-else>
+            <span class="text-on-surface-variant">{{ t('auth.needAccount') }}</span>
+            <button
+              type="button"
+              class="ml-1 font-semibold text-on-surface underline underline-offset-2"
+              @click="emit('register')"
+            >
+              {{ t('auth.register') }}
+            </button>
+          </template>
+        </div>
+      </AppCard>
     </main>
   </div>
 </template>
