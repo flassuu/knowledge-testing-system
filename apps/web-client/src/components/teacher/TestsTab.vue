@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { BarChart3, CloudUpload, Copy, Download, Eye, FileQuestion, Plus, Trash2, Upload } from '@lucide/vue'
+import { ArrowLeft, BarChart3, CloudUpload, Copy, Download, Eye, FileQuestion, Plus, Search, Trash2, Upload } from '@lucide/vue'
 import { ApiError } from '../../api/client'
 import EmptyState from '../common/EmptyState.vue'
 import SkeletonList from '../common/SkeletonList.vue'
@@ -47,6 +47,8 @@ const confirm = useConfirm()
 const toast = useToast()
 
 const tests = ref<TestSummary[]>([])
+/** A title filter: the list the teacher searches, not the list the server sends. */
+const query = ref('')
 /** Несохранённая работа: сервер был недоступен в момент сохранения. */
 const drafts = ref<TestDraft[]>([])
 const syncingDrafts = ref(false)
@@ -89,6 +91,18 @@ function apiErrorKey(error: unknown): string {
 function showError(key: string): string {
   return key === 'generic' ? t('teacher.errors.generic') : t(`teacher.errors.${key}`)
 }
+
+/** Tests matching the search box, case-insensitively on the title. */
+const filteredTests = computed(() => {
+  const needle = query.value.trim().toLowerCase()
+  if (!needle) return tests.value
+  return tests.value.filter((test) => test.title.toLowerCase().includes(needle))
+})
+
+/** Points across the questions in the editor, for the chip above the list. */
+const editorPoints = computed(() =>
+  questionForms.value.reduce((sum, form) => sum + form.points, 0),
+)
 
 function formError(): string {
   return formErrorKey.value ? t(`teacher.form.err.${formErrorKey.value}`) : ''
@@ -202,6 +216,7 @@ async function save() {
     else await createTest(payload)
     toast.success(editingId.value ? t('teacher.tests.updated') : t('teacher.tests.created'))
     await load()
+    query.value = ''
     isEditing.value = false
     showPreview.value = false
   } catch (error) {
@@ -302,6 +317,7 @@ async function runImport(): Promise<void> {
     const created = await importTestFile(file)
     toast.success(t('teacher.tests.imported', { title: created.title }))
     errorKey.value = ''
+    query.value = ''
     await load()
   } catch (error) {
     errorKey.value = error instanceof ApiError ? 'teacher.tests.errors.generic' : 'teacher.errors.network'
@@ -342,10 +358,122 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section>
+  <!-- The editor owns the tab while it is open, as the results view does: a list
+       showing through behind a form is two screens asking for one click. -->
+  <form v-if="isEditing" class="space-y-4" @submit.prevent="save">
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex min-w-0 items-center gap-1">
+        <AppButton variant="ghost" icon :aria-label="t('teacher.results.back')" @click="isEditing = false">
+          <ArrowLeft class="size-4" aria-hidden="true" />
+        </AppButton>
+        <h3 class="min-w-0 truncate text-base font-semibold text-on-surface">
+          {{ editingId ? t('teacher.tests.editHeading') : t('teacher.tests.newTest') }}
+        </h3>
+      </div>
+      <AppButton variant="secondaryMuted" size="sm" class="shrink-0" @click="showPreview = true">
+        <Eye class="size-3.5" aria-hidden="true" />
+        {{ t('teacher.tests.preview') }}
+      </AppButton>
+    </div>
+
+    <AppCard as="div">
+      <div class="grid gap-3 sm:grid-cols-2">
+        <label class="block">
+          <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.title') }}</span>
+          <AppInput v-model="title" type="text" class="mt-1" />
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.timeLimit') }}</span>
+            <AppInput v-model="timeLimitMin" type="number" min="0" class="mt-1" />
+          </label>
+          <label class="block">
+            <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.passMark') }}</span>
+            <AppInput v-model="passingPercent" type="number" min="0" max="100" class="mt-1" />
+          </label>
+        </div>
+        <label class="block sm:col-span-2">
+          <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.description') }}</span>
+          <textarea
+            v-model="description"
+            rows="2"
+            class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
+          />
+        </label>
+      </div>
+    </AppCard>
+
+    <div v-if="formError()" role="alert" class="rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
+      {{ formError() }}
+    </div>
+
+    <div class="space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-sm font-semibold text-on-surface">{{ t('teacher.tests.questions') }}</p>
+          <span class="rounded-full bg-surface-container-highest px-2 py-0.5 text-[11px] font-semibold text-on-surface-variant">
+            {{ t('teacher.tests.questionCount', { count: questionForms.length }) }}
+          </span>
+          <span class="rounded-full bg-surface-container-highest px-2 py-0.5 text-[11px] font-semibold text-on-surface-variant">
+            {{ t('teacher.tests.totalPoints', { count: editorPoints }) }}
+          </span>
+        </div>
+      </div>
+      <QuestionEditor
+        v-for="(question, index) in questionForms"
+        :key="question.key"
+        :question="question"
+        :index="index"
+        :total="questionForms.length"
+        @remove="removeQuestion"
+        @duplicate="duplicateQuestion"
+        @move="moveQuestion"
+      />
+      <AppButton variant="secondaryMuted" @click="addQuestion">
+        <Plus class="size-4" aria-hidden="true" />
+        {{ t('teacher.tests.addQuestion') }}
+      </AppButton>
+    </div>
+
+    <TestPreviewDialog
+      :open="showPreview"
+      :title="title"
+      :description="description"
+      :time-limit-min="timeLimitMin"
+      :passing-percent="passingPercent"
+      :forms="questionForms"
+      @close="showPreview = false"
+    />
+
+    <div class="flex gap-2">
+      <AppButton variant="primary" type="submit" :disabled="saving">
+        {{ t('teacher.tests.save') }}
+      </AppButton>
+      <AppButton variant="secondaryMuted" @click="isEditing = false">
+        {{ t('teacher.tests.cancel') }}
+      </AppButton>
+    </div>
+  </form>
+
+  <template v-else-if="resultsFor">
+    <SkeletonList v-if="resultsLoading" :rows="3" />
+
+    <TestResultsView
+      v-if="results"
+      :test="{
+        id: resultsFor.id,
+        title: results.test.title,
+        passingPercent: results.test.passingPercent,
+      }"
+      :results="results"
+      @back="closeResults"
+    />
+  </template>
+
+  <template v-else>
     <div class="flex items-center justify-between">
       <h3 class="text-base font-semibold text-on-surface">{{ t('teacher.tests.heading') }}</h3>
-      <div v-if="!isEditing" class="flex shrink-0 items-center gap-2">
+      <div class="flex shrink-0 items-center gap-2">
         <AppButton
           variant="secondaryMuted"
           size="sm"
@@ -381,7 +509,7 @@ onMounted(async () => {
 
     <!-- Черновики: работа, которую сервер не принял, потому что его не было рядом -->
     <section
-      v-if="!isEditing && drafts.length > 0"
+      v-if="drafts.length > 0"
       class="mt-4 rounded-2xl border border-outline-variant bg-warning-container p-4"
     >
       <div class="flex items-start justify-between gap-2">
@@ -434,165 +562,128 @@ onMounted(async () => {
       </ul>
     </section>
 
-    <!-- editor (also renders while creating: editingId === null is handled by `isEditing`) -->
-    <form v-if="isEditing" class="mt-4 space-y-4" @submit.prevent="save">
-      <AppCard as="div">
-        <div class="grid gap-3 sm:grid-cols-2">
-          <label class="block">
-            <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.title') }}</span>
-            <AppInput v-model="title" type="text" class="mt-1" />
-          </label>
-          <div class="grid grid-cols-2 gap-3">
-            <label class="block">
-              <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.timeLimit') }}</span>
-              <AppInput v-model="timeLimitMin" type="number" min="0" class="mt-1" />
-            </label>
-            <label class="block">
-              <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.passMark') }}</span>
-              <AppInput v-model="passingPercent" type="number" min="0" max="100" class="mt-1" />
-            </label>
-          </div>
-          <label class="block sm:col-span-2">
-            <span class="text-xs font-semibold text-on-surface-variant">{{ t('teacher.tests.description') }}</span>
-            <textarea
-              v-model="description"
-              rows="2"
-              class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm focus:border-primary"
-            />
-          </label>
-        </div>
-      </AppCard>
+    <p v-if="errorKey" role="alert" class="mt-4 rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
+      {{ showError(errorKey) }}
+    </p>
+    <SkeletonList v-else-if="loading" class="mt-4" :rows="3" />
 
-      <div v-if="formError()" role="alert" class="rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
-        {{ formError() }}
-      </div>
-
-      <div class="space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <p class="text-sm font-semibold text-on-surface">{{ t('teacher.tests.questions') }}</p>
-          <AppButton variant="secondaryMuted" @click="showPreview = true">
-            <Eye class="size-3.5" aria-hidden="true" />
-            {{ t('teacher.tests.preview') }}
-          </AppButton>
-        </div>
-        <QuestionEditor
-          v-for="(question, index) in questionForms"
-          :key="question.key"
-          :question="question"
-          :index="index"
-          :total="questionForms.length"
-          @remove="removeQuestion"
-          @duplicate="duplicateQuestion"
-          @move="moveQuestion"
-        />
-        <AppButton variant="secondaryMuted" @click="addQuestion">
-          <Plus class="size-4" aria-hidden="true" />
-          {{ t('teacher.tests.addQuestion') }}
-        </AppButton>
-      </div>
-
-      <TestPreviewDialog
-        :open="showPreview"
-        :title="title"
-        :description="description"
-        :time-limit-min="timeLimitMin"
-        :passing-percent="passingPercent"
-        :forms="questionForms"
-        @close="showPreview = false"
-      />
-
-      <div class="flex gap-2">
-        <AppButton variant="primary" type="submit" :disabled="saving">
-          {{ t('teacher.tests.save') }}
-        </AppButton>
-        <AppButton variant="secondaryMuted" @click="isEditing = false">
-          {{ t('teacher.tests.cancel') }}
-        </AppButton>
-      </div>
-    </form>
-
-    <!-- grade journal for one test, opened from the list -->
-    <SkeletonList v-else-if="resultsFor && resultsLoading" class="mt-4" :rows="3" />
-
-    <TestResultsView
-      v-else-if="resultsFor && results"
-      :test="{
-        id: resultsFor.id,
-        title: results.test.title,
-        passingPercent: results.test.passingPercent,
-      }"
-      :results="results"
-      @back="closeResults"
+    <EmptyState
+      v-else-if="tests.length === 0"
+      class="mt-4"
+      :icon="FileQuestion"
+      :title="t('teacher.tests.emptyTitle')"
+      :description="t('teacher.tests.emptyHint')"
+      :action-label="t('teacher.tests.newTest')"
+      @action="startCreate"
     />
-
-    <!-- list -->
     <template v-else>
-      <p v-if="errorKey" role="alert" class="mt-4 rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
-        {{ showError(errorKey) }}
-      </p>
-      <SkeletonList v-else-if="loading" class="mt-4" :rows="3" />
+      <!-- A list worth searching once it outgrows one screen. -->
+      <label
+        v-if="tests.length > 3"
+        class="mt-4 flex items-center gap-2 rounded-lg border border-outline bg-surface px-3 py-1.5 focus-within:border-primary"
+      >
+        <Search class="size-4 shrink-0 text-on-surface-variant" aria-hidden="true" />
+        <input
+          v-model="query"
+          type="search"
+          :placeholder="t('teacher.tests.search')"
+          :aria-label="t('teacher.tests.search')"
+          class="w-full bg-transparent text-sm"
+        />
+      </label>
 
-      <EmptyState
-        v-else-if="tests.length === 0"
-        class="mt-4"
-        :icon="FileQuestion"
-        :title="t('teacher.tests.emptyTitle')"
-        :description="t('teacher.tests.emptyHint')"
-        :action-label="t('teacher.tests.newTest')"
-        @action="startCreate"
-      />
+      <p
+        v-if="filteredTests.length === 0"
+        class="mt-4 flex items-center gap-1.5 text-xs text-on-surface-variant"
+      >
+        <Search class="size-3.5" aria-hidden="true" />
+        {{ t('teacher.tests.searchNoMatch', { query: query.trim() }) }}
+      </p>
+
       <ul v-else class="mt-4 space-y-2">
         <AppCard
           as="li"
-          v-for="test in tests"
+          v-for="test in filteredTests"
           :key="test.id"
           class="flex flex-col gap-3 shadow-sm sm:flex-row sm:items-center"
         >
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-semibold text-on-surface">{{ test.title }}</p>
-            <p class="mt-0.5 text-xs text-on-surface-variant">
-              {{ t('teacher.tests.questionCount', { count: test.questionCount }) }}
-              <span v-if="test.timeLimitSec"> · {{ t('teacher.tests.timeLimit') }}:
-                {{ Math.round(test.timeLimitSec / 60) }} {{ t('teacher.tests.minutes') }}</span>
-              <span v-if="test.passingPercent != null"> · {{ t('teacher.tests.passing', { percent: test.passingPercent }) }}</span>
+            <p v-if="test.description" class="mt-0.5 truncate text-xs text-on-surface-variant">
+              {{ test.description }}
             </p>
+            <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span class="rounded-full bg-surface-container-highest px-2 py-0.5 text-[11px] font-semibold text-on-surface-variant">
+                {{ t('teacher.tests.questionCount', { count: test.questionCount }) }}
+              </span>
+              <span
+                v-if="test.timeLimitSec"
+                class="rounded-full bg-surface-container-highest px-2 py-0.5 text-[11px] font-semibold text-on-surface-variant"
+              >
+                {{ Math.round(test.timeLimitSec / 60) }} {{ t('teacher.tests.minutes') }}
+              </span>
+              <span
+                v-if="test.passingPercent != null"
+                class="rounded-full bg-surface-container-highest px-2 py-0.5 text-[11px] font-semibold text-on-surface-variant"
+              >
+                {{ t('teacher.tests.passing', { percent: test.passingPercent }) }}
+              </span>
+            </div>
           </div>
           <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
             <AppButton
+              variant="secondaryMuted"
+              size="sm"
+              :disabled="busyId === test.id"
+              @click="openResults(test)"
+            >
+              <BarChart3 class="size-3.5" aria-hidden="true" />
+              {{ t('teacher.tests.results') }}
+            </AppButton>
+            <AppButton
+              variant="secondary"
+              size="sm"
+              :disabled="busyId === test.id"
+              @click="startEdit(test)"
+            >
+              {{ t('teacher.tests.edit') }}
+            </AppButton>
+            <AppButton
               variant="ghost"
               icon
+              size="sm"
+              :disabled="busyId === test.id"
+              :aria-label="t('teacher.tests.duplicate')"
+              v-tip="t('teacher.tests.duplicate')"
+              @click="duplicate(test)"
+            >
+              <Copy class="size-4" aria-hidden="true" />
+            </AppButton>
+            <AppButton
+              variant="ghost"
+              icon
+              size="sm"
               :disabled="busyId === test.id"
               :aria-label="t('teacher.tests.exportJson')"
+              v-tip="t('teacher.tests.exportJson')"
               @click="exportFile(test)"
             >
               <Download class="size-4" aria-hidden="true" />
             </AppButton>
             <AppButton
-              variant="secondaryMuted"
+              variant="ghostDanger"
+              icon
+              size="sm"
               :disabled="busyId === test.id"
-              @click="duplicate(test)"
-            >
-              <Copy class="size-3.5" aria-hidden="true" />
-              {{ t('teacher.tests.duplicate') }}
-            </AppButton>
-            <AppButton variant="secondaryMuted" :disabled="busyId === test.id" @click="openResults(test)">
-              <BarChart3 class="size-3.5" aria-hidden="true" />
-              {{ t('teacher.tests.results') }}
-            </AppButton>
-            <AppButton variant="secondaryMuted" :disabled="busyId === test.id" @click="startEdit(test)">
-              {{ t('teacher.tests.edit') }}
-            </AppButton>
-            <AppButton
-              type="button"
-              :disabled="busyId === test.id"
+              :aria-label="t('teacher.tests.delete')"
+              v-tip="t('teacher.tests.delete')"
               @click="remove(test)"
-              variant="dangerSecondary" size="sm"
             >
-              {{ t('teacher.tests.delete') }}
+              <Trash2 class="size-4" aria-hidden="true" />
             </AppButton>
           </div>
         </AppCard>
       </ul>
     </template>
-  </section>
+  </template>
 </template>
