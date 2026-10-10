@@ -15,7 +15,8 @@ verified, not when it is planned.
 | Phase 3 — Session runtime | **0.3.0** (done) | Live testing: join, answer, score, WS board |
 | Phase 4 — Reporting | 0.4.0 (done) | Statistics, journals, printable + CSV export |
 | Phase 5 — Deployment | **0.5.0** (done) | The three ways it has to run: desktop host, school server, classroom without an admin |
-| Phase 6 — MVP polish | 1.0.0 (next) | Packaging polish, e2e, screenshots, offline PWA |
+| Phase 6 — Classroom experience | **0.6.1 … 0.6.9** (next) | Rooms & tags, a session lobby, per-student detail, media in questions, course lessons & announcements, journals |
+| Phase 7 — MVP polish | 1.0.0 | Packaging polish, e2e, screenshots, offline PWA |
 
 The UI/UX polish pass (originally planned as its own 0.1.1) shipped together
 with Phase 2 as **0.2.0** — separating them would have meant a release that
@@ -333,7 +334,264 @@ real server.
       `scripts/console-smoke.sh`, `pnpm smoke:console`, wired into the release
       workflow's server job
 
-## Phase 6 — MVP polish (v1.0.0)
+## Phase 6 — Classroom experience (v0.6.1 … v0.6.9, next)
+
+The system can author a test and run a class; this phase makes the *classroom*
+work. Three ideas run through it: a **room is who, a course is what**; a session
+is something the teacher **opens, starts and watches**; and a question can
+**carry a picture**. Every decision below was taken with the room in mind — one
+teacher, a class of phones, no administrator anywhere.
+
+**Decisions taken before the phase (binding, they shape the schema):**
+
+- A **Room** (the tab formerly "Classes") is *who*: a group such as 9A with a
+  registration key. A **Course** is *what*: a programme with lesson topics,
+  materials and tests. Rooms and courses link **many-to-many**, and a room can
+  have any number of courses.
+- The rename goes all the way down — tables and API too: `classrooms` → `rooms`,
+  `/api/classrooms` → `/api/rooms`. There are no external clients, so nothing
+  needs a compatibility shim.
+- **Tags** are free subject/topic labels on tests, sessions and courses. A room
+  is a **relation**, not a tag: "which class" is a foreign key, "which topic" is
+  a label.
+- Per-question time is measured by the **client** and sent with the submission —
+  no incremental writes, no autosave.
+- Leaving the window is **recorded** (passive status plus an event log with
+  timestamps), not punished. Nothing is auto-submitted and nothing is blocked.
+- Question and answer media is stored as **files on the server**, served by URL,
+  so a GIF animates.
+- A result is shown **immediately on submission** by default; the teacher can
+  hold it until they release it.
+
+**Cross-cutting groundwork, built early and reused by later sub-phases:**
+
+- [ ] `AppTabs` — the "browser tab" behaviour for sessions (6.2)
+- [ ] `TagInput` + `TagChips`, one chip style, used wherever a tag is edited (6.1)
+- [ ] `AppTable` — a sortable table, extracted from the admin screens, for the
+      journal (6.8)
+- [ ] `AppDrawer` / wide dialog, for the session library and the student detail
+      (6.2, 6.5)
+- [ ] `MediaFigure` (image/GIF + lightbox) and `AssetUpload` (6.6)
+- [ ] `usePresence` — the Page Visibility API plus a WebSocket heartbeat (6.3)
+- [ ] `useSessionSettings` — one client-side model of the session options (6.4)
+
+Every change lands in **both** apps (`apps/desktop` and `apps/web-client`), whose
+files are byte-identical twins, and in both locale files.
+
+### 6.1 Rooms, tags, session name — v0.6.1
+
+Goal: separate *who* from *what*, give tests and sessions tags, and give a
+session a name and a room.
+
+- [ ] Migration **v6**: rename `classrooms` → `rooms`, `classroom_members` →
+      `room_members`, `classroom_id` → `room_id`; add `course_rooms`
+      (many-to-many), move `rooms.course_id` into it; add `tests.room_id` and
+      `live_sessions.room_id` (nullable FKs) and `live_sessions.name`; add
+      `tags` and `entity_tags` (entity kind `test | session | course`)
+- [ ] Server: `lib/classrooms.ts` → `lib/rooms.ts`, `routes/classrooms.ts` →
+      `routes/rooms.ts`, `/api/rooms*`; a room enrols its members into every
+      course it is linked to, present and future
+- [ ] Server: `lib/tags.ts`, `routes/tags.ts` — `GET/POST /api/tags`,
+      `PATCH/DELETE /api/tags/:id`, `PUT /api/:entity/:id/tags`; tests, sessions
+      and courses carry `tags[]` and `roomId` in and out
+- [ ] Server: `POST /api/sessions` takes `name` and `roomId`; `GET /api/sessions`
+      gains filters (`room`, `tag`, `status`, `from`, `to`, `q`)
+- [ ] Client: `ClassesTab.vue` → `RoomsTab.vue` and the tab label becomes
+      "Rooms"; a room links to several courses; members as before
+- [ ] Client: `TagInput.vue` / `TagChips.vue` in `TestsTab`, `CoursesTab`,
+      `CourseDetails` and the start-session dialog; the room chip where it applies
+- [ ] i18n: `teacher.rooms.*` (the rename), `teacher.tags.*`, session name/room
+- [ ] Tests: rooms CRUD and course enrolment; tags CRUD and linking; ownership
+      boundaries. Update `scripts/browser-checks.mjs` for the new tab name
+- [ ] Docs: `schema.md` (v6), `api.md` (rooms, tags), `architecture.md` (who/what)
+
+### 6.2 Live — session tabs and a library — v0.6.2
+
+Goal: a strip of the most recent sessions that reads like browser tabs, a button
+beside it that opens a comfortable library to search and filter, and a board that
+visibly belongs to the selected tab.
+
+- [ ] Server: `GET /api/sessions` with the 6.1 filters, sorting and paging;
+      `GET /api/sessions/:id` for one session
+- [ ] Client: `SessionTabs.vue` — as many tabs as fit are shown (measured with a
+      `ResizeObserver`), the rest live behind "All sessions"; a tab carries the
+      status dot, the name and the code
+- [ ] Client: `SessionLibraryDialog.vue` — search by name and test, filters by
+      date, test, status, room and tag, sorting, and selection
+- [ ] Client: one visual unit — the tabs are the top edge of one card, and the
+      selected session's hero, board and participants sit inside it, so it is
+      plain which board and which participants belong to which test
+- [ ] i18n: `teacher.live.library.*`, `teacher.live.tabs.*`
+- [ ] Tests: the list filters on the server; the browser harness opens the
+      library, filters, picks, and checks the grouped block
+
+### 6.3 The lobby, the start, presence — v0.6.3
+
+Goal: a session is created in a **lobby**; the clock starts when the teacher
+starts it; the teacher sees who is in and what they are doing; leaving the window
+is recorded.
+
+- [ ] Migration **v7**: rebuild `live_sessions` so `status` includes `lobby` and
+      `started_at` is null until the start; add `entry_locked`; add
+      `participation_events`
+- [ ] Server: `POST /api/sessions` creates a `lobby`; `POST /api/sessions/:id/start`
+      stamps `started_at`, flips to `active` and broadcasts; `PATCH` toggles
+      `entry_locked`; `join` refuses when locked and works from the lobby
+- [ ] Server: the WebSocket hub takes client messages — `progress`
+      (question index, answered count) and `activity` (visible) — keeps them in
+      memory and broadcasts the board with `activity` and `questionIndex`
+- [ ] Server: focus/visibility events are appended to `participation_events`,
+      with timestamps
+- [ ] Client (student): `LobbyScreen` ("waiting for the teacher"), then the
+      runner; `usePresence` reports activity and progress and warns on leaving
+- [ ] Client (teacher): lobby state, Start, Lock entry, and participant rows that
+      say *waiting*, *on question 3*, *finished*, *inactive* or *offline*
+- [ ] i18n: `student.lobby.*`, `teacher.live.entryLock`, `teacher.live.presence.*`
+- [ ] Tests: lobby→active lifecycle, refusal when locked, activity events;
+      presence logic as pure functions; the browser harness covers lobby and start
+
+### 6.4 Session settings — v0.6.4
+
+Goal: shuffle, answer reveal, result release, and one question at a time.
+
+- [ ] Migration **v8**: `tests.settings` and `live_sessions.settings` (JSON) and
+      `live_sessions.results_released`; `participations.option_order` for the
+      shuffled options
+- [ ] Defaults: `shuffleQuestions`, `shuffleOptions`,
+      `showCorrectAnswers: never | after_submit`,
+      `releaseResults: immediate | teacher`,
+      `questionsPerPage: all | one`, `allowBack`
+- [ ] Server: a session snapshots the test's defaults at the start; options are
+      shuffled per student and fixed in `option_order`; `POST
+      /api/sessions/:id/release` flips the release and broadcasts; with
+      `releaseResults: teacher`, `submit` returns no result and `result` refuses
+      until released
+- [ ] Client: a settings step in the start dialog (switches and segments) driven
+      by `useSessionSettings`
+- [ ] Client (student): a one-at-a-time runner with a pager and progress when
+      `questionsPerPage: one`; the result view honours the reveal rule
+- [ ] Client (teacher): a "Release results" action and a "results hidden" badge
+- [ ] i18n: `teacher.sessionSettings.*`, `student.paged.*`
+- [ ] Tests: settings snapshot, the release gate, option shuffling; the browser
+      harness covers the paged runner and the held result
+
+### 6.5 Per-student detail — v0.6.5
+
+Goal: for each student, what was right and wrong, how long each question took,
+and how the attempt went.
+
+- [ ] Migration **v9**: `participation_answers.time_ms`, `answered_at`,
+      `changed`; `participations.total_time_ms`, `focus_lost` (the events table
+      landed in v7)
+- [ ] Server: `submit` accepts and stores timings, changes, events, `focus_lost`
+      and `total_time_ms`; `GET /api/sessions/:id/participants/:userId` returns
+      the questions, the student's answer, correctness, points, time, the events
+      and the start/finish times; the test report gains time aggregates
+- [ ] Client: `useQuestionTiming` in the runner — time on the visible question,
+      number of changes, sent on submission
+- [ ] Client: `ParticipantDetailDialog.vue`, opened from a participant row — a
+      header, a per-question table (right/wrong, points, time, "changed N
+      times"), the activity timeline, and metrics (average time, where focus was
+      lost)
+- [ ] i18n: `teacher.participantDetail.*`
+- [ ] Tests: accepting and storing timings and events, the detail endpoint and
+      its permissions; the timing computation as pure functions
+
+### 6.6 The test editor, media, statistics — v0.6.6
+
+Goal: images and GIFs in questions and answers, a more useful editor, and a
+prettier result for both teacher and student.
+
+- [ ] Migration **v10**: `assets` (owner, path, mime, size); question payloads
+      grow `media` on the question, `image` on each option and each matching side
+- [ ] Server: `routes/assets.ts` — raw upload like materials (with a size cap),
+      `GET /api/assets/:id` (GIF supported), `DELETE`, owner-scoped; the student
+      paper and the result carry media
+- [ ] Client: `AssetUpload.vue` and `MediaFigure.vue` (preview + lightbox), in
+      `QuestionEditor` for the question and every option/pair, and in
+      `QuestionAnswerInput`
+- [ ] Client: a body editor of text plus inserted images, without a heavy
+      dependency
+- [ ] Client: editor statistics — count and points chips, an estimated time, and
+      for an existing test the per-question difficulty from its results; a
+      polished `TestPreviewDialog` that shows media
+- [ ] Client: a readability and beauty pass over the editor, the student runner
+      and the result screen
+- [ ] i18n: `teacher.editor.media.*`, `common.image.*`
+- [ ] Tests: assets CRUD, permissions and limits; export/import with media;
+      payload utilities; the browser harness inserts an image and sees it as a
+      student
+
+### 6.7 Courses — lessons, announcements, media — v0.6.7
+
+Goal: lesson topics, teacher announcements, and images viewed rather than only
+downloaded.
+
+- [ ] Migration **v11**: `course_topics`; a nullable `topic_id` on `materials`
+      and `course_tests`; `announcements` (course, author, body, optional
+      material, timestamps)
+- [ ] Server: topics CRUD and ordering; attach/detach tests and materials to a
+      topic; announcements CRUD (author only); the student's course payload
+      carries topics, announcements and materials
+- [ ] Client (teacher): `CourseDetails` shows ordered topics, each with its tests
+      and materials; create and edit a topic; an announcement form (text plus an
+      optional file); materials show a preview with a lightbox and a GIF plays
+- [ ] Client (student): `StudentCourses` shows topics, materials with previews,
+      and the announcement feed
+- [ ] i18n: `teacher.courses.topics.*`, `teacher.courses.announcements.*`,
+      `student.courses.*`
+- [ ] Tests: topics, announcements and ordering, with permissions; the browser
+      harness views an image inside a course
+
+### 6.8 Journals by room and by course — v0.6.8
+
+Goal: a table of students against tests, with grades and dates, scoped to a room
+or to a course.
+
+- [ ] Server: `GET /api/journals/rooms/:id` and `/api/journals/courses/:id` —
+      students against the tests of the room or course, each cell the last
+      percent, the attempt count and the last date; CSV export and print
+- [ ] Client: `JournalTable.vue` on `AppTable` — a sticky first column, sorting,
+      a dash for an empty cell, a tooltip for "N attempts, date", printing
+- [ ] Client: a Journal screen reachable from a room and from a course, with the
+      scope switch and the test columns; a link into the student detail (6.5)
+- [ ] Client: the dashboard menu settles as `Live`, `Tests`, `Courses`, `Rooms`,
+      `Journal`
+- [ ] i18n: `teacher.journal.*`
+- [ ] Tests: journal aggregates for both scopes and their permissions; the
+      browser harness covers the table and the empty cells
+
+### 6.9 Documentation, i18n, tests, e2e — v0.6.9
+
+- [ ] `docs/schema.md` brought up to date through v6–v11, `architecture.md` with
+      the room/course model, the lobby and presence flows, media and journals,
+      `api.md` with every new endpoint, `scenarios.md` with the new steps
+- [ ] i18n: en and uk in step, no hard-coded string anywhere
+- [ ] Server integration tests for every new path; client tests for the new pure
+      logic; `scripts/browser-checks.mjs` extended for rooms, the session library,
+      the lobby, the paged runner, media, the journals and image viewing
+- [ ] A CHANGELOG entry per sub-phase, and a final consistency pass on the style
+
+**Order and dependencies.** 6.1 → 6.2 → 6.3 → 6.4 → 6.5 → 6.6 → 6.7 → 6.8 →
+6.9. Timing (6.5) needs the lobby and the events table from 6.3; the journals
+(6.8) use the detail from 6.5 and the room/course model from 6.1. Each sub-phase
+is its own release: **0.6.1 … 0.6.9**.
+
+**Assumptions to keep in view.** Rooms↔courses are many-to-many and a later link
+still enrols the members; a room lives on the test and on the session (the
+session inherits, the teacher may override); `questionsPerPage` defaults to "all
+at once"; media is png/jpg/webp/gif with a per-file cap and is served from
+`/api/assets/:id`; announcements are course-level with one optional attachment;
+the journal is a matrix with a room scope, a course scope and a by-date mode.
+
+**Risks.** The v6 migration touches a live database — it ships with a
+post-migration integrity check and a test against a populated file. The lobby
+changes the session lifecycle everywhere (student, socket, CSV, reports) and is
+covered by integration tests. Presence is best-effort by nature and is an
+indicator, never a sanction. Media complicates test export: the export either
+carries the files or carries the references, and 6.6 decides which.
+
+## Phase 7 — MVP polish (v1.0.0)
 
 - [x] Server unit and integration tests: scoring over all five question types,
       the grade journal and CSV export, the session runtime, auth and the role
