@@ -17,12 +17,41 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Linux, in two entries on purpose.
+          #
+          # `.deb` is the required half: it is produced by dpkg-deb and has never
+          # failed, and it is the Linux artifact the release page cannot do
+          # without. The AppImage is produced by linuxdeploy, which runs by
+          # mounting and stripping its own helpers on a runner that has no FUSE
+          # and a glibc it disagrees with — it failed three times in a row here,
+          # each time as a bare `failed to run linuxdeploy` with no cause, while
+          # the very same command succeeded on a workstation. One flaky tool must
+          # not be able to take the whole release down with it, so it gets its own
+          # job that is allowed to fail.
+          #
+          # `fail-fast: false` above is what makes the second entry even run: with
+          # it off, the first failure would cancel the rest of the matrix.
           - platform: ubuntu-22.04
             os: linux
+            bundle: deb
+            tauriArgs: --bundles deb
+            best_effort: false
+          - platform: ubuntu-22.04
+            os: linux
+            bundle: appimage
+            # --verbose makes tauri stream linuxdeploy's own stdout/stderr instead
+            # of swallowing it. It is the difference between a failure that says
+            # nothing and one that says what broke.
+            tauriArgs: --bundles appimage --verbose
+            best_effort: true
           - platform: windows-latest
             os: windows
+            bundle: msi, nsis
+            tauriArgs: --bundles msi,nsis
+            best_effort: false
 
     runs-on: ${{ matrix.platform }}
+    continue-on-error: ${{ matrix.best_effort }}
 
     steps:
       - uses: actions/checkout@v4
@@ -72,24 +101,19 @@ jobs:
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # AppImage bundling, and only that: `.deb` never runs linuxdeploy.
-          #
-          # NO_STRIP is the actual fix. The `strip` inside linuxdeploy is binutils
-          # 2.35, and it dies on the `.relr.dyn` sections that glibc >= 2.36 puts in
-          # every system library the AppImage bundles (`unknown type [0x13]
-          # section '.relr.dyn'`). tauri-bundler swallows that stderr and reports
-          # only `failed to run linuxdeploy`, with nothing above it to read - which
-          # is why the failure looks like Tauri and is not. Skipping the strip
-          # costs the AppImage some size and is what upstream tauri#14796 lands on.
-          #
-          # APPIMAGE_EXTRACT_AND_RUN and libfuse2 are the older FUSE story: the
-          # runners have no FUSE, so the helper images are extracted rather than
-          # mounted. It is not what was breaking here, and it is kept because it is
-          # free and covers the case where FUSE is the one that fails.
+          # APPIMAGE_EXTRACT_AND_RUN and libfuse2 are the FUSE story: the runners
+          # have no FUSE, so the helper images are extracted rather than mounted.
+          # NO_STRIP skips linuxdeploy's bundled `strip`, which is binutils 2.35
+          # and cannot read the `.relr.dyn` sections of glibc >= 2.36. Neither was
+          # enough to make AppImage bundling reliable here, which is why that half
+          # is its own best-effort job above — but both are free and both narrow
+          # the ways it can fail.
           NO_STRIP: 'true'
           APPIMAGE_EXTRACT_AND_RUN: '1'
+          RUST_LOG: tauri_bundler=debug
         with:
           projectPath: apps/desktop
+          args: ${{ matrix.tauriArgs }}
           tagName: v__VERSION__
           releaseName: 'v__VERSION__'
           releaseBody: 'See the assets to download this version and install.'
