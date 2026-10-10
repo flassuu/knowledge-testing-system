@@ -240,17 +240,21 @@ function leave(): void {
           row's centre sits five pixels below the centre of the row that opened
           it. Offsetting by exactly that puts the two centres on one line.
         -->
-        <Transition name="menu-nested">
-          <div
-            v-if="settingsOpen"
-            role="menu"
-            :aria-label="t('menu.settings')"
-            class="menu-panel menu-nested absolute z-40 w-60 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
-            data-open="true"
-          >
-            <SettingsList />
-          </div>
-        </Transition>
+        <!--
+          Always in the document, like the panel above: under a `<Transition>`
+          a list closed while it was still opening kept both sets of classes at
+          once and was never removed, leaving a panel that stayed open over the
+          page and swallowed the next click anywhere. `data-open` is the state,
+          the same state the rest of the menu reads.
+        -->
+        <div
+          role="menu"
+          :aria-label="t('menu.settings')"
+          class="menu-panel menu-nested absolute z-40 w-60 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+          :data-open="settingsOpen"
+        >
+          <SettingsList />
+        </div>
       </div>
 
       <!--
@@ -284,17 +288,15 @@ function leave(): void {
           <span class="min-w-0 flex-1 truncate">{{ t('common.language') }}</span>
           <FlagIcon :code="locale as 'en' | 'uk'" class="size-4 shrink-0" />
         </button>
-        <Transition name="menu-nested">
-          <div
-            v-if="languageOpen"
-            role="menu"
-            :aria-label="t('common.language')"
-            class="menu-panel menu-nested absolute z-40 w-52 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
-            data-open="true"
-          >
-            <LocaleList @pick="setLocale" />
-          </div>
-        </Transition>
+        <!-- Always in the document, like the panel above - see the note there. -->
+        <div
+          role="menu"
+          :aria-label="t('common.language')"
+          class="menu-panel menu-nested absolute z-40 w-52 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+          :data-open="languageOpen"
+        >
+          <LocaleList @pick="setLocale" />
+        </div>
       </div>
 
 

@@ -855,10 +855,17 @@ async function studentPath(session, fixtures, context) {
     if (!row) return { opened: false, why: 'no language row' };
     row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 300));
-    // The list is a panel of its own beside the menu, so counting inside the
-    // account panel counts nothing.
-    const lists = [...document.querySelectorAll('[role=menu][data-open=true]')];
-    const rows = lists.flatMap((p) => [...p.querySelectorAll('[role=menuitemradio]')]);
+    // Counted per panel, not per document: a list that is closed is still in
+    // the document (panels are hidden with opacity and visibility, never
+    // unmounted - see the panel's own comment), so its rows are descendants of
+    // the account panel and a flat count sees them twice and reads a closed
+    // list as open. A row belongs to the *nearest* panel above it, and only that
+    // panel's state says whether it is on screen - a closest() that looks for
+    // the open panel directly would skip a closed list and land on the open
+    // account panel behind it.
+    const rows = [...document.querySelectorAll('[role=menuitemradio]')].filter(
+      (r) => r.closest('[role=menu]')?.getAttribute('data-open') === 'true',
+    );
     return {
       opened: true,
       locales: rows.length,
@@ -995,9 +1002,11 @@ async function studentPath(session, fixtures, context) {
       /Language|Мова/.test(r.textContent),
     );
     if (!row) return { why: 'no language row' };
+    // The nearest panel owns the row; see the note on the locale count above for
+    // why a closed list still has to read as closed.
     const rows = () =>
-      [...document.querySelectorAll('[role=menu][data-open=true]')].flatMap((p) =>
-        [...p.querySelectorAll('[role=menuitemradio]')],
+      [...document.querySelectorAll('[role=menuitemradio]')].filter(
+        (r) => r.closest('[role=menu]')?.getAttribute('data-open') === 'true',
       ).length;
     const openNow = rows();
     row.dispatchEvent(new MouseEvent('click', { bubbles: true }));

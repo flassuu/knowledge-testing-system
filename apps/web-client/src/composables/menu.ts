@@ -24,9 +24,21 @@ export interface MenuBehaviour {
 /** Marks a button as one of the menu's rows. `useMenu` finds these by name. */
 export const MENU_ITEM_ATTR = 'data-menu-item'
 
+/**
+ * The rows a menu can move focus to: the ones that are actually on screen.
+ *
+ * A nested list is in the document even when it is closed - it is hidden with
+ * `opacity` and `visibility`, not unmounted, for the same reason the panel is -
+ * so its rows are in the query too. Focus cannot go to a `visibility: hidden`
+ * element, and arrow keys that try land nowhere, which reads as the keyboard
+ * having stopped a row before the visible end. Closed panels are filtered out
+ * here, once, for every menu in the app.
+ */
 export function menuItems(root: HTMLElement | null): HTMLButtonElement[] {
   if (!root) return []
-  return [...root.querySelectorAll<HTMLButtonElement>(`[${MENU_ITEM_ATTR}]`)]
+  return [...root.querySelectorAll<HTMLButtonElement>(`[${MENU_ITEM_ATTR}]`)].filter(
+    (item) => !item.closest('[role=menu][data-open="false"]'),
+  )
 }
 
 /**

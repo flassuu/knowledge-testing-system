@@ -278,35 +278,16 @@
   }
 
   /*
-   * Nested panels are the exception: they mount and unmount with their row
-   * (`v-if`), so their motion is a keyframe pair under Vue's <Transition>.
+   * Nested panels are not an exception to any of this: the language and settings
+   * lists are always in the document too, and carry the same `data-open` the
+   * panel above reads. They were once mounted and unmounted with a `<Transition>`
+   * and a keyframe pair, and that is what they are not any more - a list closed
+   * while it was still opening came to carry `enter-from`, `leave-from` and
+   * `leave-active` at the same time, from which Vue never removed the node: a
+   * panel left open over the page, holding the next click anywhere on it. The
+   * state rules above need no keyframes, no `forwards`, and no second copy of
+   * the motion; they already do the whole of it.
    */
-  @keyframes panel-in {
-    from {
-      opacity: 0;
-      transform: translate(0.75rem, -0.375rem);
-    }
-  }
-
-  @keyframes panel-out {
-    to {
-      opacity: 0;
-      transform: translate(0.5rem, -0.25rem);
-    }
-  }
-
-  .menu-nested-enter-active {
-    animation: panel-in var(--motion-medium) var(--ease-emphasized);
-  }
-
-  /*
-   * `forwards`: without it the panel snaps back to opacity 1 for the single
-   * frame between the animation ending and Vue removing the node - the flash
-   * seen when a nested list is closed by its own button.
-   */
-  .menu-nested-leave-active {
-    animation: panel-out var(--motion-short) var(--ease-accelerate) forwards;
-  }
 
   /*
    * A nested panel opens beside its row where there is room for it, and below
