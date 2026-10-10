@@ -148,13 +148,19 @@ jobs:
           releaseDraft: false
           prerelease: false
 
-      # A green AppImage build is not proof of a working one. linuxdeploy runs
-      # patchelf over every ELF in usr/bin to set its rpath, and on a
-      # `bun build --compile` binary that rewrite can corrupt it - the bundle is
-      # produced, the upload succeeds, and the app inside cannot start the server.
-      # So the artifact is checked against the binary that was actually built,
-      # and a mismatch takes the asset back off the release page.
-      - name: Verify the AppImage carries the sidecar that was built
+      # A green AppImage build is not proof of a working one, and this job has
+      # now produced a broken one. linuxdeploy runs patchelf over every ELF in
+      # usr/bin to set its rpath; on a `bun build --compile` binary that rewrite
+      # corrupts the ELF, because the dynamic section sits far past the appended
+      # payload. The bundle is built, the upload succeeds, and the app inside
+      # cannot start the server: the sidecar dumps core, and `ldd` on it exits 1
+      # where a healthy one exits 0.
+      #
+      # So the artifact is opened and the sidecar inside it is asked to trace its
+      # own libraries. A failure takes the asset back off the release page, which
+      # is why the `.deb` is a separate job and not an afterthought: it is built
+      # by dpkg-deb, which never rewrites anything, and its sidecar is intact.
+      - name: Verify the AppImage's sidecar still works
         if: matrix.bundle == 'appimage'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -165,22 +171,21 @@ jobs:
             echo "::warning::no AppImage was produced"
             exit 0
           fi
-          SRC=apps/desktop/src-tauri/binaries/lantern-server-x86_64-unknown-linux-gnu
+          NAME=$(basename "$APPIMAGE")
+          drop() {
+            echo "::error::$1 - taking $NAME off the release page"
+            gh release delete-asset v__VERSION__ "$NAME" -y || true
+            exit 1
+          }
           rm -rf /tmp/ai && mkdir -p /tmp/ai
           ( cd /tmp/ai && "$OLDPWD/$APPIMAGE" --appimage-extract >/dev/null )
           GOT=/tmp/ai/squashfs-root/usr/bin/lantern-server
-          if [ ! -f "$GOT" ]; then
-            echo "::error::the AppImage has no lantern-server in usr/bin"
-            exit 1
-          fi
-          A=$(sha256sum "$SRC" | cut -d' ' -f1)
-          B=$(sha256sum "$GOT" | cut -d' ' -f1)
-          if [ "$A" != "$B" ]; then
-            echo "::error::the sidecar inside the AppImage is not the one that was built - bundling rewrote it"
-            gh release delete-asset v__VERSION__ -n "$(basename "$APPIMAGE")" -y || true
-            exit 1
-          fi
-          echo "sidecar in the AppImage is byte-identical to the built binary: ok"
+          [ -f "$GOT" ] || drop "the AppImage has no lantern-server in usr/bin"
+          # The rpath patchelf wrote is what lets it find the bundled libs; the
+          # same rewrite is what breaks the ELF. If the dynamic section survived,
+          # ldd exits 0.
+          ldd "$GOT" > /dev/null 2>&1 || drop "the sidecar inside the AppImage does not load"
+          echo "sidecar inside the AppImage loads: ok"
         shell: bash
 
   # Headless distribution: the standalone server binary plus the built web
