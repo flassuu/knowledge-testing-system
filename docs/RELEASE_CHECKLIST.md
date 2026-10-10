@@ -73,15 +73,19 @@ on it:
   intact and the bundle works.
 - **AppImage** is assembled by `linuxdeploy`, which runs `patchelf` over every
   ELF in the AppDir's `usr/bin` to set an rpath. On our sidecar — a
-  `bun build --compile` binary, whose dynamic section sits far past the appended
-  payload — that rewrite **corrupts the ELF**. The bundle builds, uploads, and
-  the app inside dumps core on startup.
-- `linuxdeploy` also runs `ldd` on each ELF and aborts on a non-zero exit,
-  which `ldd` gives for a Bun binary it cannot trace. The `ldd` shim in the
-  workflow exists only for that; it does not address the corruption above.
-- A step after the build opens the produced AppImage and asks the sidecar
-  inside it to trace its own libraries. A failure **deletes the asset from the
-  release**, so a broken AppImage never reaches the download list.
+  `bun build --compile` binary — that rewrite **corrupts it**. The bundle builds,
+  uploads, and the app inside segfaults silently on startup.
+- Nothing structural notices. `readelf` reads the header, the program headers and
+  the dynamic section without complaint, and `ldd` is content wherever the
+  libraries happen to resolve. Only running it tells you.
+- `linuxdeploy` also runs `ldd` on each ELF and aborts on a non-zero exit, which
+  `ldd` gives for a Bun binary it cannot trace. The `ldd` shim in the workflow
+  exists only for that; it is not what fixes the corruption.
+- A step after the build opens the produced AppImage, gives the sidecar inside it
+  a data directory and eight seconds, and requires it to still be alive when the
+  timeout takes it. Anything else — a segfault, an abort, a bind failure —
+  **deletes the asset from the release**, so a broken AppImage never reaches the
+  download list.
 
 Shipping a working AppImage therefore means moving the Bun binary out of
 `usr/bin` into a directory `linuxdeploy` does not scan, with a small wrapper in

@@ -150,22 +150,24 @@ jobs:
 
       # A green AppImage build is not proof of a working one, and this job has
       # now produced a broken one. linuxdeploy runs patchelf over every ELF in
-      # usr/bin to set its rpath; on a `bun build --compile` binary that rewrite
-      # corrupts the ELF, because the dynamic section sits far past the appended
-      # payload. The bundle is built, the upload succeeds, and the app inside
-      # cannot start the server: the sidecar dumps core, and `ldd` on it exits 1
-      # where a healthy one exits 0.
+      # usr/bin to set an rpath; on a `bun build --compile` binary that rewrite
+      # corrupts it. Every structural check still passes afterwards - `readelf`
+      # reads the header, the program headers and the dynamic section without
+      # complaint, and `ldd` is happy on a machine whose libraries happen to
+      # resolve - so the only question worth asking is whether the thing runs.
       #
-      # So the artifact is opened and the sidecar inside it is asked to trace its
-      # own libraries. A failure takes the asset back off the release page, which
-      # is why the `.deb` is a separate job and not an afterthought: it is built
-      # by dpkg-deb, which never rewrites anything, and its sidecar is intact.
-      - name: Verify the AppImage's sidecar still works
+      # It does not. Downloaded and run, the sidecar inside segfaults silently
+      # while the same binary from the .deb starts and serves /api/health. So the
+      # artifact is opened and its sidecar is given a data directory and eight
+      # seconds; a process still alive when the timeout takes it is a working
+      # server, anything else is a broken artifact and loses its place on the
+      # release page.
+      - name: Verify the AppImage's sidecar actually runs
         if: matrix.bundle == 'appimage'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           APPIMAGE=$(find apps/desktop/src-tauri/target/release/bundle/appimage -name '*.AppImage' | head -1 || true)
           if [ -z "$APPIMAGE" ]; then
             echo "::warning::no AppImage was produced"
@@ -181,11 +183,12 @@ jobs:
           ( cd /tmp/ai && "$OLDPWD/$APPIMAGE" --appimage-extract >/dev/null )
           GOT=/tmp/ai/squashfs-root/usr/bin/lantern-server
           [ -f "$GOT" ] || drop "the AppImage has no lantern-server in usr/bin"
-          # The rpath patchelf wrote is what lets it find the bundled libs; the
-          # same rewrite is what breaks the ELF. If the dynamic section survived,
-          # ldd exits 0.
-          ldd "$GOT" > /dev/null 2>&1 || drop "the sidecar inside the AppImage does not load"
-          echo "sidecar inside the AppImage loads: ok"
+          # --port 0 binds an ephemeral port, so this cannot fail for a reason
+          # that has nothing to do with the binary.
+          rc=0
+          timeout 8 "$GOT" --port 0 --data /tmp/ai/data >/dev/null 2>&1 || rc=$?
+          [ "$rc" -eq 124 ] || drop "the sidecar inside the AppImage does not run (exit $rc)"
+          echo "the sidecar inside the AppImage runs: ok"
         shell: bash
 
   # Headless distribution: the standalone server binary plus the built web
