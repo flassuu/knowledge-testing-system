@@ -4,7 +4,14 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.5.1] — 2026-10-10
+
+A class that runs without an admin in the room, and the pass over the interface
+that had been waiting for it: one account menu instead of two, a header that
+stops moving when it opens, a sign-up form in the order a person actually reads
+it, and a motion vocabulary that says something. The Linux desktop build stops
+flickering too — that one was a WebKitGTK renderer bug in a CSS costume, and no
+amount of styling was ever going to fix it.
 
 ### One teacher, no admin
 
@@ -157,6 +164,21 @@ them, so every state change snapped. All of it runs on the compositor —
   than a percentage transform — the same px path the tab strips use. A fill
   positioned with a percentage in a transform is re-sampled as it moves, and
   the software renderer shows that as a stutter.
+
+### Verification at this release
+
+230 server tests, 62 client tests, 9 Rust tests, typecheck across all three
+packages, `pnpm build:server`, `pnpm build:web`, `pnpm smoke:console` and
+`pnpm check:browser` — all green. The browser sweep is what caught the last
+regression here: a nested list closed while it was still opening kept both sets
+of transition classes at once and was never removed, leaving a panel open over
+the page that swallowed the next click anywhere. Four checks failed on it, and
+they are in the file because of that.
+
+**Migrations:** none beyond 0.5.0's schema version 5 — this release changes no
+API and no schema. The desktop package picks up `WEBKIT_DISABLE_DMABUF_RENDERER`
+at startup, which trades hardware acceleration for a renderer that stops
+flickering; set it yourself to keep acceleration and the flicker.
 
 ## [0.5.0] — 2026-10-08
 
@@ -906,6 +928,8 @@ teacher UIs in the web client and the desktop app. 35 integration tests green.
   preloads the system `libwayland-client.so` (bundled one is ABI-incompatible
   with Mesa 26).
 
+[0.5.1]: https://github.com/flassuu/lantern/releases/tag/v0.5.1
+[0.5.0]: https://github.com/flassuu/lantern/releases/tag/v0.5.0
 [0.4.2]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.4.2
 [0.4.1]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.4.1
 [0.4.0]: https://github.com/flassuu/knowledge-testing-system/releases/tag/v0.4.0

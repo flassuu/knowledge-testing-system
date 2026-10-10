@@ -1,6 +1,6 @@
 {
   "name": "@lantern/root",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "LANtern: offline classroom testing system (course project)",
   "license": "MIT",

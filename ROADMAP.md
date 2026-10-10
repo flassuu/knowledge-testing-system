@@ -55,13 +55,16 @@ only restyled the same screens.
 - [x] Admin insights: DB health (+ table counts) and participants list
 - [x] Import/export share format (JSON) — Phase 2 authoring
 
-## Phase 1.1 — UI/UX polish (done; revisited in v0.4.2)
+## Phase 1.1 — UI/UX polish (done; revisited in v0.4.2 and v0.5.1)
 
 Nothing new server-side: make everything 0.1.0 already ships feel finished.
 Planned as its own 0.1.1, released as part of 0.2.0 together with Phase 2; the
 two items that needed a real screen to judge — the component consistency pass and
 the desktop About dialog — landed later, the dialog in 0.4.0 and the pass in
-0.4.1.
+0.4.1. v0.5.1 came back to it once more: two menus became one, the header settled,
+the sign-up form was reordered, and the whole motion vocabulary was written —
+plus the Linux desktop flicker, which was a WebKitGTK renderer bug and not a UI
+one, and so belonged here only because that is where the symptom was reported.
 
 **Revisited in v0.4.2**, because the remaining complaint was not a missing
 feature but a wrong one: button sizes followed the language, the Ukrainian login
