@@ -41,6 +41,7 @@ jobs:
             file \
             libxdo-dev \
             libssl-dev \
+            libfuse2 \
             libayatana-appindicator3-dev
 
       - uses: actions/setup-node@v4
@@ -71,6 +72,22 @@ jobs:
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # AppImage bundling, and only that: `.deb` never runs linuxdeploy.
+          #
+          # NO_STRIP is the actual fix. The `strip` inside linuxdeploy is binutils
+          # 2.35, and it dies on the `.relr.dyn` sections that glibc >= 2.36 puts in
+          # every system library the AppImage bundles (`unknown type [0x13]
+          # section '.relr.dyn'`). tauri-bundler swallows that stderr and reports
+          # only `failed to run linuxdeploy`, with nothing above it to read - which
+          # is why the failure looks like Tauri and is not. Skipping the strip
+          # costs the AppImage some size and is what upstream tauri#14796 lands on.
+          #
+          # APPIMAGE_EXTRACT_AND_RUN and libfuse2 are the older FUSE story: the
+          # runners have no FUSE, so the helper images are extracted rather than
+          # mounted. It is not what was breaking here, and it is kept because it is
+          # free and covers the case where FUSE is the one that fails.
+          NO_STRIP: 'true'
+          APPIMAGE_EXTRACT_AND_RUN: '1'
         with:
           projectPath: apps/desktop
           tagName: v__VERSION__

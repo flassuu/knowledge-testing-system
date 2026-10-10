@@ -51,6 +51,7 @@ jobs:
             file \
             libxdo-dev \
             libssl-dev \
+            libfuse2 \
             libayatana-appindicator3-dev
 
       - uses: actions/setup-node@v4
@@ -79,6 +80,12 @@ jobs:
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The AppImage fix, identical to release.yml and for the same reason:
+          # linuxdeploy's bundled `strip` is binutils 2.35 and cannot read the
+          # `.relr.dyn` sections of glibc >= 2.36, and the bundler reports that as
+          # a bare `failed to run linuxdeploy`. See release.yml for the full note.
+          NO_STRIP: 'true'
+          APPIMAGE_EXTRACT_AND_RUN: '1'
         with:
           projectPath: apps/desktop
           uploadWorkflowArtifacts: true
