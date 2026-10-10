@@ -184,7 +184,7 @@ function leave(): void {
         the panel it opened level with the account block, which is two rows above
         the control that opened it. Against the row it opens level with the row.
       -->
-      <div class="relative">
+      <div class="menu-anchor">
         <button
           :data-menu-item="MENU_ITEM_ATTR"
           type="button"
@@ -209,7 +209,7 @@ function leave(): void {
             v-if="languageOpen"
             role="menu"
             :aria-label="t('common.language')"
-            class="menu-panel menu-nested absolute right-full top-[-5px] z-40 mr-2 w-52 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
+            class="menu-panel menu-nested absolute z-40 w-52 origin-top-right overflow-hidden rounded-[var(--radius-card)] border border-outline-variant bg-surface-container py-1 shadow-lg"
             data-open="true"
           >
             <LocaleList @pick="setLocale" />

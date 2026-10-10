@@ -309,16 +309,44 @@
   }
 
   /*
-   * A nested panel opens beside its menu where there is room for it, and below it
-   * where there is not. A 208px list beside a 256px menu needs 464px of screen:
-   * on a 390px phone there is nothing left of the menu, and a list that hangs
-   * off the edge of the screen is worse than one that opens downwards.
+   * A nested panel opens beside its row where there is room for it, and below
+   * the *whole* menu - not below its own row - where there is not.
+   *
+   * The row wrapper carries `.menu-anchor` instead of a Tailwind `relative`, so
+   * this layer owns whether the wrapper is a containing block at all. Beside, it
+   * is `relative` and the panel anchors to its row (first row to first row). In
+   * the narrow branch it is `static`, so the containing block becomes the menu
+   * panel itself - and `top: 100%` now clears the menu's bottom edge, with the
+   * same 12px inset the profile menu keeps from the top bar. The row wrapper had
+   * to lose its utility class for this to work: a utility in the utilities layer
+   * beats a rule here regardless of source order, which is why the narrow branch
+   * never fired before.
+   *
+   * The space test is the viewport width, because every width here is fixed: the
+   * widest nested panel (the 240px settings list) beside a 256px menu, plus the
+   * screen inset and the 8px gap, needs about 520px. Below that there is nothing
+   * left of the menu, and a list that hangs off the edge of the screen is worse
+   * than one that opens downwards.
    */
-  @media (max-width: 30rem) {
+  .menu-anchor {
+    position: relative;
+  }
+
+  .menu-nested {
+    right: 100%;
+    top: -5px;
+    margin-right: 0.5rem;
+  }
+
+  @media (max-width: 33rem) {
+    .menu-anchor {
+      position: static;
+    }
+
     .menu-nested {
       right: 0;
       top: 100%;
-      margin-top: 0.375rem;
+      margin-top: 0.75rem;
       margin-right: 0;
     }
   }

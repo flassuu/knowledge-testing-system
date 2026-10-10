@@ -311,6 +311,7 @@ async function submit(): Promise<void> {
                 class="absolute right-0 top-1/2 mr-0.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-[var(--radius-control)] text-on-surface-variant hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 :aria-label="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
                 v-tip="showPassword ? t('auth.hidePassword') : t('auth.showPassword')"
+                @mousedown.prevent
                 @click="showPassword = !showPassword"
               >
                 <EyeOff v-if="showPassword" class="size-4" aria-hidden="true" />
