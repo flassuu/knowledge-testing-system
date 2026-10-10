@@ -25,7 +25,9 @@ scripts/          Sidecar, smoke and browser-check scripts
 
 ## Environment
 
-- Dev OS: Arch Linux. Targets: Windows (.exe) and Linux (.deb / .AppImage).
+- Dev OS: Arch Linux. Targets: Windows (.exe) and Linux (.deb). CI ships the
+  `.deb`; the AppImage is built locally only, because `linuxdeploy`'s patchelf
+  pass corrupts the Bun sidecar (see docs/RELEASE_CHECKLIST.md §5).
 - Node.js >= 22.5 (built-in `node:sqlite`), pnpm >= 9. `bun` only compiles the
   server binary — it is not the runtime for anything else.
 - Tauri on Linux needs `webkit2gtk-4.1`; AppImage needs `patchelf` and, on Arch,

@@ -62,12 +62,11 @@ placeholder notes.
 Both workflows must succeed: `Release` and `Build desktop app (Linux +
 Windows)`. Watch with `gh run watch <id> --repo flassuu/lantern`.
 
-### The AppImage job is allowed to fail, and is checked
+### There is no AppImage, and that is deliberate
 
-The Linux matrix is split: the `.deb` is required, the AppImage is
-`continue-on-error`. This is not caution about a flaky test — it is a known
-packaging conflict, and it is worth knowing before anyone spends an afternoon
-on it:
+CI builds the `.deb` and the Windows installers. It does not build the AppImage,
+and it is not waiting on a fix — the format is excluded because of a known
+conflict that CI cannot route around:
 
 - **`.deb`** is built by `dpkg-deb`, which rewrites nothing. Its sidecar is
   intact and the bundle works.
@@ -79,18 +78,16 @@ on it:
   the dynamic section without complaint, and `ldd` is content wherever the
   libraries happen to resolve. Only running it tells you.
 - `linuxdeploy` also runs `ldd` on each ELF and aborts on a non-zero exit, which
-  `ldd` gives for a Bun binary it cannot trace. The `ldd` shim in the workflow
-  exists only for that; it is not what fixes the corruption.
-- A step after the build opens the produced AppImage, gives the sidecar inside it
-  a data directory and eight seconds, and requires it to still be alive when the
-  timeout takes it. Anything else — a segfault, an abort, a bind failure —
-  **deletes the asset from the release**, so a broken AppImage never reaches the
-  download list.
+  `ldd` gives for a Bun binary it cannot trace. A shim for that was tried and did
+  make the bundle build — which is how the corrupt artifact got as far as the
+  download list before it was caught by hand. Neither the shim nor `NO_STRIP`
+  nor `APPIMAGE_EXTRACT_AND_RUN` addresses the corruption.
 
 Shipping a working AppImage therefore means moving the Bun binary out of
 `usr/bin` into a directory `linuxdeploy` does not scan, with a small wrapper in
 the sidecar slot. Until that is done, expect Linux users to take the `.deb`, or
-to build the AppImage locally.
+to build the AppImage locally — which works, and is what AGENTS.md already
+documents for Arch.
 
 ## 6. Publish the notes
 

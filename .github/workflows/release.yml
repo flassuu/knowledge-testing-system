@@ -17,33 +17,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Linux, in two entries on purpose.
+          # No AppImage, and that is a decision rather than an omission.
           #
-          # `.deb` is the required half: it is produced by dpkg-deb and has never
-          # failed, and it is the Linux artifact the release page cannot do
-          # without. The AppImage is produced by linuxdeploy, which runs by
-          # mounting and stripping its own helpers on a runner that has no FUSE
-          # and a glibc it disagrees with — it failed three times in a row here,
-          # each time as a bare `failed to run linuxdeploy` with no cause, while
-          # the very same command succeeded on a workstation. One flaky tool must
-          # not be able to take the whole release down with it, so it gets its own
-          # job that is allowed to fail.
+          # linuxdeploy rewrites the rpath of every ELF in the AppDir's usr/bin
+          # with patchelf, and on our `bun build --compile` sidecar that rewrite
+          # corrupts it: the bundle builds, uploads, and the app inside segfaults
+          # in silence on startup. Every structural check still passes - readelf
+          # is content, ldd is content wherever the libraries resolve - so the
+          # only way to notice is to run the artifact, and a file that has to be
+          # downloaded and launched before it can be trusted does not belong on a
+          # download list.
           #
-          # `fail-fast: false` above is what makes the second entry even run: with
-          # it off, the first failure would cancel the rest of the matrix.
+          # The .deb is built by dpkg-deb, which rewrites nothing, and its sidecar
+          # starts and serves. It is the Linux artifact. Building the AppImage
+          # again needs the Bun binary moved out of usr/bin into somewhere
+          # linuxdeploy does not scan; docs/RELEASE_CHECKLIST.md has the detail.
           - platform: ubuntu-22.04
             os: linux
             bundle: deb
             tauriArgs: --bundles deb
             best_effort: false
-          - platform: ubuntu-22.04
-            os: linux
-            bundle: appimage
-            # --verbose makes tauri stream linuxdeploy's own stdout/stderr instead
-            # of swallowing it. It is the difference between a failure that says
-            # nothing and one that says what broke.
-            tauriArgs: --bundles appimage --verbose
-            best_effort: true
           - platform: windows-latest
             os: windows
             bundle: msi, nsis
@@ -98,33 +91,6 @@ jobs:
           pnpm desktop:sidecar
         shell: bash
 
-      # Only the AppImage job needs this, and it exists for one reason.
-      #
-      # linuxdeploy runs `ldd` on every ELF it finds in the AppDir's usr/bin and
-      # treats a non-zero exit as fatal: `what(): Failed to run ldd: exited with
-      # code 1`, exit 134. It cannot trace our sidecar - `bun build --compile`
-      # emits a self-contained binary, and ldd reaches it by executing it in
-      # trace mode, where it exits 1. That is the whole of the AppImage failure;
-      # NO_STRIP and FUSE were red herrings.
-      #
-      # The shim reports "no dependencies" for a binary the real ldd cannot
-      # trace, and passes every other binary - the GTK app, which does need its
-      # libs deployed - straight through. The sidecar links nothing but libc, and
-      # libc is already in the AppDir for the main binary, so nothing is lost.
-      - name: Shim ldd for the Bun sidecar
-        if: matrix.bundle == 'appimage'
-        run: |
-          mkdir -p "$HOME/shim"
-          cat > "$HOME/shim/ldd" <<'SH'
-          #!/usr/bin/env bash
-          out=$(/usr/bin/ldd "$@" 2>&1); rc=$?
-          # A real trace: pass it through untouched, output and exit code alike.
-          if [ $rc -eq 0 ]; then printf '%s\n' "$out"; exit 0; fi
-          # No trace: report no dependencies rather than aborting the bundle.
-          exit 0
-          SH
-          chmod +x "$HOME/shim/ldd"
-          echo "$HOME/shim" >> "$GITHUB_PATH"
 
       - uses: tauri-apps/tauri-action@v1
         env:
@@ -148,48 +114,6 @@ jobs:
           releaseDraft: false
           prerelease: false
 
-      # A green AppImage build is not proof of a working one, and this job has
-      # now produced a broken one. linuxdeploy runs patchelf over every ELF in
-      # usr/bin to set an rpath; on a `bun build --compile` binary that rewrite
-      # corrupts it. Every structural check still passes afterwards - `readelf`
-      # reads the header, the program headers and the dynamic section without
-      # complaint, and `ldd` is happy on a machine whose libraries happen to
-      # resolve - so the only question worth asking is whether the thing runs.
-      #
-      # It does not. Downloaded and run, the sidecar inside segfaults silently
-      # while the same binary from the .deb starts and serves /api/health. So the
-      # artifact is opened and its sidecar is given a data directory and eight
-      # seconds; a process still alive when the timeout takes it is a working
-      # server, anything else is a broken artifact and loses its place on the
-      # release page.
-      - name: Verify the AppImage's sidecar actually runs
-        if: matrix.bundle == 'appimage'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -uo pipefail
-          APPIMAGE=$(find apps/desktop/src-tauri/target/release/bundle/appimage -name '*.AppImage' | head -1 || true)
-          if [ -z "$APPIMAGE" ]; then
-            echo "::warning::no AppImage was produced"
-            exit 0
-          fi
-          NAME=$(basename "$APPIMAGE")
-          drop() {
-            echo "::error::$1 - taking $NAME off the release page"
-            gh release delete-asset v__VERSION__ "$NAME" -y || true
-            exit 1
-          }
-          rm -rf /tmp/ai && mkdir -p /tmp/ai
-          ( cd /tmp/ai && "$OLDPWD/$APPIMAGE" --appimage-extract >/dev/null )
-          GOT=/tmp/ai/squashfs-root/usr/bin/lantern-server
-          [ -f "$GOT" ] || drop "the AppImage has no lantern-server in usr/bin"
-          # --port 0 binds an ephemeral port, so this cannot fail for a reason
-          # that has nothing to do with the binary.
-          rc=0
-          timeout 8 "$GOT" --port 0 --data /tmp/ai/data >/dev/null 2>&1 || rc=$?
-          [ "$rc" -eq 124 ] || drop "the sidecar inside the AppImage does not run (exit $rc)"
-          echo "the sidecar inside the AppImage runs: ok"
-        shell: bash
 
   # Headless distribution: the standalone server binary plus the built web
   # client, so the whole system can run without Tauri.

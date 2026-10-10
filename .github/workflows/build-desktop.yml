@@ -27,20 +27,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Same split as release.yml, and for the same reason: linuxdeploy is
-          # fragile on a runner without FUSE, so AppImage gets its own
-          # best-effort job and the `.deb` keeps `main` honest. See release.yml
-          # for the full note.
+          # No AppImage, for the reason in release.yml: linuxdeploy's patchelf
+          # pass corrupts the Bun sidecar, and a bundle that only fails once it
+          # is launched is not worth building on every push.
           - platform: ubuntu-22.04
             os: linux
             bundle: deb
             tauriArgs: --bundles deb
             best_effort: false
-          - platform: ubuntu-22.04
-            os: linux
-            bundle: appimage
-            tauriArgs: --bundles appimage --verbose
-            best_effort: true
           - platform: windows-latest
             os: windows
             bundle: msi, nsis
