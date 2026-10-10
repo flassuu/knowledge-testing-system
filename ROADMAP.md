@@ -348,6 +348,47 @@ real server.
 - [ ] Browser e2e for the student flow: join → answer → submit → result
 - [ ] Offline PWA caching polish: a manifest and a service worker, so a phone can
       install the client and a room without Wi-Fi still shows what it has
+- [ ] A Linux AppImage that actually runs, from CI — the format is off in CI for
+      a reason, and 0.5.1 is where that was found. See below.
+
+### The AppImage, and what 0.5.1 established about it
+
+The desktop ships a `.deb` from CI and an AppImage built locally. The AppImage is
+excluded from CI not because it is flaky but because it is **wrong**: the bundle
+builds, uploads, and the app inside it segfaults on startup.
+
+The cause is `linuxdeploy`. Assembling an AppImage, it runs `patchelf` over
+every ELF in the AppDir's `usr/bin` to give it the bundle's rpath. Our sidecar is
+a `bun build --compile` binary, and that rewrite corrupts it. The `.deb` does not
+go through any of this — `dpkg-deb` rewrites nothing — and its sidecar starts and
+serves, which is how the two formats differ.
+
+What is already established, so this does not have to be re-learned:
+
+- **Nothing structural notices.** `readelf` reads the header, the program headers
+  and the dynamic section without complaint. Comparing hashes does not work
+  either: adding the rpath is `patchelf`'s job, so the bytes are *meant* to
+  change, and that test can only ever fail. `ldd` is content wherever the
+  libraries happen to resolve, and unhappy where they do not.
+- **Only running the artifact sees it.** Give the sidecar a data directory and
+  eight seconds: a live server is killed by the timeout (124), a corrupted one
+  dies on its own (139).
+- **`NO_STRIP`, `APPIMAGE_EXTRACT_AND_RUN` and an `ldd` shim are not the fix.**
+  The shim does make the bundle build — which is precisely how a broken file got
+  onto the download list before it was caught by hand. Those three address
+  `linuxdeploy`'s environment, not its rewrite of our binary.
+- **The same command works on a workstation.** Building it locally on Arch is
+  fine, and that is what AGENTS.md documents. The failure is specific to
+  `linuxdeploy` touching the sidecar, not to the machine.
+
+What the fix therefore looks like, and what is left to do: move the Bun binary
+out of `usr/bin` into a directory `linuxdeploy` does not scan — resources, where
+it is shipped as data rather than as an executable — and put a small wrapper in
+the sidecar slot that execs it. That means resolving the bundled path in Rust
+(`resource_dir()`), keeping the `.deb` and Windows layouts working, and proving
+the result by running the produced AppImage before it goes on the release page.
+The verification step is the part worth keeping whatever the packaging ends up
+being: an artifact nobody has started is an artifact nobody has tested.
 
 ## Out of scope (v1)
 
