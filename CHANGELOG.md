@@ -4,6 +4,27 @@ All notable changes to this project are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### The teacher's Live tab, rebuilt around the run in progress
+
+The tab had grown by accretion - a code, then a QR, then four controls, then a
+participant list - and none of it had a shape. It now reads in the order a
+lesson runs.
+
+- **The session is a card with a face**: status, the test behind it, when it
+  started, and a clock - elapsed, or a countdown when the test has a time limit,
+  turning red in the last minute and saying so when it runs out.
+- **Students join from one block**: the code large, a copy for the code and one
+  for the link, and the QR behind a button, with the address it encodes beneath
+  it and the unreachable-address warning kept exactly where it was.
+- **A live board**: joined, submitted, passed and not passed as four tiles over
+  a submitted/total bar, with the class average and "N still working" below it.
+- **Participants carry their result**: a monogram that takes the pass or fail
+  colour, the percent, and the time they handed their paper in.
+- **Starting a session is a dialog** with the test picker, not a card that
+  pushes the page around.
+
 ## [0.5.1] — 2026-10-10
 
 A class that runs without an admin in the room, and the pass over the interface

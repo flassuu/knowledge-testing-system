@@ -1,20 +1,25 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   CircleCheck,
   CircleX,
   Copy,
-  Link2,
-  QrCode,
   Download,
+  Hourglass,
+  Link2,
   Pause,
+  Percent,
   Play,
+  QrCode,
   Radio,
-  RotateCw,
   Square,
+  Timer,
   TriangleAlert,
+  Trophy,
+  UserCheck,
   Users,
+  X,
 } from '@lucide/vue'
 import { ApiError, downloadFile } from '../../api/client'
 import {
@@ -22,6 +27,7 @@ import {
   setSessionStatus,
   startSession,
   type LiveSessionStatus,
+  type ParticipantEntry,
   type SessionSummary,
 } from '../../api/sessions'
 import type { TestSummary } from '../../api/types'
@@ -30,45 +36,20 @@ import QrCodeCard from '../common/QrCode.vue'
 import SkeletonList from '../common/SkeletonList.vue'
 import TestPicker from './TestPicker.vue'
 import { useConfirm } from '../../composables/confirm'
+import { useDialogFocus } from '../../composables/focusTrap'
 import { effectiveBaseUrl, loadSettings } from '../../composables/settings'
 import { isReachableFromPhone, joinLink as buildJoinLink } from '../../utils/links'
 import { useSessionChannel } from '../../composables/sessionChannel'
 import { useToast } from '../../composables/toast'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
-
-/** The address students are being sent to, and whether they can open it. */
-const joinOrigin = computed(() => effectiveBaseUrl())
-const originReachable = computed(() => isReachableFromPhone(joinOrigin.value))
-
-/** True while the spreadsheet download is in flight. */
-const exporting = ref(false)
-
-async function exportCsv(): Promise<void> {
-  const session = selected.value
-  if (!session || exporting.value) return
-  exporting.value = true
-  try {
-    await downloadFile(
-      `/api/sessions/${session.id}/results.csv`,
-      `session-${session.joinCode}.csv`,
-    )
-  } catch (error) {
-    toast.error(
-      error instanceof ApiError && error.status === 403
-        ? t('teacher.errors.generic')
-        : t('teacher.errors.network'),
-    )
-  } finally {
-    exporting.value = false
-  }
-}
+import AppDialog from '../../components/common/AppDialog.vue'
 
 const props = defineProps<{
   tests: TestSummary[]
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const confirm = useConfirm()
 const toast = useToast()
 
@@ -84,15 +65,88 @@ const copied = ref(false)
 const linkCopied = ref(false)
 const showQr = ref(false)
 
+/** True while the spreadsheet download is in flight. */
+const exporting = ref(false)
+
 /** The server pushes the board over a WebSocket; polling is the fallback. */
 const channel = useSessionChannel()
 const participants = channel.participants
 const boardStatus = channel.status
 
-const selected = computed(() => sessions.value.find((session) => session.id === selectedId.value) ?? null)
-const submittedCount = computed(
-  () => participants.value.filter((entry) => entry.status !== 'joined').length,
+/**
+ * A wall clock the elapsed and remaining labels are derived from. The server
+ * measures the time limit against `startedAt` and the wall clock too, so pausing
+ * does not stop the count - and neither does this.
+ */
+const now = ref(Date.now())
+let clock: number | undefined
+
+/** The address students are being sent to, and whether they can open it. */
+const joinOrigin = computed(() => effectiveBaseUrl())
+const originReachable = computed(() => isReachableFromPhone(joinOrigin.value))
+
+const selected = computed(
+  () => sessions.value.find((session) => session.id === selectedId.value) ?? null,
 )
+/**
+ * The test behind the selected session, looked up by id: the session list
+ * carries `testId` and a title, not the test object - only the create and
+ * status responses do - so the question count comes from the list this screen
+ * was already handed.
+ */
+const selectedTest = computed(
+  () => props.tests.find((test) => test.id === selected.value?.testId) ?? null,
+)
+const joinedCount = computed(() => participants.value.length)
+const workingCount = computed(
+  () => participants.value.filter((entry) => entry.status === 'joined').length,
+)
+const submittedCount = computed(() => joinedCount.value - workingCount.value)
+const passedCount = computed(
+  () => participants.value.filter((entry) => entry.passed === true).length,
+)
+const failedCount = computed(
+  () =>
+    participants.value.filter((entry) => entry.status !== 'joined' && entry.passed === false)
+      .length,
+)
+/** Mean of the scores that exist, or null while nobody has handed anything in. */
+const averagePercent = computed(() => {
+  const scored = participants.value.filter(
+    (entry) => entry.status !== 'joined' && entry.percent !== null,
+  )
+  if (scored.length === 0) return null
+  return Math.round(scored.reduce((sum, entry) => sum + (entry.percent ?? 0), 0) / scored.length)
+})
+const progressPercent = computed(() =>
+  joinedCount.value === 0 ? 0 : Math.round((submittedCount.value / joinedCount.value) * 100),
+)
+
+/** Time since the session started, frozen at the finish mark once it is over. */
+const elapsedSeconds = computed(() => {
+  const session = selected.value
+  if (!session) return 0
+  const start = Date.parse(session.startedAt)
+  if (Number.isNaN(start)) return 0
+  const end = session.finishedAt ? Date.parse(session.finishedAt) : now.value
+  return Math.max(0, Math.floor((end - start) / 1000))
+})
+const remainingSeconds = computed(() => {
+  const limit = selected.value?.timeLimitSec
+  if (limit == null) return null
+  return limit - elapsedSeconds.value
+})
+const timeIsShort = computed(() => remainingSeconds.value !== null && remainingSeconds.value <= 60)
+const timerLabel = computed(() => {
+  const remaining = remainingSeconds.value
+  if (remaining !== null && remaining <= 0) return t('teacher.live.timeUp')
+  return formatClock(remaining ?? elapsedSeconds.value)
+})
+const timerCaption = computed(() => {
+  if (boardStatus.value === 'finished') return t('teacher.live.duration')
+  return remainingSeconds.value !== null ? t('teacher.live.timeLeft') : t('teacher.live.elapsed')
+})
+
 const sortedParticipants = computed(() =>
   [...participants.value].sort((left, right) => {
     if (left.status === 'joined') return 1
@@ -105,6 +159,52 @@ const statusChip: Record<LiveSessionStatus, string> = {
   active: 'bg-success-container text-on-success-container',
   paused: 'bg-warning-container text-on-warning-container',
   finished: 'bg-surface-container-highest text-on-surface-variant',
+}
+
+const statusDot: Record<LiveSessionStatus, string> = {
+  active: 'bg-success',
+  paused: 'bg-warning',
+  finished: 'bg-on-surface-variant',
+}
+
+/** The one dialog on this screen: a test is chosen, then the run starts. */
+const panel = ref<HTMLElement | null>(null)
+const cancelRef = ref<HTMLButtonElement | null>(null)
+useDialogFocus(() => showStart.value, () => closeStart(), panel, cancelRef)
+
+function formatClock(totalSeconds: number): string {
+  const seconds = Math.max(0, totalSeconds)
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const rest = seconds % 60
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return hours > 0 ? `${hours}:${pad(minutes)}:${pad(rest)}` : `${minutes}:${pad(rest)}`
+}
+
+function formatTime(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat(locale.value, { hour: '2-digit', minute: '2-digit' }).format(date)
+}
+
+/** Up to two initials: from the full name when there is one, the login otherwise. */
+function monogram(entry: ParticipantEntry): string {
+  const source = (entry.fullName || entry.username || '').trim()
+  if (!source) return '?'
+  const parts = source.split(/\s+/)
+  const first = parts[0]?.charAt(0) ?? ''
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.charAt(0) ?? '') : ''
+  return (first + last).toUpperCase()
+}
+
+/** The avatar carries the result: green for a pass, red for a fail, neutral while
+ *  working and neutral when the test has no pass mark to judge against. */
+function avatarClass(entry: ParticipantEntry): string {
+  if (entry.status === 'joined') return 'bg-surface-container-highest text-on-surface-variant'
+  if (entry.passed === true) return 'bg-success-container text-on-success-container'
+  if (entry.passed === false) return 'bg-error-container text-on-error-container'
+  return 'bg-surface-container-highest text-on-surface-variant'
 }
 
 function errorMessage(error: unknown): string {
@@ -129,6 +229,18 @@ async function load(): Promise<void> {
   } finally {
     loading.value = false
   }
+}
+
+function openStart(): void {
+  actionError.value = ''
+  startingTestId.value = ''
+  showStart.value = true
+}
+
+function closeStart(): void {
+  if (starting.value) return
+  showStart.value = false
+  startingTestId.value = ''
 }
 
 async function start(testId: string): Promise<void> {
@@ -166,6 +278,26 @@ async function changeStatus(status: LiveSessionStatus): Promise<void> {
     await load()
   } catch (error) {
     actionError.value = errorMessage(error)
+  }
+}
+
+async function exportCsv(): Promise<void> {
+  const session = selected.value
+  if (!session || exporting.value) return
+  exporting.value = true
+  try {
+    await downloadFile(
+      `/api/sessions/${session.id}/results.csv`,
+      `session-${session.joinCode}.csv`,
+    )
+  } catch (error) {
+    toast.error(
+      error instanceof ApiError && error.status === 403
+        ? t('teacher.errors.generic')
+        : t('teacher.errors.network'),
+    )
+  } finally {
+    exporting.value = false
   }
 }
 
@@ -211,6 +343,13 @@ watch(selectedId, (id) => {
 onMounted(() => {
   void load()
   void loadSettings()
+  clock = window.setInterval(() => {
+    now.value = Date.now()
+  }, 1000)
+})
+
+onBeforeUnmount(() => {
+  if (clock !== undefined) window.clearInterval(clock)
 })
 </script>
 
@@ -218,7 +357,9 @@ onMounted(() => {
   <div class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h3 class="text-base font-semibold text-on-surface">{{ t('teacher.live.heading') }}</h3>
-      <AppButton variant="primary" v-if="!showStart" @click="showStart = !showStart">
+      <!-- While the list is empty the empty state carries the call to action, so
+           the header does not repeat it. -->
+      <AppButton v-if="loading || sessions.length > 0" variant="primary" @click="openStart">
         <Radio class="size-3.5" aria-hidden="true" />
         {{ t('teacher.live.start') }}
       </AppButton>
@@ -232,33 +373,6 @@ onMounted(() => {
       {{ errorKey }}
     </p>
 
-    <AppCard as="section" v-if="showStart">
-      <h4 class="text-sm font-semibold text-on-surface">{{ t('teacher.live.startTitle') }}</h4>
-      <p class="mt-1 text-xs text-on-surface-variant">{{ t('teacher.live.startHint') }}</p>
-      <TestPicker
-        :tests="props.tests"
-        :busy="starting"
-        @select="startingTestId = $event"
-      />
-      <div class="mt-3 flex flex-wrap gap-2">
-        <AppButton variant="success" :disabled="!startingTestId || starting" @click="start(startingTestId)">
-          <Play class="size-3.5" aria-hidden="true" />
-          {{ starting ? t('common.loading') : t('teacher.live.startRun') }}
-        </AppButton>
-        <AppButton variant="secondaryMuted" @click="showStart = false; startingTestId = ''">
-          {{ t('common.cancel') }}
-        </AppButton>
-      </div>
-    </AppCard>
-
-    <p
-      v-if="actionError"
-      role="alert"
-      class="rounded-xl bg-error-container px-3 py-2 text-sm text-on-error-container"
-    >
-      {{ actionError }}
-    </p>
-
     <SkeletonList v-if="loading" :rows="2" />
 
     <EmptyState
@@ -267,170 +381,416 @@ onMounted(() => {
       :title="t('teacher.live.emptyTitle')"
       :description="t('teacher.live.emptyHint')"
       :action-label="t('teacher.live.start')"
-      @action="showStart = true"
+      @action="openStart"
     />
 
     <template v-else>
-      <ul class="flex flex-wrap gap-1.5">
-        <li v-for="session in sessions" :key="session.id">
-          <button
-            type="button"
-            @click="selectedId = session.id"
-            class="state-layer inline-flex h-[var(--control-md)] items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-xs font-semibold"
-            :class="
-              selectedId === session.id
-                ? 'bg-primary text-on-primary'
-                : 'bg-surface-container-high text-on-surface-variant'
-            "
-          >
-            <span class="size-2 rounded-full" :class="statusChip[session.status]" />
-            <span class="max-w-32 truncate">{{ session.title }}</span>
-            <span class="opacity-80">{{ session.joinCode }}</span>
-          </button>
-        </li>
-      </ul>
+      <!-- Only worth a switcher when there is something to switch between. -->
+      <div v-if="sessions.length > 1" class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        <button
+          v-for="session in sessions"
+          :key="session.id"
+          type="button"
+          class="state-layer inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-semibold"
+          :class="
+            selectedId === session.id
+              ? 'border-transparent bg-primary text-on-primary'
+              : 'border-outline-variant bg-surface-container text-on-surface-variant'
+          "
+          @click="selectedId = session.id"
+        >
+          <span class="size-2 rounded-full" :class="statusDot[session.status]" />
+          <span class="max-w-40 truncate">{{ session.title }}</span>
+          <span class="font-mono tracking-wide opacity-80">{{ session.joinCode }}</span>
+        </button>
+      </div>
 
-      <AppCard as="section" v-if="selected">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div class="min-w-0">
-            <p class="truncate text-sm font-semibold text-on-surface">{{ selected.title }}</p>
-            <span
-              class="mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
-              :class="statusChip[boardStatus]"
+      <p
+        v-if="actionError"
+        role="alert"
+        class="rounded-xl bg-error-container px-3 py-2 text-sm text-on-error-container"
+      >
+        {{ actionError }}
+      </p>
+
+      <template v-if="selected">
+        <!-- Who the session is, how long it has run, and how students get in. -->
+        <AppCard as="section">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  :class="statusChip[boardStatus]"
+                >
+                  <span class="size-1.5 rounded-full" :class="statusDot[boardStatus]" />
+                  {{ t(`teacher.live.status.${boardStatus}`) }}
+                </span>
+                <span class="text-[11px] text-on-surface-variant">
+                  <template v-if="selectedTest">
+                    {{ t('teacher.tests.questionCount', { count: selectedTest.questionCount }) }}
+                  </template>
+                  <template v-if="selected.timeLimitSec">
+                    <span v-if="selectedTest"> · </span>{{ selected.timeLimitSec / 60 }}
+                    {{ t('teacher.tests.minutes') }}
+                  </template>
+                </span>
+              </div>
+              <h4 class="mt-1.5 truncate text-lg font-semibold text-on-surface">
+                {{ selected.title }}
+              </h4>
+              <p class="mt-0.5 text-xs text-on-surface-variant">
+                {{ t('teacher.live.startedAt', { time: formatTime(selected.startedAt) }) }}
+              </p>
+            </div>
+
+            <div class="flex shrink-0 items-center gap-2 rounded-2xl bg-surface px-3 py-2">
+              <span
+                class="grid size-9 place-items-center rounded-full bg-surface-container-highest text-on-surface-variant"
+              >
+                <Timer class="size-4" aria-hidden="true" />
+              </span>
+              <span class="leading-tight">
+                <span
+                  class="block text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant"
+                >
+                  {{ timerCaption }}
+                </span>
+                <span
+                  class="block font-mono text-base font-semibold tabular-nums"
+                  :class="timeIsShort ? 'text-error' : 'text-on-surface'"
+                >
+                  {{ timerLabel }}
+                </span>
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-2xl bg-surface p-3 sm:p-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div class="min-w-0">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant">
+                  {{ t('teacher.live.codeLabel') }}
+                </p>
+                <p
+                  class="font-mono text-3xl font-bold tracking-[0.2em] text-on-surface sm:text-4xl"
+                >
+                  {{ selected.joinCode }}
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <AppButton variant="primary" @click="copyCode">
+                  <CircleCheck v-if="copied" class="size-3.5" aria-hidden="true" />
+                  <Copy v-else class="size-3.5" aria-hidden="true" />
+                  {{ copied ? t('teacher.live.copied') : t('teacher.live.copy') }}
+                </AppButton>
+                <AppButton variant="secondary" @click="copyLink">
+                  <CircleCheck v-if="linkCopied" class="size-3.5" aria-hidden="true" />
+                  <Link2 v-else class="size-3.5" aria-hidden="true" />
+                  {{ linkCopied ? t('teacher.live.copied') : t('teacher.live.copyLink') }}
+                </AppButton>
+                <AppButton
+                  variant="secondary"
+                  :aria-pressed="showQr"
+                  @click="showQr = !showQr"
+                >
+                  <QrCode class="size-3.5" aria-hidden="true" />
+                  {{ showQr ? t('teacher.live.hideQr') : t('teacher.live.showQr') }}
+                </AppButton>
+              </div>
+            </div>
+
+            <div v-if="showQr" class="mt-3 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+              <QrCodeCard :text="joinLink()" :caption="t('teacher.live.qrCaption')" />
+              <div class="min-w-0 space-y-1">
+                <p class="text-xs text-on-surface-variant">{{ t('teacher.live.linkHint') }}</p>
+                <p class="break-all font-mono text-[11px] text-on-surface-variant">
+                  {{ joinLink() }}
+                </p>
+                <p class="text-[11px] text-on-surface-variant">
+                  {{ t('teacher.live.qrAddress') }}:
+                  <span class="font-mono">{{ joinOrigin }}</span>
+                </p>
+              </div>
+            </div>
+            <p v-else class="mt-3 text-xs text-on-surface-variant">
+              {{ t('teacher.live.linkHint') }}
+              <span class="break-all font-mono text-[11px]">{{ joinLink() }}</span>
+            </p>
+
+            <!-- A QR that scans and then fails reads as a broken app, so the one
+                 case where that happens is stated instead of left to be
+                 discovered in the middle of a lesson. -->
+            <p
+              v-if="!originReachable"
+              class="mt-3 flex items-start gap-2 rounded-xl bg-warning-container px-3 py-2 text-xs text-on-warning-container"
             >
-              {{ t(`teacher.live.status.${boardStatus}`) }}
-            </span>
+              <TriangleAlert class="mt-px size-4 shrink-0" aria-hidden="true" />
+              <span>
+                {{ t('teacher.live.unreachableHint') }}
+                <span class="break-all font-mono">{{ joinOrigin }}</span>
+              </span>
+            </p>
           </div>
 
-          <div class="text-center">
-            <p class="text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant">
-              {{ t('teacher.live.codeLabel') }}
-            </p>
-            <p class="font-mono text-4xl font-bold tracking-[0.2em] text-on-surface">
-              {{ selected.joinCode }}
-            </p>
-            <AppButton variant="ghost" class="mt-1 gap-1" @click="copyCode">
-              <CircleCheck v-if="copied" class="size-3.5" aria-hidden="true" />
-              <Copy v-else class="size-3.5" aria-hidden="true" />
-              {{ copied ? t('teacher.live.copied') : t('teacher.live.copy') }}
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <AppButton
+              v-if="boardStatus === 'active'"
+              variant="secondary"
+              @click="changeStatus('paused')"
+            >
+              <Pause class="size-3.5" aria-hidden="true" />
+              {{ t('teacher.live.pause') }}
             </AppButton>
-            <AppButton variant="ghost" class="mt-1 gap-1" @click="copyLink">
-              <Link2 class="size-3.5" aria-hidden="true" />
-              {{ linkCopied ? t('teacher.live.copied') : t('teacher.live.copyLink') }}
+            <AppButton
+              v-else-if="boardStatus === 'paused'"
+              variant="secondary"
+              @click="changeStatus('active')"
+            >
+              <Play class="size-3.5" aria-hidden="true" />
+              {{ t('teacher.live.resume') }}
             </AppButton>
-            <AppButton variant="ghost" class="mt-1 gap-1" :aria-pressed="showQr" @click="showQr = !showQr">
-              <QrCode class="size-3.5" aria-hidden="true" />
-              {{ showQr ? t('teacher.live.hideQr') : t('teacher.live.showQr') }}
+            <AppButton
+              v-if="boardStatus !== 'finished'"
+              variant="danger"
+              @click="changeStatus('finished')"
+            >
+              <Square class="size-3.5" aria-hidden="true" />
+              {{ t('teacher.live.finish') }}
             </AppButton>
-          </div>
-        </div>
+            <AppButton variant="secondary" :disabled="exporting" @click="exportCsv">
+              <Download class="size-3.5" aria-hidden="true" />
+              {{ t('teacher.live.exportCsv') }}
+            </AppButton>
 
-        <div v-if="showQr" class="mt-4 flex flex-col items-center gap-2 sm:items-end">
-          <QrCodeCard :text="joinLink()" :caption="t('teacher.live.qrCaption')" />
-          <p class="max-w-full truncate text-[11px] text-on-surface-variant">
-            {{ t('teacher.live.qrAddress') }}:
-            <span class="font-mono">{{ joinOrigin }}</span>
-          </p>
-        </div>
-        <p v-else class="mt-3 text-[11px] text-on-surface-variant">
-          {{ t('teacher.live.linkHint') }}
-        </p>
-
-        <!-- A QR that scans and then fails reads as a broken app, so the one case
-             where that happens is stated instead of left to be discovered in the
-             middle of a lesson. -->
-        <p
-          v-if="!originReachable"
-          class="mt-3 flex items-start gap-2 rounded-[var(--radius-control)] bg-warning-container px-3 py-2 text-xs text-on-warning-container"
-        >
-          <TriangleAlert class="mt-px size-4 shrink-0" aria-hidden="true" />
-          <span>
-            {{ t('teacher.live.unreachableHint') }}
-            <span class="font-mono break-all">{{ joinOrigin }}</span>
-          </span>
-        </p>
-
-        <div class="mt-4 flex flex-wrap items-center gap-2">
-          <AppButton variant="secondary" v-if="boardStatus === 'active'" @click="changeStatus('paused')">
-            <Pause class="size-3.5" aria-hidden="true" />
-            {{ t('teacher.live.pause') }}
-          </AppButton>
-          <AppButton variant="secondary" v-else-if="boardStatus === 'paused'" @click="changeStatus('active')">
-            <Play class="size-3.5" aria-hidden="true" />
-            {{ t('teacher.live.resume') }}
-          </AppButton>
-          <AppButton variant="danger" v-if="boardStatus !== 'finished'" @click="changeStatus('finished')">
-            <Square class="size-3.5" aria-hidden="true" />
-            {{ t('teacher.live.finish') }}
-          </AppButton>
-          <AppButton variant="secondary" :disabled="exporting" @click="exportCsv">
-            <Download class="size-3.5" aria-hidden="true" />
-            {{ t('teacher.live.exportCsv') }}
-          </AppButton>
-          <span class="inline-flex items-center gap-1.5 text-xs text-on-surface-variant">
-            <RotateCw
-              class="size-3.5"
-              :class="channel.connected.value ? 'text-success' : 'text-warning'"
-              aria-hidden="true"
-            />
-            {{ t('teacher.live.board', { done: submittedCount, joined: participants.length }) }}
-            <span class="sr-only">
-              {{ channel.connected.value ? t('teacher.live.live') : t('teacher.live.polling') }}
-            </span>
-          </span>
-        </div>
-      </AppCard>
-
-      <AppCard as="section" v-if="selected">
-        <h4 class="flex items-center gap-2 text-sm font-semibold text-on-surface">
-          <Users class="size-4" aria-hidden="true" />
-          {{ t('teacher.live.participants') }}
-        </h4>
-
-        <p
-          v-if="participants.length === 0"
-          class="mt-3 flex items-center gap-1.5 text-xs text-on-surface-variant"
-        >
-          <Users class="size-3.5" aria-hidden="true" />
-          {{ t('teacher.live.noParticipants') }}
-        </p>
-
-        <ul v-else class="mt-3 space-y-1.5">
-          <li
-            v-for="entry in sortedParticipants"
-            :key="entry.userId"
-            class="flex items-center justify-between gap-2 rounded-xl bg-surface px-3 py-2 text-sm"
-          >
-            <span class="flex min-w-0 items-center gap-2">
-              <CircleCheck
-                v-if="entry.status !== 'joined'"
-                class="size-4 shrink-0"
-                :class="entry.passed ? 'text-success' : 'text-error'"
-                aria-hidden="true"
+            <span
+              class="ms-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+              :class="
+                channel.connected.value
+                  ? 'bg-success-container text-on-success-container'
+                  : 'bg-warning-container text-on-warning-container'
+              "
+            >
+              <span
+                class="size-1.5 rounded-full"
+                :class="channel.connected.value ? 'bg-success' : 'bg-warning'"
               />
-              <CircleX v-else class="size-4 shrink-0 text-on-surface-variant" aria-hidden="true" />
-              <span class="min-w-0 truncate text-on-surface">
-                {{ entry.fullName || entry.username }}
+              {{ channel.connected.value ? t('teacher.live.connected') : t('teacher.live.pollingShort') }}
+              <span class="sr-only">
+                {{ channel.connected.value ? t('teacher.live.live') : t('teacher.live.polling') }}
               </span>
             </span>
-            <span class="shrink-0 text-xs font-semibold tabular-nums text-on-surface-variant">
-              <template v-if="entry.status === 'joined'">
+          </div>
+        </AppCard>
+
+        <!-- The board: the numbers a teacher watches while the room works. -->
+        <AppCard as="section">
+          <h4 class="flex items-center gap-2 text-sm font-semibold text-on-surface">
+            <Users class="size-4" aria-hidden="true" />
+            {{ t('teacher.live.boardTitle') }}
+          </h4>
+
+          <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div class="rounded-xl bg-surface px-3 py-2.5">
+              <span
+                class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant"
+              >
+                <Users class="size-3.5" aria-hidden="true" />
+                {{ t('teacher.live.stats.joined') }}
+              </span>
+              <p class="mt-1 text-2xl font-semibold tabular-nums text-on-surface">{{ joinedCount }}</p>
+            </div>
+            <div class="rounded-xl bg-surface px-3 py-2.5">
+              <span
+                class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant"
+              >
+                <UserCheck class="size-3.5" aria-hidden="true" />
+                {{ t('teacher.live.stats.submitted') }}
+              </span>
+              <p class="mt-1 text-2xl font-semibold tabular-nums text-primary">{{ submittedCount }}</p>
+            </div>
+            <div class="rounded-xl bg-surface px-3 py-2.5">
+              <span
+                class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant"
+              >
+                <Trophy class="size-3.5" aria-hidden="true" />
+                {{ t('teacher.live.stats.passed') }}
+              </span>
+              <p class="mt-1 text-2xl font-semibold tabular-nums text-success">{{ passedCount }}</p>
+            </div>
+            <div class="rounded-xl bg-surface px-3 py-2.5">
+              <span
+                class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant"
+              >
+                <CircleX class="size-3.5" aria-hidden="true" />
+                {{ t('teacher.live.stats.failed') }}
+              </span>
+              <p class="mt-1 text-2xl font-semibold tabular-nums text-error">{{ failedCount }}</p>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-semibold text-on-surface">
+                {{ t('teacher.live.board', { done: submittedCount, joined: joinedCount }) }}
+              </span>
+              <span class="tabular-nums text-on-surface-variant">{{ progressPercent }}%</span>
+            </div>
+            <div
+              class="mt-2 h-2.5 overflow-hidden rounded-full bg-surface-container-highest"
+              role="progressbar"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              :aria-valuenow="progressPercent"
+              :aria-label="t('teacher.live.board', { done: submittedCount, joined: joinedCount })"
+            >
+              <!-- scaleX, not width: the fill grows on the compositor and the bar
+                   never re-flows the page while twenty answers arrive. -->
+              <div
+                class="h-full w-full origin-left rounded-full bg-primary transition-transform [transition-duration:var(--motion-medium)] [transition-timing-function:var(--ease-emphasized)]"
+                :style="{ transform: `scaleX(${progressPercent / 100})` }"
+              />
+            </div>
+          </div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-on-surface-variant">
+            <span v-if="averagePercent !== null" class="inline-flex items-center gap-1.5">
+              <Percent class="size-3.5" aria-hidden="true" />
+              {{ t('teacher.live.average') }}
+              <span class="font-semibold tabular-nums text-on-surface">{{ averagePercent }}%</span>
+            </span>
+            <span v-if="joinedCount > 0" class="inline-flex items-center gap-1.5">
+              <Hourglass v-if="workingCount > 0" class="size-3.5" aria-hidden="true" />
+              <CircleCheck v-else class="size-3.5 text-success" aria-hidden="true" />
+              {{
+                workingCount > 0
+                  ? t('teacher.live.waiting', { count: workingCount })
+                  : t('teacher.live.allSubmitted')
+              }}
+            </span>
+          </div>
+        </AppCard>
+
+        <AppCard as="section">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h4 class="flex items-center gap-2 text-sm font-semibold text-on-surface">
+              <Users class="size-4" aria-hidden="true" />
+              {{ t('teacher.live.participants') }}
+            </h4>
+            <span
+              v-if="joinedCount > 0"
+              class="rounded-full bg-surface-container-highest px-2 py-0.5 text-[11px] font-semibold tabular-nums text-on-surface-variant"
+            >
+              {{ joinedCount }}
+            </span>
+          </div>
+
+          <p
+            v-if="participants.length === 0"
+            class="mt-3 flex items-center gap-1.5 text-xs text-on-surface-variant"
+          >
+            <Users class="size-3.5" aria-hidden="true" />
+            {{ t('teacher.live.noParticipants') }}
+          </p>
+
+          <ul v-else class="mt-3 space-y-1.5">
+            <li
+              v-for="entry in sortedParticipants"
+              :key="entry.userId"
+              class="flex items-center gap-3 rounded-xl bg-surface px-3 py-2"
+            >
+              <span
+                class="grid size-9 shrink-0 place-items-center rounded-full text-xs font-semibold"
+                :class="avatarClass(entry)"
+                aria-hidden="true"
+              >
+                {{ monogram(entry) }}
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm text-on-surface">
+                  {{ entry.fullName || entry.username }}
+                </span>
+                <span
+                  v-if="entry.status !== 'joined'"
+                  class="block text-[11px] text-on-surface-variant"
+                >
+                  {{ t('teacher.live.submittedAt', { time: formatTime(entry.submittedAt) }) }}
+                </span>
+              </span>
+
+              <span
+                v-if="entry.status === 'joined'"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-surface-container-highest px-2 py-0.5 text-[11px] font-semibold text-on-surface-variant"
+              >
+                <Hourglass class="size-3" aria-hidden="true" />
                 {{ t('teacher.live.working') }}
-              </template>
-              <template v-else>
-                {{ entry.percent }}%
+              </span>
+              <span v-else class="flex shrink-0 items-center gap-2">
+                <span class="text-sm font-semibold tabular-nums text-on-surface">
+                  <template v-if="entry.percent === null">—</template>
+                  <template v-else>{{ entry.percent }}%</template>
+                </span>
+                <!-- A test without a pass mark has a score and no verdict. -->
                 <span
                   v-if="entry.passed !== null"
-                  class="ml-1 rounded-full px-1.5 py-0.5 text-[11px]"
-                  :class="entry.passed ? 'bg-success-container text-on-success-container' : 'bg-error-container text-on-error-container'"
+                  class="rounded-full px-1.5 py-0.5 text-[11px] font-semibold"
+                  :class="
+                    entry.passed
+                      ? 'bg-success-container text-on-success-container'
+                      : 'bg-error-container text-on-error-container'
+                  "
                 >
                   {{ entry.passed ? t('teacher.live.passed') : t('teacher.live.failed') }}
                 </span>
-              </template>
-            </span>
-          </li>
-        </ul>
-      </AppCard>
+              </span>
+            </li>
+          </ul>
+        </AppCard>
+      </template>
     </template>
+
+    <AppDialog
+      v-if="showStart"
+      :label="t('teacher.live.startTitle')"
+      max-width="max-w-lg"
+      @close="closeStart"
+    >
+      <div ref="panel" class="flex max-h-[92dvh] flex-col">
+        <header class="flex items-start justify-between gap-3 border-b border-outline-variant p-4">
+          <div class="min-w-0">
+            <h3 class="text-base font-semibold text-on-surface">
+              {{ t('teacher.live.startTitle') }}
+            </h3>
+            <p class="mt-0.5 text-sm text-on-surface-variant">{{ t('teacher.live.startHint') }}</p>
+          </div>
+          <AppButton
+            variant="ghost"
+            class="shrink-0"
+            :aria-label="t('common.close')"
+            @click="closeStart"
+          >
+            <X class="size-4" aria-hidden="true" />
+          </AppButton>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4">
+          <TestPicker :tests="props.tests" :busy="starting" @select="startingTestId = $event" />
+        </div>
+
+        <footer class="flex justify-end gap-2 border-t border-outline-variant p-4">
+          <AppButton variant="secondary" ref="cancelRef" @click="closeStart">
+            {{ t('common.cancel') }}
+          </AppButton>
+          <AppButton
+            variant="success"
+            :disabled="!startingTestId || starting"
+            @click="start(startingTestId)"
+          >
+            <Play class="size-3.5" aria-hidden="true" />
+            {{ starting ? t('common.loading') : t('teacher.live.startRun') }}
+          </AppButton>
+        </footer>
+      </div>
+    </AppDialog>
   </div>
 </template>
