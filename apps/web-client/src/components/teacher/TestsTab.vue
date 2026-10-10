@@ -483,7 +483,7 @@ onMounted(async () => {
           <Upload class="size-3.5" aria-hidden="true" />
           {{ t('teacher.tests.importJson') }}
         </AppButton>
-        <AppButton variant="success" @click="startCreate">
+        <AppButton variant="primary" @click="startCreate">
           <Plus class="size-3.5" aria-hidden="true" />
           {{ t('teacher.tests.newTest') }}
         </AppButton>

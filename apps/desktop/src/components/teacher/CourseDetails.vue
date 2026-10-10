@@ -148,19 +148,24 @@ onMounted(load)
   <SkeletonList v-if="loading" class="mt-4" :rows="3" />
 
   <div v-else-if="course" class="mt-4 space-y-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h4 class="text-base font-semibold text-on-surface">{{ course.title }}</h4>
-        <p v-if="course.description" class="mt-0.5 text-sm text-on-surface-variant">{{ course.description }}</p>
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex min-w-0 items-center gap-1">
+        <AppButton
+          type="button"
+          variant="ghost"
+          icon
+          :aria-label="t('teacher.courses.back')"
+          @click="emit('close')"
+        >
+          <ArrowLeft class="size-4" aria-hidden="true" />
+        </AppButton>
+        <div class="min-w-0">
+          <h4 class="truncate text-base font-semibold text-on-surface">{{ course.title }}</h4>
+          <p v-if="course.description" class="mt-0.5 truncate text-sm text-on-surface-variant">
+            {{ course.description }}
+          </p>
+        </div>
       </div>
-      <AppButton
-        type="button"
-        @click="emit('close')"
-        variant="secondaryPlain" size="sm" class="shrink-0"
-      >
-        <ArrowLeft class="size-3.5" aria-hidden="true" />
-        {{ t('teacher.courses.back') }}
-      </AppButton>
     </div>
 
     <p v-if="actionError" role="alert" class="rounded-lg bg-error-container px-3 py-2 text-sm text-on-error-container">
@@ -169,9 +174,14 @@ onMounted(load)
 
     <!-- students -->
     <AppCard as="section">
-      <h5 class="text-sm font-semibold text-on-surface">
-        {{ t('teacher.courses.students') }} ({{ course.students.length }})
-      </h5>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h5 class="text-sm font-semibold text-on-surface">
+          {{ t('teacher.courses.students') }}
+        </h5>
+        <span class="rounded-full bg-surface-container-highest px-2 py-0.5 text-[11px] font-semibold tabular-nums text-on-surface-variant">
+          {{ course.students.length }}
+        </span>
+      </div>
       <ul v-if="course.students.length" class="mt-3 space-y-1.5">
         <li
           v-for="student in course.students"
@@ -210,9 +220,14 @@ onMounted(load)
 
     <!-- tests -->
     <AppCard as="section">
-      <h5 class="text-sm font-semibold text-on-surface">
-        {{ t('teacher.courses.tests') }} ({{ course.tests.length }})
-      </h5>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h5 class="text-sm font-semibold text-on-surface">
+          {{ t('teacher.courses.tests') }}
+        </h5>
+        <span class="rounded-full bg-surface-container-highest px-2 py-0.5 text-[11px] font-semibold tabular-nums text-on-surface-variant">
+          {{ course.tests.length }}
+        </span>
+      </div>
       <ul v-if="course.tests.length" class="mt-3 space-y-1.5">
         <li
           v-for="test in course.tests"
@@ -238,9 +253,14 @@ onMounted(load)
 
     <!-- materials -->
     <AppCard as="section">
-      <h5 class="text-sm font-semibold text-on-surface">
-        {{ t('teacher.courses.materials') }} ({{ course.materials.length }})
-      </h5>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h5 class="text-sm font-semibold text-on-surface">
+          {{ t('teacher.courses.materials') }}
+        </h5>
+        <span class="rounded-full bg-surface-container-highest px-2 py-0.5 text-[11px] font-semibold tabular-nums text-on-surface-variant">
+          {{ course.materials.length }}
+        </span>
+      </div>
       <ul v-if="course.materials.length" class="mt-3 space-y-1.5">
         <li v-for="material in course.materials" :key="material.id" class="flex flex-wrap items-center gap-2 text-sm">
           <MaterialBadge :title="material.title" :mime-type="material.mimeType" />

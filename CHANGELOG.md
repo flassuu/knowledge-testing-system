@@ -25,6 +25,19 @@ lesson runs.
 - **Starting a session is a dialog** with the test picker, not a card that
   pushes the page around.
 
+### The Tests and Courses tabs in the same vocabulary
+
+- **Tests**: the card shows what a test is - title, the description that was
+  never shown, and the meta as chips; duplicate, export and delete become icon
+  buttons with tooltips; the list searches by title from four tests up; the
+  editor owns the tab with a heading, a way back, and count and points chips.
+- **Courses**: creating one is a dialog; the card shows the description and the
+  students/tests/materials counts as chips; the details screen gets the same
+  header and count badges as the editor.
+- **One action colour per tab**: the main action of a tab is the filled primary
+  button - start on Live, new on Tests and Courses - where "new" used to be
+  green on some screens and blue on others.
+
 ## [0.5.1] — 2026-10-10
 
 A class that runs without an admin in the room, and the pass over the interface
