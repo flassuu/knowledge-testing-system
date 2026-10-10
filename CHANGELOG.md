@@ -43,6 +43,10 @@ lesson runs.
   own label; the members list picks up the participant-row style; approve takes
   the primary colour it always deserved. The address card, the key display and
   every string the classroom flow depends on are untouched.
+- **The results journal**: its four headline numbers use the same tile shape as
+  the Live board - icon and label above the figure, colour only where the figure
+  means something (average in the primary, pass rate in the success colour, and
+  a dash in the plain colour when a test has no pass mark to compute one).
 
 ## [0.5.1] — 2026-10-10
 

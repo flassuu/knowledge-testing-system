@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, BarChart3, Printer, TrendingDown, TrendingUp } from '@lucide/vue'
+import {
+  ArrowLeft,
+  BarChart3,
+  ClipboardList,
+  Percent,
+  Printer,
+  TrendingDown,
+  TrendingUp,
+  Trophy,
+  Users,
+} from '@lucide/vue'
 import type { TestResults } from '../../api/tests'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
@@ -22,13 +32,35 @@ const weakQuestions = computed(() =>
     .sort((left, right) => left.percent - right.percent),
 )
 
+/**
+ * The headline numbers, in the same tile shape the Live board uses: icon and
+ * label above, the figure below, colour only where the figure itself means
+ * something.
+ */
 const cards = computed(() => [
-  { key: 'students', value: props.results.students },
-  { key: 'attempts', value: props.results.submissions },
-  { key: 'average', value: `${props.results.averagePercent}%` },
+  {
+    key: 'students',
+    value: props.results.students,
+    icon: Users,
+    tone: 'text-on-surface',
+  },
+  {
+    key: 'attempts',
+    value: props.results.submissions,
+    icon: ClipboardList,
+    tone: 'text-on-surface',
+  },
+  {
+    key: 'average',
+    value: `${props.results.averagePercent}%`,
+    icon: Percent,
+    tone: 'text-primary',
+  },
   {
     key: 'passRate',
     value: props.results.passRate === null ? '—' : `${props.results.passRate}%`,
+    icon: Trophy,
+    tone: props.results.passRate === null ? 'text-on-surface' : 'text-success',
   },
 ])
 
@@ -72,12 +104,21 @@ function printReport(): void {
     </header>
 
     <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      <AppCard as="div" padding="sm" v-for="card in cards" :key="card.key" class="text-center">
-        <p class="text-xl font-bold tabular-nums text-on-surface">{{ card.value }}</p>
-        <p class="mt-0.5 text-[11px] text-on-surface-variant">
+      <div
+        v-for="card in cards"
+        :key="card.key"
+        class="rounded-xl border border-outline-variant bg-surface-container px-3 py-2.5"
+      >
+        <span
+          class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant"
+        >
+          <component :is="card.icon" class="size-3.5" aria-hidden="true" />
           {{ t(`teacher.results.card.${card.key}`) }}
+        </span>
+        <p class="mt-1 text-2xl font-semibold tabular-nums" :class="card.tone">
+          {{ card.value }}
         </p>
-      </AppCard>
+      </div>
     </div>
 
     <section v-if="weakQuestions.length > 0" class="rounded-2xl border border-outline bg-warning-container p-4">
