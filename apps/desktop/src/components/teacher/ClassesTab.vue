@@ -2,14 +2,17 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
+  Ban,
   CircleCheck,
   Copy,
   KeyRound,
+  Pencil,
   Plus,
   QrCode,
   RefreshCw,
   Trash2,
   Users,
+  X,
 } from '@lucide/vue'
 import { ApiError } from '../../api/client'
 import {
@@ -30,8 +33,10 @@ import QrCodeCard from '../common/QrCode.vue'
 import SkeletonList from '../common/SkeletonList.vue'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import AppDialog from '../../components/common/AppDialog.vue'
 import AppInput from '../../components/common/AppInput.vue'
 import { useConfirm } from '../../composables/confirm'
+import { useDialogFocus } from '../../composables/focusTrap'
 import { applySettings, effectiveBaseUrl, loadSettings } from '../../composables/settings'
 import { useToast } from '../../composables/toast'
 import { isReachableFromPhone, registrationLink } from '../../utils/links'
@@ -66,6 +71,22 @@ const renameDraft = ref('')
 const newName = ref('')
 const newCourseId = ref('')
 const creating = ref(false)
+/** Creating a class is a dialog: a name, an optional course, nothing else. */
+const showCreate = ref(false)
+const createPanel = ref<HTMLElement | null>(null)
+const createCancel = ref<HTMLButtonElement | null>(null)
+useDialogFocus(() => showCreate.value, () => closeCreate(), createPanel, createCancel)
+
+function openCreate(): void {
+  newName.value = ''
+  newCourseId.value = ''
+  showCreate.value = true
+}
+
+function closeCreate(): void {
+  if (creating.value) return
+  showCreate.value = false
+}
 
 /** The address a student's phone will be told to open for registration. */
 const baseUrl = ref(effectiveBaseUrl())
@@ -112,6 +133,7 @@ async function create(): Promise<void> {
       name,
       courseId: newCourseId.value === '' ? null : newCourseId.value,
     })
+    showCreate.value = false
     newName.value = ''
     newCourseId.value = ''
     await load()
@@ -286,9 +308,15 @@ onMounted(() => {
           {{ t('teacher.classes.hint') }}
         </p>
       </div>
-      <AppButton variant="secondary" size="sm" :aria-label="t('common.refresh')" @click="load">
-        <RefreshCw class="size-4" aria-hidden="true" />
-      </AppButton>
+      <div class="flex shrink-0 items-center gap-2">
+        <AppButton variant="secondary" size="sm" :aria-label="t('common.refresh')" @click="load">
+          <RefreshCw class="size-4" aria-hidden="true" />
+        </AppButton>
+        <AppButton variant="primary" size="sm" @click="openCreate">
+          <Plus class="size-3.5" aria-hidden="true" />
+          {{ t('teacher.classes.create') }}
+        </AppButton>
+      </div>
     </div>
 
     <!-- The address every QR code on this tab is built from -->
@@ -324,49 +352,6 @@ onMounted(() => {
           {{ t('teacher.classes.addressSave') }}
         </AppButton>
       </div>
-    </AppCard>
-
-    <!-- Creating a class -->
-    <AppCard as="section">
-      <form class="space-y-3" @submit.prevent="create">
-        <div class="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label class="text-xs font-medium text-on-surface-variant" for="new-class-name">
-              {{ t('teacher.classes.name') }}
-            </label>
-            <AppInput
-              id="new-class-name"
-              v-model="newName"
-              :placeholder="t('teacher.classes.namePlaceholder')"
-              class="mt-1"
-            />
-          </div>
-          <div>
-            <label class="text-xs font-medium text-on-surface-variant" for="new-class-course">
-              {{ t('teacher.classes.course') }}
-            </label>
-            <!-- Optional: a class can enrol its students into a course on arrival. -->
-            <select
-              id="new-class-course"
-              v-model="newCourseId"
-              class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm text-on-surface focus:border-primary"
-            >
-              <option value="">{{ t('teacher.classes.courseNone') }}</option>
-              <option v-for="course in courses" :key="course.id" :value="course.id">
-                {{ course.title }}
-              </option>
-            </select>
-          </div>
-        </div>
-        <AppButton
-          type="submit"
-          variant="primary"
-          :disabled="creating || newName.trim() === ''"
-        >
-          <Plus class="size-4" aria-hidden="true" />
-          {{ t('teacher.classes.create') }}
-        </AppButton>
-      </form>
     </AppCard>
 
     <p
@@ -486,7 +471,8 @@ onMounted(() => {
             </p>
           </div>
 
-          <!-- Actions -->
+          <!-- Actions: the two reading actions as words, the rare or destructive ones
+               as icons with a tooltip, matching the Tests and Courses rows. -->
           <div class="mt-3 flex flex-wrap items-center gap-2">
             <AppButton
               variant="secondary"
@@ -510,44 +496,51 @@ onMounted(() => {
             <AppButton
               v-if="renaming !== classroom.id"
               variant="ghost"
+              icon
               size="sm"
               :disabled="classroom.status === 'revoked'"
+              :aria-label="t('teacher.classes.rename')"
+              v-tip="t('teacher.classes.rename')"
               @click="startRename(classroom)"
             >
-              {{ t('teacher.classes.rename') }}
-            </AppButton>
-            <AppButton
-              v-if="classroom.status === 'active'"
-              variant="secondaryPlain"
-              size="sm"
-              :aria-label="t('teacher.classes.newKey')"
-              v-tip="t('teacher.classes.newKey')"
-              @click="newKey(classroom)"
-            >
-              <KeyRound class="size-3.5" aria-hidden="true" />
+              <Pencil class="size-4" aria-hidden="true" />
             </AppButton>
             <AppButton
               v-if="classroom.status === 'active'"
               variant="ghost"
+              icon
+              size="sm"
+              :aria-label="t('teacher.classes.newKey')"
+              v-tip="t('teacher.classes.newKeyConfirm')"
+              @click="newKey(classroom)"
+            >
+              <KeyRound class="size-4" aria-hidden="true" />
+            </AppButton>
+            <AppButton
+              v-if="classroom.status === 'active'"
+              variant="ghost"
+              icon
               size="sm"
               :disabled="classroom.membersCount > 0"
               :aria-label="t('teacher.classes.revoke')"
               v-tip="
                 classroom.membersCount > 0
                   ? t('teacher.classes.revokeBlocked')
-                  : t('teacher.classes.revoke')
+                  : t('teacher.classes.revokeConfirm')
               "
               @click="revoke(classroom)"
             >
-              {{ t('teacher.classes.revoke') }}
+              <Ban class="size-4" aria-hidden="true" />
             </AppButton>
             <AppButton
               variant="ghostDanger"
+              icon
               size="sm"
               :aria-label="t('teacher.classes.delete')"
+              v-tip="t('teacher.classes.delete')"
               @click="remove(classroom)"
             >
-              <Trash2 class="size-3.5" aria-hidden="true" />
+              <Trash2 class="size-4" aria-hidden="true" />
             </AppButton>
           </div>
 
@@ -557,7 +550,7 @@ onMounted(() => {
               <li
                 v-for="member in members[classroom.id]"
                 :key="member.userId"
-                class="flex items-center justify-between gap-3 text-sm"
+                class="flex items-center justify-between gap-3 rounded-xl bg-surface px-3 py-2 text-sm"
               >
                 <span class="min-w-0 truncate text-on-surface">{{ member.fullName }}</span>
                 <span class="shrink-0 text-xs text-on-surface-variant">{{ member.username }}</span>
@@ -611,6 +604,7 @@ onMounted(() => {
               {{ t('teacher.classes.waitingDenyShort') }}
             </AppButton>
             <AppButton
+              variant="primary"
               size="sm"
               :aria-label="t('teacher.classes.waitingApprove', { name: student.fullName })"
               @click="approve(student)"
@@ -621,5 +615,74 @@ onMounted(() => {
         </li>
       </ul>
     </AppCard>
+
+    <AppDialog
+      v-if="showCreate"
+      :label="t('teacher.classes.create')"
+      @close="closeCreate"
+    >
+      <form ref="createPanel" class="flex max-h-[92dvh] flex-col" @submit.prevent="create">
+        <header class="flex items-start justify-between gap-3 border-b border-outline-variant p-4">
+          <div class="min-w-0">
+            <h3 class="text-base font-semibold text-on-surface">
+              {{ t('teacher.classes.create') }}
+            </h3>
+            <p class="mt-0.5 text-sm text-on-surface-variant">
+              {{ t('teacher.classes.emptyHint') }}
+            </p>
+          </div>
+          <AppButton
+            variant="ghost"
+            class="shrink-0"
+            :aria-label="t('common.close')"
+            @click="closeCreate"
+          >
+            <X class="size-4" aria-hidden="true" />
+          </AppButton>
+        </header>
+
+        <div class="flex-1 space-y-3 overflow-y-auto p-4">
+          <label class="block">
+            <span class="text-xs font-semibold text-on-surface-variant">
+              {{ t('teacher.classes.name') }}
+            </span>
+            <AppInput
+              v-model="newName"
+              :placeholder="t('teacher.classes.namePlaceholder')"
+              class="mt-1"
+            />
+          </label>
+          <label class="block">
+            <span class="text-xs font-semibold text-on-surface-variant">
+              {{ t('teacher.classes.course') }}
+            </span>
+            <!-- Optional: a class can enrol its students into a course on arrival. -->
+            <select
+              v-model="newCourseId"
+              class="mt-1 w-full rounded-lg border border-outline bg-surface px-3 py-2 text-sm text-on-surface focus:border-primary"
+            >
+              <option value="">{{ t('teacher.classes.courseNone') }}</option>
+              <option v-for="course in courses" :key="course.id" :value="course.id">
+                {{ course.title }}
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <footer class="flex justify-end gap-2 border-t border-outline-variant p-4">
+          <AppButton variant="secondary" ref="createCancel" @click="closeCreate">
+            {{ t('common.cancel') }}
+          </AppButton>
+          <AppButton
+            variant="primary"
+            type="submit"
+            :disabled="creating || newName.trim() === ''"
+          >
+            <Plus class="size-4" aria-hidden="true" />
+            {{ t('teacher.classes.create') }}
+          </AppButton>
+        </footer>
+      </form>
+    </AppDialog>
   </section>
 </template>

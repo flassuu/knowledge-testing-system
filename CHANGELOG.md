@@ -37,6 +37,12 @@ lesson runs.
 - **One action colour per tab**: the main action of a tab is the filled primary
   button - start on Live, new on Tests and Courses - where "new" used to be
   green on some screens and blue on others.
+- **Classes**: creating one is a dialog; on each class card the reading actions
+  (QR, students) stay as words while rename, re-key, revoke and delete become
+  icon buttons with tooltips - revoke had been rendering both a tooltip and its
+  own label; the members list picks up the participant-row style; approve takes
+  the primary colour it always deserved. The address card, the key display and
+  every string the classroom flow depends on are untouched.
 
 ## [0.5.1] — 2026-10-10
 
