@@ -98,6 +98,34 @@ jobs:
           pnpm desktop:sidecar
         shell: bash
 
+      # Only the AppImage job needs this, and it exists for one reason.
+      #
+      # linuxdeploy runs `ldd` on every ELF it finds in the AppDir's usr/bin and
+      # treats a non-zero exit as fatal: `what(): Failed to run ldd: exited with
+      # code 1`, exit 134. It cannot trace our sidecar - `bun build --compile`
+      # emits a self-contained binary, and ldd reaches it by executing it in
+      # trace mode, where it exits 1. That is the whole of the AppImage failure;
+      # NO_STRIP and FUSE were red herrings.
+      #
+      # The shim reports "no dependencies" for a binary the real ldd cannot
+      # trace, and passes every other binary - the GTK app, which does need its
+      # libs deployed - straight through. The sidecar links nothing but libc, and
+      # libc is already in the AppDir for the main binary, so nothing is lost.
+      - name: Shim ldd for the Bun sidecar
+        if: matrix.bundle == 'appimage'
+        run: |
+          mkdir -p "$HOME/shim"
+          cat > "$HOME/shim/ldd" <<'SH'
+          #!/usr/bin/env bash
+          out=$(/usr/bin/ldd "$@" 2>&1); rc=$?
+          # A real trace: pass it through untouched, output and exit code alike.
+          if [ $rc -eq 0 ]; then printf '%s\n' "$out"; exit 0; fi
+          # No trace: report no dependencies rather than aborting the bundle.
+          exit 0
+          SH
+          chmod +x "$HOME/shim/ldd"
+          echo "$HOME/shim" >> "$GITHUB_PATH"
+
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -119,6 +147,42 @@ jobs:
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: false
           prerelease: false
+
+      # A green AppImage build is not proof of a working one. linuxdeploy runs
+      # patchelf over every ELF in usr/bin to set its rpath, and on a
+      # `bun build --compile` binary that rewrite can corrupt it - the bundle is
+      # produced, the upload succeeds, and the app inside cannot start the server.
+      # So the artifact is checked against the binary that was actually built,
+      # and a mismatch takes the asset back off the release page.
+      - name: Verify the AppImage carries the sidecar that was built
+        if: matrix.bundle == 'appimage'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          APPIMAGE=$(find apps/desktop/src-tauri/target/release/bundle/appimage -name '*.AppImage' | head -1 || true)
+          if [ -z "$APPIMAGE" ]; then
+            echo "::warning::no AppImage was produced"
+            exit 0
+          fi
+          SRC=apps/desktop/src-tauri/binaries/lantern-server-x86_64-unknown-linux-gnu
+          rm -rf /tmp/ai && mkdir -p /tmp/ai
+          ( cd /tmp/ai && "$OLDPWD/$APPIMAGE" --appimage-extract >/dev/null )
+          GOT=/tmp/ai/squashfs-root/usr/bin/lantern-server
+          if [ ! -f "$GOT" ]; then
+            echo "::error::the AppImage has no lantern-server in usr/bin"
+            exit 1
+          fi
+          A=$(sha256sum "$SRC" | cut -d' ' -f1)
+          B=$(sha256sum "$GOT" | cut -d' ' -f1)
+          if [ "$A" != "$B" ]; then
+            echo "::error::the sidecar inside the AppImage is not the one that was built - bundling rewrote it"
+            gh release delete-asset v__VERSION__ -n "$(basename "$APPIMAGE")" -y || true
+            exit 1
+          fi
+          echo "sidecar in the AppImage is byte-identical to the built binary: ok"
+        shell: bash
+
   # Headless distribution: the standalone server binary plus the built web
   # client, so the whole system can run without Tauri.
   #
